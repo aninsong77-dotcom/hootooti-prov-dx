@@ -1,4 +1,4 @@
-import { analyzeWithAI, isModelReady } from './ai.js?v=3';
+import { analyzeWithAI, isModelReady } from './ai.js?v=4';
 
 function formatBytes(n) {
   return (n / (1024 * 1024 * 1024)).toFixed(2) + 'GB';
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var remainingSec = speed > 0 ? (total - loaded) / speed : NaN;
         statusEl.hidden = false;
         statusEl.textContent =
-          '모델 다운로드 중 (최초 1회, 약 1.4GB)... ' + formatBytes(loaded) + ' / ' + formatBytes(total) +
+          '모델 다운로드 중 (최초 1회, 약 2.4GB)... ' + formatBytes(loaded) + ' / ' + formatBytes(total) +
           (isFinite(remainingSec) ? formatRemaining(remainingSec) : ' · 예상 남은 시간 계산 중...');
       });
 
