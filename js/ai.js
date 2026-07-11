@@ -123,6 +123,9 @@ export async function ensureModelLoaded(onProgress) {
   loadingPromise = wllama
     .loadModelFromUrl(MODEL_URL, {
       n_ctx: N_CTX,
+      // WebGPU(특히 일부 AMD 드라이버)에서 컨텍스트가 커지면 GPU 큐가 멈추는
+      // 사례가 확인되어(DXGI_ERROR_DEVICE_HUNG), 안정성을 위해 CPU로만 실행한다.
+      n_gpu_layers: 0,
       progressCallback: ({ loaded, total }) => {
         if (onProgress) onProgress(loaded, total);
       },
