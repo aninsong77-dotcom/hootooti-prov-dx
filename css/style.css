@@ -178,6 +178,7 @@ a{color:var(--primary)}
 }
 .disclaimer-box strong{ color:#463300; }
 .disclaimer-box-small{
+  flex:0 0 auto;
   background:var(--warn-bg);
   border:1px solid #eddcae;
   border-left:4px solid #c99a2e;
@@ -189,30 +190,44 @@ a{color:var(--primary)}
 }
 .disclaimer-box-small strong{ color:#463300; }
 
+/* ---------- Shell page (index.html) — 전체 페이지 스크롤 없이 한 화면 ---------- */
+body.shell-page{
+  height:100vh;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+body.shell-page .site-header{ flex:0 0 auto; }
+
 /* ---------- Assist layout (소견 입력 좌 / 결과 우) ---------- */
 .assist-layout{
   max-width:var(--maxw);
-  margin:16px auto 0;
-  padding:0 24px;
+  margin:0 auto;
+  padding:16px 24px;
   display:grid;
   grid-template-columns:420px 1fr;
   gap:22px;
-  align-items:start;
+  align-items:stretch;
+  flex:1 1 auto;
+  min-height:0;
+  width:100%;
 }
 .assist-left{
   display:flex;
   flex-direction:column;
   gap:10px;
+  min-height:0;
 }
 .assist-results-panel{
-  position:sticky;
-  top:16px;
-  max-height:calc(100vh - 32px);
+  min-height:0;
   overflow-y:auto;
   display:flex;
   flex-direction:column;
   gap:14px;
-  padding-bottom:4px;
+  background:var(--gray-100);
+  border:1px solid var(--gray-200);
+  border-radius:var(--radius-lg);
+  padding:14px;
 }
 .assist-results-empty{
   padding:32px 20px;
@@ -221,8 +236,10 @@ a{color:var(--primary)}
   color:var(--gray-500);
 }
 @media (max-width: 960px){
-  .assist-layout{ grid-template-columns:1fr; }
-  .assist-results-panel{ position:static; max-height:none; overflow-y:visible; }
+  body.shell-page{ height:auto; overflow:visible; }
+  .assist-layout{ grid-template-columns:1fr; height:auto; }
+  .assist-left{ height:auto; }
+  .assist-results-panel{ max-height:none; overflow-y:visible; }
 }
 .assist-card{
   background:var(--white);
@@ -230,6 +247,10 @@ a{color:var(--primary)}
   border-radius:var(--radius-lg);
   box-shadow:var(--shadow-md);
   padding:18px 22px;
+  flex:1 1 auto;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
 }
 .assist-card h2{
   margin:0 0 4px;
@@ -244,6 +265,8 @@ a{color:var(--primary)}
 }
 .notes-textarea{
   width:100%;
+  flex:1 1 auto;
+  min-height:60px;
   border:1px solid var(--gray-300);
   border-radius:var(--radius-sm);
   padding:14px 16px;
