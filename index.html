@@ -51,10 +51,6 @@
     Association, 2022)의 개념을 참고하여 <b>AI(Claude)의 도움을 받아 재서술</b>한 것으로, APA의 공식 문서가
     아니며 <b>자격을 갖춘 임상 전문가의 검증을 거치지 않았습니다.</b> 실제 사용 전 반드시 DSM-5-TR 원서와
     대조하여 정확성을 확인하시기 바랍니다.
-    <br><br>
-    <strong>현재 상태:</strong> 아직 로컬 AI 모델이 연결되지 않아, 지금 나오는 결과는 <b>키워드 겹침 비교로 만든
-    임시 결과</b>입니다. AI가 아니며, 문맥·부정문·돌려 말하는 표현은 이해하지 못하니 참고만 하세요. 입력한
-    내용은 서버로 전송되지 않고 이 브라우저 화면에만 남으며 새로고침 시 사라집니다.
   </div>
 </div>
 
@@ -65,7 +61,7 @@
     <textarea id="notes-input" class="notes-textarea" rows="8" placeholder="예: 최근 2주간 잠을 잘 못 자고 식욕이 크게 줄었다고 함. 매사에 흥미가 없고, 죽고 싶다는 말을 자주 함. 집중이 안 되고 스스로를 자책하는 말을 많이 함..."></textarea>
     <div class="notes-actions">
       <button class="btn btn-primary" id="analyze-btn">가진단 받기</button>
-      <button class="btn" id="ai-analyze-btn">AI로 분석 받기 (카나나, 최초 1회 약 1.4GB)</button>
+      <button class="btn" id="ai-analyze-btn">AI 분석 (Kanana)</button>
       <button class="btn" id="clear-notes-btn">지우기</button>
       <button class="btn" id="save-result-btn">결과 저장 (.txt)</button>
       <span class="notes-hint">입력한 소견은 이 브라우저 화면에만 남고 저장·전송되지 않습니다.</span>
@@ -77,15 +73,26 @@
   <div class="candidates-card" id="candidates-card" hidden>
     <div class="candidates-head">
       <h2>가진단 후보</h2>
-      <span class="candidates-badge" id="candidates-mode-badge">키워드 기반 임시 결과</span>
+      <div class="candidates-head-right">
+        <span class="candidates-badge" id="candidates-mode-badge">키워드 기반 임시 결과</span>
+        <button class="copy-btn" id="copy-candidates-btn" type="button">복사</button>
+      </div>
     </div>
     <div class="candidates-list" id="candidates-list"></div>
+    <p class="result-note">
+      <strong>현재 상태:</strong> 이 결과는 <b>키워드 겹침 비교로 만든 임시 결과</b>입니다. AI가 아니며,
+      문맥·부정문·돌려 말하는 표현은 이해하지 못하니 참고만 하세요. 입력한 내용은 서버로 전송되지 않고
+      이 브라우저 화면에만 남으며 새로고침 시 사라집니다.
+    </p>
   </div>
 
   <div class="candidates-card" id="ai-result-card" hidden>
     <div class="candidates-head">
-      <h2>AI 분석 결과 (카나나)</h2>
-      <span class="candidates-badge" id="ai-mode-badge">브라우저 내 로컬 AI</span>
+      <h2>AI 분석 결과 (Kanana)</h2>
+      <div class="candidates-head-right">
+        <span class="candidates-badge" id="ai-mode-badge">브라우저 내 로컬 AI</span>
+        <button class="copy-btn" id="copy-ai-result-btn" type="button">복사</button>
+      </div>
     </div>
     <div class="ai-result-text" id="ai-result-text"></div>
   </div>

@@ -398,6 +398,31 @@
     card.classList.add('flash');
   }
 
+  function formatCandidatesAsText(){
+    if(lastCandidates.length === 0) return '';
+    return lastCandidates.map(function(c, idx){
+      var lines = [(idx+1) + '. [' + c.category + '] ' + c.name_kr + ' (' + c.name_en + ')'];
+      c.evidences.forEach(function(e){
+        var kw = e.matched.length ? ('[' + e.matched.slice(0,3).join(', ') + '] ') : '';
+        lines.push('   - ' + kw + e.text);
+      });
+      return lines.join('\n');
+    }).join('\n\n');
+  }
+
+  function copyToClipboard(text, btn){
+    if(!text) return;
+    navigator.clipboard.writeText(text).then(function(){
+      var original = btn.textContent;
+      btn.textContent = '복사됨';
+      btn.classList.add('copied');
+      setTimeout(function(){
+        btn.textContent = original;
+        btn.classList.remove('copied');
+      }, 1500);
+    });
+  }
+
   function clearNotes(){
     $notesInput.value = '';
     $candidatesCard.hidden = true;
@@ -448,6 +473,9 @@
     document.getElementById('analyze-btn').addEventListener('click', runDiagnosisAssist);
     document.getElementById('clear-notes-btn').addEventListener('click', clearNotes);
     document.getElementById('save-result-btn').addEventListener('click', saveResult);
+    document.getElementById('copy-candidates-btn').addEventListener('click', function(e){
+      copyToClipboard(formatCandidatesAsText(), e.currentTarget);
+    });
   }
 
   function initChecklistPage(){

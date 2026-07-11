@@ -10,7 +10,24 @@ document.addEventListener('DOMContentLoaded', function () {
   var statusEl = document.getElementById('ai-status');
   var resultCard = document.getElementById('ai-result-card');
   var resultText = document.getElementById('ai-result-text');
+  var copyBtn = document.getElementById('copy-ai-result-btn');
   if (!btn || !notesInput) return;
+
+  if (copyBtn) {
+    copyBtn.addEventListener('click', function () {
+      var text = resultText.textContent;
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(function () {
+        var original = copyBtn.textContent;
+        copyBtn.textContent = '복사됨';
+        copyBtn.classList.add('copied');
+        setTimeout(function () {
+          copyBtn.textContent = original;
+          copyBtn.classList.remove('copied');
+        }, 1500);
+      });
+    });
+  }
 
   btn.addEventListener('click', async function () {
     var noteText = notesInput.value.trim();
@@ -24,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
     statusEl.hidden = false;
     statusEl.textContent = isModelReady()
       ? 'AI가 분석 중입니다...'
-      : '카나나 모델을 처음 불러오는 중입니다 (최초 1회, 약 1.4GB)...';
+      : 'Kanana 모델을 처음 불러오는 중입니다 (최초 1회, 약 1.4GB)...';
 
     try {
       var answer = await analyzeWithAI(noteText, function (loaded, total) {
