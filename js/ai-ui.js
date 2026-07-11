@@ -11,6 +11,29 @@ function formatRemaining(seconds) {
   return ' · 예상 남은 시간 약 ' + min + '분';
 }
 
+function playDing() {
+  try {
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    var ctx = new Ctx();
+    var now = ctx.currentTime;
+    [880, 1320].forEach(function (freq, i) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      var start = now + i * 0.12;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.2, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.35);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + 0.4);
+    });
+  } catch (e) {
+    /* 소리 재생 실패는 무시 (분석 결과 자체엔 영향 없음) */
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
   var btn = document.getElementById('ai-analyze-btn');
   var notesInput = document.getElementById('notes-input');
@@ -75,6 +98,7 @@ document.addEventListener('DOMContentLoaded', function () {
       resultCard.hidden = false;
       resultText.textContent = answer;
       resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      playDing();
     } catch (err) {
       statusEl.hidden = false;
       statusEl.textContent =
