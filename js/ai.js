@@ -21,8 +21,12 @@ const WASM_PATH_CONFIG = {
 
 const MODEL_URL = 'https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf';
 
-const N_CTX = 8192;
+// GPU(WebGPU) 사용 시 8192에서 드라이버 행(DXGI_ERROR_DEVICE_HUNG)이 확인되어,
+// 성공 사례가 있었던 작은 컨텍스트에 가깝게 4096으로 운용한다.
+const N_CTX = 4096;
+// 상위 N개는 기준 전체를, 나머지는 이름만 제공해 프롬프트를 가볍게 유지한다.
 const MAX_DICT_DIAGNOSES = 12;
+const FULL_DETAIL_DIAGNOSES = 6;
 
 const STOPWORDS = {};
 [
@@ -69,7 +73,10 @@ function pickRelevantDiagnoses(noteText, limit) {
 }
 
 function formatDiagnosisDictionary(diagnoses) {
-  return diagnoses
+  const detailed = diagnoses.slice(0, FULL_DETAIL_DIAGNOSES);
+  const nameOnly = diagnoses.slice(FULL_DETAIL_DIAGNOSES);
+
+  const detailedText = detailed
     .map((d) => {
       const groupsText = d.groups
         .map((g) => {
@@ -86,6 +93,18 @@ function formatDiagnosisDictionary(diagnoses) {
       );
     })
     .join('\n\n');
+
+  if (nameOnly.length === 0) return detailedText;
+
+  const nameOnlyText = nameOnly
+    .map((d) => '- ' + d.name_kr + ' (' + d.name_en + ') [' + d.category + ']')
+    .join('\n');
+
+  return (
+    detailedText +
+    '\n\n[아래는 기준 상세를 생략한 참고 후보 — 소견과 더 부합한다고 판단되면 이름을 언급만 하고, 상세 기준은 정밀 체크리스트에서 확인하도록 안내하세요]\n' +
+    nameOnlyText
+  );
 }
 
 function buildSystemPrompt(dictionaryText) {
@@ -126,10 +145,10 @@ export async function ensureModelLoaded(onProgress) {
 
   loadingPromise = wllama
     .loadModelFromUrl(MODEL_URL, {
+      // GPU(WebGPU) 사용. CPU 전용(n_gpu_layers:0) 싱글스레드는 응답 생성이
+      // 수십 분 걸려 실사용 불가로 확인됨. GPU 행은 n_ctx 8192에서 발생했으므로
+      // 4096으로 낮춰 운용한다 (성공 사례는 1024였음).
       n_ctx: N_CTX,
-      // WebGPU(특히 일부 AMD 드라이버)에서 컨텍스트가 커지면 GPU 큐가 멈추는
-      // 사례가 확인되어(DXGI_ERROR_DEVICE_HUNG), 안정성을 위해 CPU로만 실행한다.
-      n_gpu_layers: 0,
       progressCallback: ({ loaded, total }) => {
         if (onProgress) onProgress(loaded, total);
       },
@@ -160,7 +179,7 @@ export async function analyzeWithAI(noteText, onProgress) {
       { role: 'system', content: systemPrompt },
       { role: 'user', content: noteText },
     ],
-    max_tokens: 700,
+    max_tokens: 450,
     temperature: 0.3,
     // Qwen3의 "생각 과정(thinking)" 출력을 끔 — 스크리닝 결과만 깔끔하게 받기 위함.
     chat_template_kwargs: { enable_thinking: false },
