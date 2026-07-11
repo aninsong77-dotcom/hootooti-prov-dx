@@ -450,7 +450,7 @@
     lines.push('  자격을 갖춘 임상가의 면담·병력·감별진단을 통해 내려야 합니다.');
     lines.push('');
     lines.push('[입력한 소견]');
-    lines.push(lastNoteText.trim() || '(입력 없음)');
+    lines.push(($notesInput ? $notesInput.value.trim() : '') || lastNoteText.trim() || '(입력 없음)');
     lines.push('');
     lines.push('----------------------------------------');
     lines.push('');

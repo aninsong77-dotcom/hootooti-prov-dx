@@ -184,7 +184,7 @@ export async function analyzeWithAI(noteText, onProgress) {
       { role: 'system', content: systemPrompt },
       { role: 'user', content: noteText },
     ],
-    max_tokens: 450,
+    max_tokens: 800,
     temperature: 0.3,
   });
 
