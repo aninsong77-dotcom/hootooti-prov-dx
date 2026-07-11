@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>후투티 | 상담사를 위한 증상기반 가진단 도구</title>
+<meta name="description" content="후투티 — 상담사를 위한 증상기반 가진단 도구. 내담자 소견을 입력하면 가능한 진단 후보와 근거를 정리해 보여주는 참고용 보조 도구">
+<link rel="icon" type="image/png" href="assets/favicon-tile.png?v=2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT-Variable.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-top">
+      <div class="brand-row">
+        <div class="brand-mark" aria-hidden="true">
+          <img src="assets/logo-transparent.png" alt="" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+          <svg class="brand-fallback-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <path d="M11 15 L13 6 M14.5 14 L16.5 5 M18 14 L20.5 6" stroke="white" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9 16 C9 21.5 14 25.5 20.5 25.5 C26.5 25.5 30.5 22.5 32.5 18 L28 17 L30.5 13 L23.5 15.3 C19.5 14.2 13 14.2 9 16 Z" fill="white"/>
+            <path d="M7 16.2 L1.5 17.3 L7.3 19.2 Z" fill="white"/>
+            <path d="M18.5 25.5 L17.5 31.5 M24 25.3 L25.3 31.3" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="site-title">후투티<span class="site-title-sub">상담사를 위한 증상기반 가진단 도구</span></h1>
+        </div>
+      </div>
+      <nav class="site-nav">
+        <a href="checklist.html">정밀 체크리스트로 직접 확인하기</a>
+        <a href="about.html">후투티란?</a>
+      </nav>
+    </div>
+    <div class="header-meta">
+      <span>수록 진단 <b id="header-diag-count">-</b>개</span>
+      <span>수록 범주 <b>18</b>개 (DSM-5-TR 챕터 기준)</span>
+      <span>참고자료 <b>DSM-5-TR, American Psychiatric Association, 2022</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="disclaimer">
+  <div class="disclaimer-box">
+    <strong>사용 전 반드시 확인하십시오.</strong>
+    이 결과는 <b>가진단(참고용 후보)</b>이며 실제 진단이 아닙니다. 자격을 갖춘 임상가가 면담·병력·감별진단을
+    포함한 종합적 평가를 거쳐야만 진단을 내릴 수 있습니다. 진단 기준 문구는 DSM-5-TR(American Psychiatric
+    Association, 2022)의 개념을 참고하여 <b>AI(Claude)의 도움을 받아 재서술</b>한 것으로, APA의 공식 문서가
+    아니며 <b>자격을 갖춘 임상 전문가의 검증을 거치지 않았습니다.</b> 실제 사용 전 반드시 DSM-5-TR 원서와
+    대조하여 정확성을 확인하시기 바랍니다.
+    <br><br>
+    <strong>현재 상태:</strong> 아직 로컬 AI 모델이 연결되지 않아, 지금 나오는 결과는 <b>키워드 겹침 비교로 만든
+    임시 결과</b>입니다. AI가 아니며, 문맥·부정문·돌려 말하는 표현은 이해하지 못하니 참고만 하세요. 입력한
+    내용은 서버로 전송되지 않고 이 브라우저 화면에만 남으며 새로고침 시 사라집니다.
+  </div>
+</div>
+
+<section class="assist-section">
+  <div class="assist-card">
+    <h2>내담자 증상 소견</h2>
+    <p class="assist-desc">관찰된 증상, 행동, 진술 등을 자유롭게 서술해 주세요.</p>
+    <textarea id="notes-input" class="notes-textarea" rows="8" placeholder="예: 최근 2주간 잠을 잘 못 자고 식욕이 크게 줄었다고 함. 매사에 흥미가 없고, 죽고 싶다는 말을 자주 함. 집중이 안 되고 스스로를 자책하는 말을 많이 함..."></textarea>
+    <div class="notes-actions">
+      <button class="btn btn-primary" id="analyze-btn">가진단 받기</button>
+      <button class="btn" id="ai-analyze-btn">AI로 분석 받기 (카나나, 최초 1회 약 1.4GB)</button>
+      <button class="btn" id="clear-notes-btn">지우기</button>
+      <button class="btn" id="save-result-btn">결과 저장 (.txt)</button>
+      <span class="notes-hint">입력한 소견은 이 브라우저 화면에만 남고 저장·전송되지 않습니다.</span>
+      <span class="footer-copyright notes-copyright">© 2026. An In-song. Distributed for free.<br>(2026. 안인성. 무료 배포)</span>
+    </div>
+    <div class="ai-status" id="ai-status" hidden></div>
+  </div>
+
+  <div class="candidates-card" id="candidates-card" hidden>
+    <div class="candidates-head">
+      <h2>가진단 후보</h2>
+      <span class="candidates-badge" id="candidates-mode-badge">키워드 기반 임시 결과</span>
+    </div>
+    <div class="candidates-list" id="candidates-list"></div>
+  </div>
+
+  <div class="candidates-card" id="ai-result-card" hidden>
+    <div class="candidates-head">
+      <h2>AI 분석 결과 (카나나)</h2>
+      <span class="candidates-badge" id="ai-mode-badge">브라우저 내 로컬 AI</span>
+    </div>
+    <div class="ai-result-text" id="ai-result-text"></div>
+  </div>
+</section>
+
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+<script type="module" src="js/ai-ui.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    document.getElementById('header-diag-count').textContent = DIAGNOSES.length;
+  });
+</script>
+</body>
+</html>

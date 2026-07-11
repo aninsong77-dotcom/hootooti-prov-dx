@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>정밀 체크리스트 | 후투티 — 상담사를 위한 증상기반 가진단 도구</title>
+<meta name="description" content="후투티 — DSM-5-TR 18개 범주, 81개 진단 정밀 체크리스트">
+<link rel="icon" type="image/png" href="assets/favicon-tile.png?v=2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT-Variable.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-top">
+      <div class="brand-row">
+        <div class="brand-mark" aria-hidden="true">
+          <img src="assets/logo-transparent.png" alt="" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+          <svg class="brand-fallback-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <path d="M11 15 L13 6 M14.5 14 L16.5 5 M18 14 L20.5 6" stroke="white" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9 16 C9 21.5 14 25.5 20.5 25.5 C26.5 25.5 30.5 22.5 32.5 18 L28 17 L30.5 13 L23.5 15.3 C19.5 14.2 13 14.2 9 16 Z" fill="white"/>
+            <path d="M7 16.2 L1.5 17.3 L7.3 19.2 Z" fill="white"/>
+            <path d="M18.5 25.5 L17.5 31.5 M24 25.3 L25.3 31.3" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="site-title">후투티<span class="site-title-sub">상담사를 위한 증상기반 가진단 도구</span></h1>
+        </div>
+      </div>
+      <nav class="site-nav">
+        <a href="index.html">← 가진단 도구로 돌아가기</a>
+        <a href="about.html">후투티란?</a>
+      </nav>
+    </div>
+    <div class="header-meta">
+      <span>수록 진단 <b id="header-diag-count">-</b>개</span>
+      <span>수록 범주 <b>18</b>개 (DSM-5-TR 챕터 기준)</span>
+      <span>참고자료 <b>DSM-5-TR, American Psychiatric Association, 2022</b></span>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <div class="main-col">
+    <div class="toolbar">
+      <input id="search-input" class="search-input" type="text" placeholder="진단명으로 검색 (예: 우울, panic, 성격장애)">
+      <span class="check-counter" id="check-counter">체크된 증상 <b>0</b>개</span>
+      <button class="btn" id="expand-all-btn">전체 펼치기</button>
+      <button class="btn" id="collapse-all-btn">전체 접기</button>
+      <button class="btn" id="reset-btn">초기화</button>
+      <button class="btn btn-primary" id="export-btn">체크리스트 내보내기 (.txt)</button>
+    </div>
+
+    <div id="checklist-root"><!-- JS가 채웁니다 --></div>
+  </div>
+
+  <aside class="results-panel">
+    <div class="results-header">
+      <h2>체크리스트 기준 충족 현황</h2>
+      <p>기준 충족 가능성 있는 진단 <b id="results-count">0</b>개</p>
+    </div>
+    <div class="results-list" id="results-list">
+      <div class="results-empty">체크리스트에서 해당하는 증상을<br>선택하면 결과가 여기에 표시됩니다.</div>
+    </div>
+    <div class="results-footer">
+      <button class="btn btn-primary" onclick="document.getElementById('export-btn').click()">체크리스트 내보내기 (.txt)</button>
+      <button class="btn" onclick="document.getElementById('reset-btn').click()">초기화</button>
+    </div>
+  </aside>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-bottom">
+      <span>후투티 — 상담사를 위한 증상기반 가진단 도구</span>
+      <span class="footer-copyright">© 2026. An In-song. Distributed for free.<br>(2026. 안인성. 무료 배포)</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    document.getElementById('header-diag-count').textContent = DIAGNOSES.length;
+  });
+</script>
+</body>
+</html>
