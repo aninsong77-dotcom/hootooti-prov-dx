@@ -129,6 +129,61 @@ function buildSystemPrompt(dictionaryText) {
   ].join('\n');
 }
 
+// ---------- Ollama (설치형 로컬 엔진) 연동 ----------
+// PC에 Ollama가 설치·실행 중이면 브라우저 내 모델 대신 그쪽을 쓴다.
+// 훨씬 빠르고(네이티브 실행) 더 큰 모델을 쓸 수 있다. 소견은 localhost로만
+// 전송되므로 개인정보는 동일하게 PC 밖으로 나가지 않는다.
+const OLLAMA_URL = 'http://localhost:11434';
+const OLLAMA_MODEL = 'qwen3:4b';
+
+let ollamaAvailable = null; // null = 미확인, true/false = 확인됨
+
+export async function detectOllama() {
+  if (ollamaAvailable !== null) return ollamaAvailable;
+  try {
+    const res = await fetch(OLLAMA_URL + '/api/tags', { signal: AbortSignal.timeout(2000) });
+    if (!res.ok) throw new Error('bad status');
+    const data = await res.json();
+    const models = (data.models || []).map((m) => m.name);
+    ollamaAvailable = models.some((n) => n === OLLAMA_MODEL || n.startsWith(OLLAMA_MODEL));
+  } catch (e) {
+    ollamaAvailable = false;
+  }
+  return ollamaAvailable;
+}
+
+// 모델 내부 제어 토큰(<|eot_id|>, <|im_end|> 등)이나 <think> 블록이 응답에
+// 섞여 나오는 경우가 있어 사용자에게 보여주기 전에 걸러낸다.
+function cleanModelOutput(text) {
+  return String(text)
+    .replace(/<think>[\s\S]*?<\/think>/g, '')
+    .replace(/<\|[a-zA-Z0-9_]+\|>/g, '')
+    .trim();
+}
+
+async function analyzeWithOllama(systemPrompt, noteText) {
+  const res = await fetch(OLLAMA_URL + '/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: OLLAMA_MODEL,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: noteText },
+      ],
+      stream: false,
+      think: false,
+      options: { temperature: 0.3, num_predict: 800 },
+    }),
+  });
+  if (!res.ok) throw new Error('Ollama 응답 오류 (HTTP ' + res.status + ')');
+  const data = await res.json();
+  return data.message.content;
+}
+
+
+
+// ---------- 브라우저 내 모델 (wllama) ----------
 let wllama = null;
 let modelLoaded = false;
 let loadingPromise = null;
@@ -172,12 +227,22 @@ export function isModelReady() {
   return modelLoaded;
 }
 
-export async function analyzeWithAI(noteText, onProgress) {
-  await ensureModelLoaded(onProgress);
+// 현재 어떤 엔진이 쓰이는지 UI에서 표시할 수 있도록 노출.
+export function currentEngine() {
+  return ollamaAvailable === true ? 'ollama' : 'browser';
+}
 
+export async function analyzeWithAI(noteText, onProgress) {
   const relevant = pickRelevantDiagnoses(noteText, MAX_DICT_DIAGNOSES);
   const dictionaryText = formatDiagnosisDictionary(relevant);
   const systemPrompt = buildSystemPrompt(dictionaryText);
+
+  // 1순위: PC에 설치된 Ollama (빠름). 없으면 브라우저 내 모델로 폴백.
+  if (await detectOllama()) {
+    return cleanModelOutput(await analyzeWithOllama(systemPrompt, noteText));
+  }
+
+  await ensureModelLoaded(onProgress);
 
   const result = await wllama.createChatCompletion({
     messages: [
@@ -188,7 +253,5 @@ export async function analyzeWithAI(noteText, onProgress) {
     temperature: 0.3,
   });
 
-  const content = result.choices[0].message.content;
-  // 혹시 모델이 <think>...</think> 형태의 사고 블록을 내보내면 결과에서 제거.
-  return content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+  return cleanModelOutput(result.choices[0].message.content);
 }

@@ -1,4 +1,4 @@
-import { analyzeWithAI, isModelReady } from './ai.js?v=8';
+import { analyzeWithAI, isModelReady, currentEngine } from './ai.js?v=9';
 
 function formatBytes(n) {
   return (n / (1024 * 1024 * 1024)).toFixed(2) + 'GB';
@@ -105,6 +105,12 @@ document.addEventListener('DOMContentLoaded', function () {
       if (emptyHint) emptyHint.hidden = true;
       resultCard.hidden = false;
       resultText.textContent = answer;
+      var badge = document.getElementById('ai-mode-badge');
+      if (badge) {
+        badge.textContent = currentEngine() === 'ollama'
+          ? '로컬 엔진 (Ollama · Qwen3-4B)'
+          : '브라우저 내 로컬 AI (Kanana)';
+      }
       resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
       playDing();
     } catch (err) {
