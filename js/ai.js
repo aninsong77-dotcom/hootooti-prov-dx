@@ -141,7 +141,10 @@ let ollamaAvailable = null; // null = 미확인, true/false = 확인됨
 export async function detectOllama() {
   if (ollamaAvailable !== null) return ollamaAvailable;
   try {
-    const res = await fetch(OLLAMA_URL + '/api/tags', { signal: AbortSignal.timeout(2000) });
+    // 첫 방문 시 "PC의 사설망(localhost) 접근 허용" 권한 창이 뜨는데, 사용자가
+    // 그 창을 확인하고 누르는 시간까지 감안해 넉넉하게 잡는다 (너무 짧으면
+    // 권한 창이 떠 있는 동안 자체적으로 타임아웃돼 버려 항상 실패로 오판했었음).
+    const res = await fetch(OLLAMA_URL + '/api/tags', { signal: AbortSignal.timeout(15000) });
     if (!res.ok) throw new Error('bad status');
     const data = await res.json();
     const models = (data.models || []).map((m) => m.name);
