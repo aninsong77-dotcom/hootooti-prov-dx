@@ -134,7 +134,10 @@ function buildSystemPrompt(dictionaryText) {
 // 훨씬 빠르고(네이티브 실행) 더 큰 모델을 쓸 수 있다. 소견은 localhost로만
 // 전송되므로 개인정보는 동일하게 PC 밖으로 나가지 않는다.
 const OLLAMA_URL = 'http://localhost:11434';
-const OLLAMA_MODEL = 'qwen3:4b';
+// qwen3:4b(생각모드 버전)는 최종 답을 내기 전 영어로 아주 길게 "생각"하다가
+// 토큰 한도를 다 써버려 실사용이 어려움 — 바로 한국어 최종 답만 내는
+// instruct(생각모드 없는) 버전을 쓴다.
+const OLLAMA_MODEL = 'qwen3:4b-instruct';
 
 let ollamaAvailable = null; // null = 미확인, true/false = 확인됨
 
@@ -175,7 +178,6 @@ async function analyzeWithOllama(systemPrompt, noteText) {
         { role: 'user', content: noteText },
       ],
       stream: false,
-      think: false,
       options: { temperature: 0.3, num_predict: 800 },
     }),
   });
