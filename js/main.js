@@ -448,14 +448,25 @@
     lines.push('');
     lines.push('※ 이 결과는 가진단(참고용 후보)이며 실제 진단이 아닙니다. 최종 판단은 반드시');
     lines.push('  자격을 갖춘 임상가의 면담·병력·감별진단을 통해 내려야 합니다.');
-    lines.push('※ 현재 버전은 로컬 AI가 아직 연결되지 않아 키워드 겹침 비교로 만든 임시 결과입니다.');
     lines.push('');
     lines.push('[입력한 소견]');
     lines.push(lastNoteText.trim() || '(입력 없음)');
     lines.push('');
     lines.push('----------------------------------------');
     lines.push('');
-    lines.push('[가진단 후보]');
+
+    var aiResultCard = document.getElementById('ai-result-card');
+    var aiResultText = document.getElementById('ai-result-text');
+    if(aiResultCard && !aiResultCard.hidden && aiResultText && aiResultText.textContent.trim() !== ''){
+      lines.push('[AI 분석 결과 (Kanana, 브라우저 내 로컬 AI)]');
+      lines.push('');
+      lines.push(aiResultText.textContent.trim());
+      lines.push('');
+      lines.push('----------------------------------------');
+      lines.push('');
+    }
+
+    lines.push('[가진단 후보 — 키워드 기반 임시 결과]');
     lines.push('');
 
     if(lastCandidates.length === 0){
