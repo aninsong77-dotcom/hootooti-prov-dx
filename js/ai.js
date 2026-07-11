@@ -1,12 +1,12 @@
 /* ==========================================================================
-   후투티 — 브라우저 내 로컬 AI(Qwen3-4B GGUF, wllama) 연동
+   후투티 — 브라우저 내 로컬 AI(Kanana GGUF, wllama) 연동
    모델은 사용자의 브라우저 안에서만 실행되며(WebAssembly), 소견 텍스트는
-   외부 서버로 전송되지 않습니다. 최초 1회 모델 파일(약 2.4GB)을 내려받으며,
+   외부 서버로 전송되지 않습니다. 최초 1회 모델 파일(약 1.4GB)을 내려받으며,
    이후에는 브라우저 캐시에 저장되어 다시 열 때 빠르게 로드됩니다.
 
-   모델 출처: 알리바바 Qwen 팀 공식 배포본 (Apache 2.0)
-   https://huggingface.co/Qwen/Qwen3-4B-GGUF
-   SHA256: 7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5
+   모델: Kanana 1.5 2.1B (사용자가 원본에서 직접 변환·업로드한 GGUF)
+   Qwen3-4B도 시도했으나 이 환경(AMD WebGPU)에서 GPU 큐 타임아웃으로
+   크래시가 재현되어, 계산량이 절반인 Kanana(과거 GPU 성공 사례 있음)로 복귀.
 
    AI는 js/data.js의 DSM-5-TR 기반 진단 기준("사전")과 무관하게 자기 지식만으로
    답하면 근거가 부실해지므로, 소견과 겹치는 진단 후보를 먼저 키워드로 추려
@@ -19,7 +19,7 @@ const WASM_PATH_CONFIG = {
   default: 'https://cdn.jsdelivr.net/npm/@wllama/wllama@3.5.1/esm/wasm/wllama.wasm',
 };
 
-const MODEL_URL = 'https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf';
+const MODEL_URL = 'https://huggingface.co/aninsong/kanana-1.5-2.1b-instruct-gguf/resolve/main/kanana-1.5-2.1b-instruct-Q4_K_M.gguf';
 
 // GPU(WebGPU) 사용 시 8192에서 드라이버 행(DXGI_ERROR_DEVICE_HUNG)이 확인되어,
 // 성공 사례가 있었던 작은 컨텍스트에 가깝게 4096으로 운용한다.
@@ -186,11 +186,9 @@ export async function analyzeWithAI(noteText, onProgress) {
     ],
     max_tokens: 450,
     temperature: 0.3,
-    // Qwen3의 "생각 과정(thinking)" 출력을 끔 — 스크리닝 결과만 깔끔하게 받기 위함.
-    chat_template_kwargs: { enable_thinking: false },
   });
 
   const content = result.choices[0].message.content;
-  // 템플릿 설정이 안 먹는 경우를 대비해 <think>...</think> 블록은 결과에서 제거.
+  // 혹시 모델이 <think>...</think> 형태의 사고 블록을 내보내면 결과에서 제거.
   return content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
 }
