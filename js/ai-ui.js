@@ -1,4 +1,4 @@
-import { analyzeWithAI, isModelReady } from './ai.js';
+import { analyzeWithAI, isModelReady } from './ai.js?v=2';
 
 function formatBytes(n) {
   return (n / (1024 * 1024 * 1024)).toFixed(2) + 'GB';

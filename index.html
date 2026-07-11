@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT-Variable.css">
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=2">
 </head>
 <body>
 
@@ -70,6 +70,17 @@
     <div class="ai-status" id="ai-status" hidden></div>
   </div>
 
+  <div class="candidates-card" id="ai-result-card" hidden>
+    <div class="candidates-head">
+      <h2>AI 분석 결과 (Kanana)</h2>
+      <div class="candidates-head-right">
+        <span class="candidates-badge" id="ai-mode-badge">브라우저 내 로컬 AI</span>
+        <button class="copy-btn" id="copy-ai-result-btn" type="button">복사</button>
+      </div>
+    </div>
+    <div class="ai-result-text" id="ai-result-text"></div>
+  </div>
+
   <div class="candidates-card" id="candidates-card" hidden>
     <div class="candidates-head">
       <h2>가진단 후보</h2>
@@ -85,22 +96,11 @@
       이 브라우저 화면에만 남으며 새로고침 시 사라집니다.
     </p>
   </div>
-
-  <div class="candidates-card" id="ai-result-card" hidden>
-    <div class="candidates-head">
-      <h2>AI 분석 결과 (Kanana)</h2>
-      <div class="candidates-head-right">
-        <span class="candidates-badge" id="ai-mode-badge">브라우저 내 로컬 AI</span>
-        <button class="copy-btn" id="copy-ai-result-btn" type="button">복사</button>
-      </div>
-    </div>
-    <div class="ai-result-text" id="ai-result-text"></div>
-  </div>
 </section>
 
-<script src="js/data.js"></script>
-<script src="js/main.js"></script>
-<script type="module" src="js/ai-ui.js"></script>
+<script src="js/data.js?v=2"></script>
+<script src="js/main.js?v=2"></script>
+<script type="module" src="js/ai-ui.js?v=2"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('header-diag-count').textContent = DIAGNOSES.length;
