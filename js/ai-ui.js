@@ -41,13 +41,23 @@ document.addEventListener('DOMContentLoaded', function () {
     statusEl.hidden = false;
     statusEl.textContent = isModelReady()
       ? 'AI가 분석 중입니다...'
-      : 'Kanana 모델을 처음 불러오는 중입니다 (최초 1회, 약 1.4GB)...';
+      : 'Kanana 모델을 준비하는 중입니다...';
+
+    var sawRealDownload = false;
 
     try {
       var answer = await analyzeWithAI(noteText, function (loaded, total) {
-        if (!isModelReady() && total) {
+        if (isModelReady() || !total) return;
+        if (loaded < total) {
+          // 실제로 바이트 단위로 늘어나는 경우만 "다운로드"로 표시.
+          sawRealDownload = true;
           statusEl.textContent =
-            '모델 다운로드 중... ' + formatBytes(loaded) + ' / ' + formatBytes(total);
+            '모델 다운로드 중 (최초 1회, 약 1.4GB)... ' + formatBytes(loaded) + ' / ' + formatBytes(total);
+        } else if (sawRealDownload) {
+          statusEl.textContent = '모델을 초기화하는 중입니다...';
+        } else {
+          // 캐시에 이미 있는 경우 진행률 콜백이 곧바로 100%로 옴 — 다운로드가 아니라 로딩임.
+          statusEl.textContent = '캐시된 모델을 불러오는 중입니다 (다운로드 없음)...';
         }
       });
 
