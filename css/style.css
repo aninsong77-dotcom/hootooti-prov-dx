@@ -779,6 +779,13 @@ body.shell-page .site-header{ flex:0 0 auto; }
   flex-direction:column;
   gap:16px;
 }
+.about-page-title{
+  margin:4px 0 0;
+  font-size:20px;
+  font-weight:700;
+  line-height:1.4;
+  color:var(--ink);
+}
 .about-card{
   background:var(--white);
   border:1px solid var(--gray-200);
