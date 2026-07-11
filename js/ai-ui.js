@@ -11,8 +11,6 @@ function formatRemaining(seconds) {
   return ' · 예상 남은 시간 약 ' + min + '분';
 }
 
-var THINKING_HTML = '생각 중<span class="thinking-dots"><span>.</span><span>.</span><span>.</span></span>';
-
 document.addEventListener('DOMContentLoaded', function () {
   var btn = document.getElementById('ai-analyze-btn');
   var notesInput = document.getElementById('notes-input');
@@ -49,30 +47,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
     btn.disabled = true;
     btn.classList.add('loading');
-    statusEl.hidden = false;
-    statusEl.innerHTML = THINKING_HTML;
+    statusEl.hidden = true;
 
     var sawRealDownload = false;
     var downloadStartedAt = 0;
 
     try {
       var answer = await analyzeWithAI(noteText, function (loaded, total) {
-        if (isModelReady() || !total) return;
-        if (loaded < total) {
-          // 실제로 바이트 단위로 늘어나는 경우만 "다운로드"로 표시.
-          if (!sawRealDownload) {
-            sawRealDownload = true;
-            downloadStartedAt = Date.now();
-          }
-          var elapsedSec = (Date.now() - downloadStartedAt) / 1000;
-          var speed = elapsedSec > 0.3 ? loaded / elapsedSec : 0;
-          var remainingSec = speed > 0 ? (total - loaded) / speed : NaN;
-          statusEl.textContent =
-            '모델 다운로드 중 (최초 1회, 약 1.4GB)... ' + formatBytes(loaded) + ' / ' + formatBytes(total) +
-            (isFinite(remainingSec) ? formatRemaining(remainingSec) : ' · 예상 남은 시간 계산 중...');
-        } else {
-          statusEl.innerHTML = THINKING_HTML;
+        if (isModelReady() || !total || loaded >= total) return;
+        // 실제로 바이트 단위로 늘어나는 경우만 "다운로드 중"으로 표시.
+        // (캐시에서 불러올 때는 loaded===total로 즉시 호출되어 여기로 안 옴 — 버튼 스피너만으로 충분)
+        if (!sawRealDownload) {
+          sawRealDownload = true;
+          downloadStartedAt = Date.now();
         }
+        var elapsedSec = (Date.now() - downloadStartedAt) / 1000;
+        var speed = elapsedSec > 0.3 ? loaded / elapsedSec : 0;
+        var remainingSec = speed > 0 ? (total - loaded) / speed : NaN;
+        statusEl.hidden = false;
+        statusEl.textContent =
+          '모델 다운로드 중 (최초 1회, 약 1.4GB)... ' + formatBytes(loaded) + ' / ' + formatBytes(total) +
+          (isFinite(remainingSec) ? formatRemaining(remainingSec) : ' · 예상 남은 시간 계산 중...');
       });
 
       statusEl.hidden = true;
