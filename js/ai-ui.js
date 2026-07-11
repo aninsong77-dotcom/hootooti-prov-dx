@@ -11,6 +11,8 @@ function formatRemaining(seconds) {
   return ' · 예상 남은 시간 약 ' + min + '분';
 }
 
+var THINKING_HTML = '생각 중<span class="thinking-dots"><span>.</span><span>.</span><span>.</span></span>';
+
 document.addEventListener('DOMContentLoaded', function () {
   var btn = document.getElementById('ai-analyze-btn');
   var notesInput = document.getElementById('notes-input');
@@ -18,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var resultCard = document.getElementById('ai-result-card');
   var resultText = document.getElementById('ai-result-text');
   var copyBtn = document.getElementById('copy-ai-result-btn');
+  var emptyHint = document.getElementById('results-empty-hint');
   if (!btn || !notesInput) return;
 
   if (copyBtn) {
@@ -45,8 +48,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     btn.disabled = true;
+    btn.classList.add('loading');
     statusEl.hidden = false;
-    statusEl.textContent = isModelReady() ? '생각 중...' : '생각 중... (최초 1회 모델 준비 필요)';
+    statusEl.innerHTML = THINKING_HTML;
 
     var sawRealDownload = false;
     var downloadStartedAt = 0;
@@ -61,17 +65,18 @@ document.addEventListener('DOMContentLoaded', function () {
             downloadStartedAt = Date.now();
           }
           var elapsedSec = (Date.now() - downloadStartedAt) / 1000;
-          var speed = elapsedSec > 1 ? loaded / elapsedSec : 0;
+          var speed = elapsedSec > 0.3 ? loaded / elapsedSec : 0;
           var remainingSec = speed > 0 ? (total - loaded) / speed : NaN;
           statusEl.textContent =
             '모델 다운로드 중 (최초 1회, 약 1.4GB)... ' + formatBytes(loaded) + ' / ' + formatBytes(total) +
-            formatRemaining(remainingSec);
+            (isFinite(remainingSec) ? formatRemaining(remainingSec) : ' · 예상 남은 시간 계산 중...');
         } else {
-          statusEl.textContent = '생각 중...';
+          statusEl.innerHTML = THINKING_HTML;
         }
       });
 
       statusEl.hidden = true;
+      if (emptyHint) emptyHint.hidden = true;
       resultCard.hidden = false;
       resultText.textContent = answer;
       resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -81,6 +86,7 @@ document.addEventListener('DOMContentLoaded', function () {
         'AI 분석 중 오류가 발생했습니다: ' + (err && err.message ? err.message : String(err));
     } finally {
       btn.disabled = false;
+      btn.classList.remove('loading');
     }
   });
 });

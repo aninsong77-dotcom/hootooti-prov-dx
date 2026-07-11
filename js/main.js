@@ -345,9 +345,15 @@
     return list;
   }
 
+  function hideEmptyResultsHint(){
+    var hint = document.getElementById('results-empty-hint');
+    if(hint) hint.hidden = true;
+  }
+
   function runDiagnosisAssist(){
     lastNoteText = $notesInput.value;
     $candidatesCard.hidden = false;
+    hideEmptyResultsHint();
     lastCandidates = computeCandidates(lastNoteText);
 
     if(lastNoteText.replace(/\s/g,'') === ''){
@@ -429,6 +435,9 @@
     $candidatesList.innerHTML = '';
     lastCandidates = [];
     lastNoteText = '';
+    var aiCard = document.getElementById('ai-result-card');
+    var hint = document.getElementById('results-empty-hint');
+    if(hint && aiCard && aiCard.hidden) hint.hidden = false;
   }
 
   function saveResult(){
