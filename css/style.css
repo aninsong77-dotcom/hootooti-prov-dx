@@ -76,7 +76,11 @@ a{color:var(--primary)}
   display:flex;
   align-items:center;
   gap:12px;
+  color:inherit;
+  text-decoration:none;
+  cursor:pointer;
 }
+.brand-row:hover .site-title{ opacity:.88; }
 .site-nav{
   display:flex;
   align-items:center;
