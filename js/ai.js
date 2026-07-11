@@ -149,6 +149,11 @@ export async function ensureModelLoaded(onProgress) {
       // 수십 분 걸려 실사용 불가로 확인됨. GPU 행은 n_ctx 8192에서 발생했으므로
       // 4096으로 낮춰 운용한다 (성공 사례는 1024였음).
       n_ctx: N_CTX,
+      // AMD WebGPU에서 "Queue wait timed out after 30000 ms" 크래시가 확인됨 —
+      // 프롬프트 처리 배치가 커서 GPU 작업 1건이 30초 제한을 넘는 것이므로,
+      // 배치를 잘게 쪼개 한 번에 넘기는 작업량을 줄인다 (총 작업량은 동일).
+      n_batch: 512,
+      n_ubatch: 128,
       progressCallback: ({ loaded, total }) => {
         if (onProgress) onProgress(loaded, total);
       },
