@@ -189,10 +189,13 @@ a{color:var(--primary)}
   gap:14px;
 }
 .assist-card{
+  position:sticky;
+  bottom:0;
+  z-index:20;
   background:var(--white);
   border:1px solid var(--gray-200);
-  border-radius:var(--radius-lg);
-  box-shadow:var(--shadow-md);
+  border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow:0 -10px 24px rgba(16,24,40,.10), var(--shadow-md);
   padding:18px 22px;
 }
 .assist-card h2{
