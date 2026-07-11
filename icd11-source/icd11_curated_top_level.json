@@ -1,0 +1,1779 @@
+{
+  "note": "ICD-11 챕터06(정신·행동·신경발달장애)+07(수면-각성장애) 상위 진단명(코드에 점 없는 category)만 추출, 자체 번역(WHO 공식 한국어 번역 없음, 검증 필요). 하위 세분화 코드는 icd11_raw_full.json에 보관, 추후 필요시 확장.",
+  "chapters": {
+    "06": {
+      "Neurodevelopmental disorders": {
+        "block_kr": "신경발달장애",
+        "items": [
+          {
+            "code": "6A00",
+            "title_en": "Disorders of intellectual development",
+            "title_kr": "지적발달장애",
+            "definition_en": "Disorders of intellectual development are a group of etiologically diverse conditions originating during the developmental period characterised by significantly below average intellectual functioning and adaptive behaviour that are approximately two or more standard deviations below the mean (approximately less than the 2.3rd percentile), based on appropriately normed, individually administered standardized tests. Where appropriately normed and standardized tests are not available, diagnosis of disorders of intellectual development requires greater reliance on clinical judgment based on appropriate assessment of comparable behavioural indicators.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Dementia"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/605267007"
+          },
+          {
+            "code": "6A01",
+            "title_en": "Developmental speech or language disorders",
+            "title_kr": "발달성 말 또는 언어장애",
+            "definition_en": "Developmental speech or language disorders arise during the developmental period and are characterised by difficulties in understanding or producing speech and language or in using language in context for the purposes of communication that are outside the limits of normal variation expected for age and level of intellectual functioning. The observed speech and language problems are not attributable to regional, social, or cultural/ethnic language variations and are not fully explained by anatomical or neurological abnormalities. The presumptive aetiology for Developmental speech or language disorders is complex, and in many individual cases, is unknown.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/33269655"
+          },
+          {
+            "code": "6A02",
+            "title_en": "Autism spectrum disorder",
+            "title_kr": "자폐스펙트럼장애",
+            "definition_en": "Autism spectrum disorder is characterised by persistent deficits in the ability to initiate and to sustain reciprocal social interaction and social communication, and by a range of restricted, repetitive, and inflexible patterns of behaviour, interests or activities that are clearly atypical or excessive for the individual’s age and sociocultural context. The onset of the disorder occurs during the developmental period, typically in early childhood, but symptoms may not become fully manifest until later, when social demands exceed limited capacities. Deficits are sufficiently severe to cause impairment in personal, family, social, educational, occupational or other important areas of functioning and are usually a pervasive feature of the individual’s functioning observable in all settings, although they may vary according to social, educational, or other context. Individuals along the spectrum exhibit a full range of intellectual functioning and language abilities.",
+            "inclusions_en": [
+              "Autistic disorder"
+            ],
+            "exclusions_en": [
+              "Rett syndrome"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/437815624"
+          },
+          {
+            "code": "6A03",
+            "title_en": "Developmental learning disorder",
+            "title_kr": "발달성 학습장애",
+            "definition_en": "Developmental learning disorder is characterised by significant and persistent difficulties in learning academic skills, which may include reading, writing, or arithmetic. The individual’s performance in the affected academic skill(s) is markedly below what would be expected for chronological age and general level of intellectual functioning, and results in significant impairment in the individual’s academic or occupational functioning. Developmental learning disorder first manifests when academic skills are taught during the early school years. Developmental learning disorder is not due to a disorder of intellectual development, sensory impairment (vision or hearing), neurological or motor disorder, lack of availability of education, lack of proficiency in the language of academic instruction, or psychosocial adversity.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Symbolic dysfunctions"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/2099676649"
+          },
+          {
+            "code": "6A04",
+            "title_en": "Developmental motor coordination disorder",
+            "title_kr": "발달성 운동조정장애",
+            "definition_en": "Developmental motor coordination disorder is characterised by a significant delay in the acquisition of gross and fine motor skills and impairment in the execution of coordinated motor skills that manifest in clumsiness, slowness, or inaccuracy of motor performance. Coordinated motor skills are markedly below that expected given the individual's chronological age and level of intellectual functioning. Onset of coordinated motor skills difficulties occurs during the developmental period and is typically apparent from early childhood. Coordinated motor skills difficulties cause significant and persistent limitations in functioning (e.g. in activities of daily living, school work, and vocational and leisure activities). Difficulties with coordinated motor skills are not solely attributable to a Disease of the Nervous System, Disease of the Musculoskeletal System or Connective Tissue, sensory impairment, and not better explained by a Disorder of Intellectual Development.",
+            "inclusions_en": [
+              "Orofacial motor coordination disorder"
+            ],
+            "exclusions_en": [
+              "Abnormalities of gait and mobility",
+              "Diseases of the musculoskeletal system or connective tissue",
+              "Diseases of the nervous system"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/148247104"
+          },
+          {
+            "code": "6A05",
+            "title_en": "Attention deficit hyperactivity disorder",
+            "title_kr": "주의력결핍 과잉행동장애 (ADHD)",
+            "definition_en": "Attention deficit hyperactivity disorder is characterised by a persistent pattern (at least 6 months) of inattention and/or hyperactivity-impulsivity that has a direct negative impact on academic, occupational, or social functioning. There is evidence of significant inattention and/or hyperactivity-impulsivity symptoms prior to age 12, typically by early to mid-childhood, though some individuals may first come to clinical attention later. The degree of inattention and hyperactivity-impulsivity is outside the limits of normal variation expected for age and level of intellectual functioning. Inattention refers to significant difficulty in sustaining attention to tasks that do not provide a high level of stimulation or frequent rewards, distractibility and problems with organisation. Hyperactivity refers to excessive motor activity and difficulties with remaining still, most evident in structured situations that require behavioural self-control. Impulsivity is a tendency to act in response to immediate stimuli, without deliberation or consideration of the risks and consequences. The relative balance and the specific manifestations of inattentive and hyperactive-impulsive characteristics varies across individuals and may change over the course of development. In order for a diagnosis to be made, manifestations of inattention and/or hyperactivity-impulsivity must be evident across multiple situations or settings (e.g., home, school, work, with friends or relatives), but are likely to vary according to the structure and demands of the setting. Symptoms are not better accounted for by another mental, behavioural, or neurodevelopmental disorder and are not due to the effect of a substance or medication.",
+            "inclusions_en": [
+              "attention deficit disorder with hyperactivity",
+              "attention deficit syndrome with hyperactivity"
+            ],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/821852937"
+          },
+          {
+            "code": "6A06",
+            "title_en": "Stereotyped movement disorder",
+            "title_kr": "상동증적 운동장애",
+            "definition_en": "Stereotyped movement disorder is characterised by the persistent (e.g., lasting several months) presence of voluntary, repetitive, stereotyped, apparently purposeless (and often rhythmic) movements that arise during the early developmental period, are not caused by the direct physiological effects of a substance or medication (including withdrawal), and markedly interfere with normal activities or result in self-inflicted bodily injury. Stereotyped movements that are non-injurious can include body rocking, head rocking, finger-flicking mannerisms, and hand flapping. Stereotyped self-injurious behaviours can include repetitive head banging, face slapping, eye poking, and biting of the hands, lips, or other body parts.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Tic disorders",
+              "Trichotillomania",
+              "Abnormal involuntary movements"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1111628448"
+          }
+        ]
+      },
+      "Schizophrenia or other primary psychotic disorders": {
+        "block_kr": "조현병 및 기타 일차성 정신병적 장애",
+        "items": [
+          {
+            "code": "6A20",
+            "title_en": "Schizophrenia",
+            "title_kr": "조현병",
+            "definition_en": "Schizophrenia is characterised by disturbances in multiple mental modalities, including thinking (e.g., delusions, disorganisation in the form of thought), perception (e.g., hallucinations), self-experience (e.g., the experience that one's feelings, impulses, thoughts, or behaviour are under the control of an external force), cognition (e.g., impaired attention, verbal memory, and social cognition), volition (e.g., loss of motivation), affect (e.g., blunted emotional expression), and behaviour (e.g., behaviour that appears bizarre or purposeless, unpredictable or inappropriate emotional responses that interfere with the organisation of behaviour). Psychomotor disturbances, including catatonia, may be present. Persistent delusions, persistent hallucinations, thought disorder, and experiences of influence, passivity, or control are considered core symptoms. Symptoms must have persisted for at least one month in order for a diagnosis of schizophrenia to be assigned. The symptoms are not a manifestation of another health condition (e.g., a brain tumour) and are not due to the effect of a substance or medication on the central nervous system (e.g., corticosteroids), including withdrawal (e.g., alcohol withdrawal).",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Schizotypal disorder",
+              "schizophrenic reaction",
+              "Acute and transient psychotic disorder"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1683919430"
+          },
+          {
+            "code": "6A21",
+            "title_en": "Schizoaffective disorder",
+            "title_kr": "조현정동장애",
+            "definition_en": "Schizoaffective disorder is an episodic disorder in which the diagnostic requirements of schizophrenia and a manic, mixed, or moderate or severe depressive episode are met within the same episode of illness, either simultaneously or within a few days of each other. Prominent symptoms of schizophrenia (e.g. delusions, hallucinations, disorganisation in the form of thought, experiences of influence, passivity and control) are accompanied by typical symptoms of a moderate or severe depressive episode (e.g. depressed mood, loss of interest, reduced energy), a manic episode (e.g. an extreme mood state characterised by euphoria, irritability, or expansiveness; increased activity or a subjective experience of increased energy) or a mixed episode. Psychomotor disturbances, including catatonia, may be present. Symptoms must have persisted for at least one month. The symptoms are not a manifestation of another medical condition (e.g. a brain tumor) and are not due to the effect of a substance or medication on the central nervous system (e.g. corticosteroids), including withdrawal (e.g. alcohol withdrawal).",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/106339515"
+          },
+          {
+            "code": "6A22",
+            "title_en": "Schizotypal disorder",
+            "title_kr": "조현형장애",
+            "definition_en": "Schizotypal disorder is characterised by an enduring pattern (i.e. characteristic of the person’s functioning over a period of at least several years) of eccentricities in behaviour, appearance and speech, accompanied by cognitive and perceptual distortions, unusual beliefs, and discomfort with— and often reduced capacity for— interpersonal relationships. Symptoms may include constricted or inappropriate affect and anhedonia. Paranoid ideas, ideas of reference, or other psychotic symptoms, including hallucinations in any modality, may occur, but are not of sufficient intensity or duration to meet the diagnostic requirements of schizophrenia, schizoaffective disorder, or delusional disorder. The symptoms cause distress or impairment in personal, family, social, educational, occupational or other important areas of functioning.",
+            "inclusions_en": [
+              "Schizotypal personality disorder"
+            ],
+            "exclusions_en": [
+              "Autism spectrum disorder",
+              "Personality disorder"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/18178000"
+          },
+          {
+            "code": "6A23",
+            "title_en": "Acute and transient psychotic disorder",
+            "title_kr": "급성 및 일과성 정신병적장애",
+            "definition_en": "Acute and transient psychotic disorder is characterised by acute onset of psychotic symptoms that emerge without a prodrome and reach their maximal severity within two weeks. Symptoms may include delusions, hallucinations, disorganisation of thought processes, perplexity or confusion, and disturbances of affect and mood. Catatonia-like psychomotor disturbances may be present. Symptoms typically change rapidly, both in nature and intensity, from day to day, or even within a single day. The duration of the episode does not exceed 3 months, and most commonly lasts from a few days to 1 month. The symptoms are not a manifestation of another medical condition (e.g. a brain tumour) and are not due to the effect of a substance or medication on the central nervous system (e.g. corticosteroids), including withdrawal (e.g. alcohol withdrawal).",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/284410555"
+          },
+          {
+            "code": "6A24",
+            "title_en": "Delusional disorder",
+            "title_kr": "망상장애",
+            "definition_en": "Delusional disorder is characterised by the development of a delusion or set of related delusions, typically persisting for at least 3 months and often much longer, in the absence of a Depressive, Manic, or Mixed mood episode. The delusions are variable in content across individuals, but typically stable within individuals, although they may evolve over time. Other characteristic symptoms of Schizophrenia (i.e. clear and persistent hallucinations, negative symptoms, disorganised thinking, or experiences of influence, passivity, or control) are not present, although various forms of perceptual disturbances (e.g. hallucinations, illusions, misidentifications of persons) thematically related to the delusion are still consistent with the diagnosis. Apart from actions and attitudes directly related to the delusion or delusional system, affect, speech, and behavior are typically unaffected. The symptoms are not a manifestation of another medical condition (e.g., a brain tumour) and are not due to the effect of a substance or medication on the central nervous system (e.g. corticosteroids), including withdrawal effects (e.g. alcohol withdrawal).",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1974996783"
+          },
+          {
+            "code": "6A25",
+            "title_en": "Symptomatic manifestations of primary psychotic disorders",
+            "title_kr": "일차성 정신병적장애의 증상적 양상",
+            "definition_en": "These categories may be used to characterize the current clinical presentation in individuals diagnosed with Schizophrenia or another primary psychotic disorder, and should not be used in individuals without such a diagnosis. Multiple categories may be applied. Symptoms attributable to the direct pathophysiological consequences of a health condition or injury not classified under Mental, behavioural or neurodevelopmental disorders (e.g., a brain tumour or traumatic brain injury), or to the direct effects of a substance or medication on the central nervous system, including withdrawal effects, should not be considered as examples of the respective types of symptoms.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1358754380"
+          }
+        ]
+      },
+      "Catatonia": {
+        "block_kr": "긴장증",
+        "items": [
+          {
+            "code": "6A40",
+            "title_en": "Catatonia associated with another mental disorder",
+            "title_kr": "다른 정신질환과 관련된 긴장증",
+            "definition_en": "Catatonia associated with another mental disorder is a syndrome of primarily psychomotor disturbances, characterized by the co-occurrence of several symptoms of decreased, increased, or abnormal psychomotor activity, which occurs in the context of another mental disorder, such as Schizophrenia or Other Primary Psychotic Disorders, Mood Disorders, and Neurodevelopmental Disorders, especially Autism Spectrum Disorder.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/556568822"
+          },
+          {
+            "code": "6A41",
+            "title_en": "Catatonia induced by substances or medications",
+            "title_kr": "물질 또는 약물로 유발된 긴장증",
+            "definition_en": "Catatonia induced by substances or medications is a syndrome of primarily psychomotor disturbances, characterized by the co-occurrence of several symptoms of decreased, increased, or abnormal psychomotor activity, which develops during or soon after intoxication or withdrawal from certain psychoactive substances, including phencyclidine (PCP), cannabis, hallucinogens such as mescaline or LSD, cocaine and MDMA or related drugs, or during the use of certain psychoactive and non-psychoactive medications (e.g. antipsychotic medications, benzodiazepines, steroids, disulfiram, ciprofloxacin).",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Neuroleptic malignant syndrome",
+              "Serotonin syndrome"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/289492002"
+          }
+        ]
+      },
+      "Bipolar or related disorders": {
+        "block_kr": "양극성 및 관련 장애",
+        "items": [
+          {
+            "code": "6A60",
+            "title_en": "Bipolar type I disorder",
+            "title_kr": "제1형 양극성장애",
+            "definition_en": "Bipolar type I disorder is an episodic mood disorder defined by the occurrence of one or more manic or mixed episodes. A manic episode is an extreme mood state lasting at least one week unless shortened by a treatment intervention characterised by euphoria, irritability, or expansiveness, and by increased activity or a subjective experience of increased energy, accompanied by other characteristic symptoms such as rapid or pressured speech, flight of ideas, increased self-esteem or grandiosity, decreased need for sleep, distractibility, impulsive or reckless behaviour, and rapid changes among different mood states (i.e., mood lability). A mixed episode is characterised by the presence of several prominent manic and several prominent depressive symptoms consistent with those observed in manic episodes and depressive episodes, which either occur simultaneously or alternate very rapidly (from day to day or within the same day). Symptoms must include an altered mood state consistent with a manic and/or depressive episode (i.e., depressed, dysphoric, euphoric or expansive mood), and be present most of the day, nearly every day, during a period of at least 2 weeks, unless shortened by a treatment intervention. Although the diagnosis can be made based on evidence of a single manic or mixed episode, typically manic or mixed episodes alternate with depressive episodes over the course of the disorder.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Cyclothymia",
+              "Bipolar type II disorder"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1456478153"
+          },
+          {
+            "code": "6A61",
+            "title_en": "Bipolar type II disorder",
+            "title_kr": "제2형 양극성장애",
+            "definition_en": "Bipolar type II disorder is an episodic mood disorder defined by the occurrence of one or more hypomanic episodes and at least one depressive episode. A hypomanic episode is a persistent mood state lasting for at least several days characterised by persistent elevation of mood or increased irritability as well as increased activity or a subjective experience of increased energy, accompanied by other characteristic symptoms such as increased talkativeness, rapid or racing thoughts, increased self-esteem, decreased need for sleep, distractability, and impulsive or reckless behavior. The symptoms represent a change from the individual’s typical mood, energy level, and behavior but are not severe enough to cause marked impairment in functioning. A depressive episode is characterised by a period of depressed mood or diminished interest in activities occurring most of the day, nearly every day during a period lasting at least two weeks accompanied by other symptoms such as changes in appetite or sleep, psychomotor agitation or retardation, fatigue, feelings of worthless or excessive or inappropriate guilt, feelings or hopelessness, difficulty concentrating, and suicidality. There is no history of manic or mixed episodes.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/199053300"
+          },
+          {
+            "code": "6A62",
+            "title_en": "Cyclothymic disorder",
+            "title_kr": "순환성장애",
+            "definition_en": "Cyclothymic disorder is characterised by a persistent instability of mood over a period of at least 2 years, involving numerous periods of hypomanic (e.g., euphoria, irritability, or expansiveness, psychomotor activation) and depressive (e.g., feeling down, diminished interest in activities, fatigue) symptoms that are present during more of the time than not. The hypomanic symptomatology may or may not be sufficiently severe or prolonged to meet the full definitional requirements of a hypomanic episode (see Bipolar type II disorder), but there is no history of manic or mixed episodes (see Bipolar type I disorder). The depressive symptomatology has never been sufficiently severe or prolonged to meet the diagnostic requirements for a depressive episode (see Bipolar type II disorder). The symptoms result in significant distress or significant impairment in personal, family, social, educational, occupational or other important areas of functioning.",
+            "inclusions_en": [
+              "Cycloid personality",
+              "Cyclothymic personality"
+            ],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1427638883"
+          }
+        ]
+      },
+      "Depressive disorders": {
+        "block_kr": "우울장애",
+        "items": [
+          {
+            "code": "6A70",
+            "title_en": "Single episode depressive disorder",
+            "title_kr": "단일삽화 우울장애",
+            "definition_en": "Single episode depressive disorder is characterised by the presence or history of one depressive episode when there is no history of prior depressive episodes. A depressive episode is characterised by a period of depressed mood or diminished interest in activities occurring most of the day, nearly every day during a period lasting at least two weeks accompanied by other symptoms such as difficulty concentrating, feelings of worthlessness or excessive or inappropriate guilt, hopelessness, recurrent thoughts of death or suicide, changes in appetite or sleep, psychomotor agitation or retardation, and reduced energy or fatigue. There have never been any prior manic, hypomanic, or mixed episodes, which would indicate the presence of a bipolar disorder.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "recurrent depressive disorder",
+              "Adjustment disorder",
+              "Bipolar or related disorders"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/578635574"
+          },
+          {
+            "code": "6A71",
+            "title_en": "Recurrent depressive disorder",
+            "title_kr": "재발성 우울장애",
+            "definition_en": "Recurrent depressive disorder is characterised by a history of at least two depressive episodes separated by at least several months without significant mood disturbance. A depressive episode is characterised by a period of depressed mood or diminished interest in activities occurring most of the day, nearly every day during a period lasting at least two weeks accompanied by other symptoms such as difficulty concentrating, feelings of worthlessness or excessive or inappropriate guilt, hopelessness, recurrent thoughts of death or suicide, changes in appetite or sleep, psychomotor agitation or retardation, and reduced energy or fatigue. There have never been any prior manic, hypomanic, or mixed episodes, which would indicate the presence of a Bipolar disorder.",
+            "inclusions_en": [
+              "seasonal depressive disorder"
+            ],
+            "exclusions_en": [
+              "Adjustment disorder",
+              "Bipolar or related disorders",
+              "Single episode depressive disorder"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1194756772"
+          },
+          {
+            "code": "6A72",
+            "title_en": "Dysthymic disorder",
+            "title_kr": "기분저하증 (지속성 우울장애)",
+            "definition_en": "Dysthymic disorder is characterised by a persistent depressive mood (i.e., lasting 2 years or more), for most of the day, for more days than not. In children and adolescents depressed mood can manifest as pervasive irritability. The depressed mood is accompanied by additional symptoms such as markedly diminished interest or pleasure in activities, reduced concentration and attention or indecisiveness, low self-worth or excessive or inappropriate guilt, hopelessness about the future, disturbed sleep or increased sleep, diminished or increased appetite, or low energy or fatigue. During the first 2 years of the disorder, there has never been a 2-week period during which the number and duration of symptoms were sufficient to meet the diagnostic requirements for a Depressive Episode. There is no history of Manic, Mixed, or Hypomanic Episodes.",
+            "inclusions_en": [
+              "Dysthymia"
+            ],
+            "exclusions_en": [
+              "anxiety depression (mild or not persistent)"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/810797047"
+          },
+          {
+            "code": "6A73",
+            "title_en": "Mixed depressive and anxiety disorder",
+            "title_kr": "혼합형 우울 및 불안장애",
+            "definition_en": "Mixed depressive and anxiety disorder is characterised by symptoms of both anxiety and depression more days than not for a period of two weeks or more. Depressive symptoms include depressed mood or markedly diminished interest or pleasure in activities. There are multiple anxiety symptoms, which may include feeling nervous, anxious, or on edge, not being able to control worrying thoughts, fear that something awful will happen, having trouble relaxing, muscle tension, or sympathetic autonomic symptoms. Neither set of symptoms, considered separately, is sufficiently severe, numerous, or persistent to justify a diagnosis of another depressive disorder or an anxiety or fear-related disorder. The symptoms result in significant distress or significant impairment in personal, family, social, educational, occupational or other important areas of functioning. There is no history of manic or mixed episodes, which would indicate the presence of a bipolar disorder.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/314468192"
+          }
+        ]
+      },
+      "Mood disorders": {
+        "block_kr": "기분장애",
+        "items": [
+          {
+            "code": "6A80",
+            "title_en": "Symptomatic and course presentations for mood episodes in mood disorders",
+            "title_kr": "기분장애의 기분삽화 증상 및 경과 양상",
+            "definition_en": "These categories may be applied to describe the presentation and characteristics of mood episodes in the context of single episode depressive disorder, recurrent depressive disorder, bipolar type I disorder, or bipolar type II disorder. These categories indicate the presence of specific, important features of the clinical presentation or of the course, onset, and pattern of mood episodes. These categories are not mutually exclusive, and as many may be added as apply.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/496273089"
+          }
+        ]
+      },
+      "Anxiety or fear-related disorders": {
+        "block_kr": "불안 또는 공포관련장애",
+        "items": [
+          {
+            "code": "6B00",
+            "title_en": "Generalised anxiety disorder",
+            "title_kr": "범불안장애",
+            "definition_en": "Generalised anxiety disorder is characterised by marked symptoms of anxiety that persist for at least several months, for more days than not, manifested by either general apprehension (i.e. ‘free-floating anxiety’) or excessive worry focused on multiple everyday events, most often concerning family, health, finances, and school or work, together with additional symptoms such as muscular tension or motor restlessness, sympathetic autonomic over-activity, subjective experience of nervousness, difficulty maintaining concentration, irritability, or sleep disturbance. The symptoms result in significant distress or significant impairment in personal, family, social, educational, occupational, or other important areas of functioning. The symptoms are not a manifestation of another health condition and are not due to the effects of a substance or medication on the central nervous system.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1712535455"
+          },
+          {
+            "code": "6B01",
+            "title_en": "Panic disorder",
+            "title_kr": "공황장애",
+            "definition_en": "Panic disorder is characterised by recurrent unexpected panic attacks that are not restricted to particular stimuli or situations. Panic attacks are discrete episodes of intense fear or apprehension accompanied by the rapid and concurrent onset of several characteristic symptoms (e.g. palpitations or increased heart rate, sweating, trembling, shortness of breath, chest pain, dizziness or lightheadedness, chills, hot flushes, fear of imminent death). In addition, panic disorder is characterised by persistent concern about the recurrence or significance of panic attacks, or behaviours intended to avoid their recurrence, that results in significant impairment in personal, family, social, educational, occupational, or other important areas of functioning. The symptoms are not a manifestation of another medical condition and are not due to the effects of a substance or medication on the central nervous system.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Panic attack"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/56162827"
+          },
+          {
+            "code": "6B02",
+            "title_en": "Agoraphobia",
+            "title_kr": "광장공포증",
+            "definition_en": "Agoraphobia is characterised by marked and excessive fear or anxiety that occurs in response to multiple situations where escape might be difficult or help might not be available, such as using public transportation, being in crowds, being outside the home alone (e.g., in shops, theatres, standing in line). The individual is consistently anxious about these situations due to a fear of specific negative outcomes (e.g., panic attacks, other incapacitating or embarrassing physical symptoms). The situations are actively avoided, entered only under specific circumstances such as in the presence of a trusted companion, or endured with intense fear or anxiety. The symptoms persist for at least several months, and are sufficiently severe to result in significant distress or significant impairment in personal, family, social, educational, occupational, or other important areas of functioning.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/530592394"
+          },
+          {
+            "code": "6B03",
+            "title_en": "Specific phobia",
+            "title_kr": "특정공포증",
+            "definition_en": "Specific phobia is characterised by a marked and excessive fear or anxiety that consistently occurs upon exposure or anticipation of exposure to one or more specific objects or situations (e.g., proximity to certain animals, flying, heights, closed spaces, sight of blood or injury) that is out of proportion to actual danger. The phobic objects or situations are avoided or else endured with intense fear or anxiety. Symptoms persist for at least several months and are sufficiently severe to result in significant distress or significant impairment in personal, family, social, educational, occupational, or other important areas of functioning.",
+            "inclusions_en": [
+              "Simple phobia"
+            ],
+            "exclusions_en": [
+              "Body dysmorphic disorder",
+              "Hypochondriasis"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/239513569"
+          },
+          {
+            "code": "6B04",
+            "title_en": "Social anxiety disorder",
+            "title_kr": "사회불안장애",
+            "definition_en": "Social anxiety disorder is characterised by marked and excessive fear or anxiety that consistently occurs in one or more social situations such as social interactions (e.g. having a conversation), doing something while feeling observed (e.g. eating or drinking in the presence of others), or performing in front of others (e.g. giving a speech). The individual is concerned that he or she will act in a way, or show anxiety symptoms, that will be negatively evaluated by others. Relevant social situations are consistently avoided or else endured with intense fear or anxiety. The symptoms persist for at least several months and are sufficiently severe to result in significant distress or significant impairment in personal, family, social, educational, occupational, or other important areas of functioning.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/2062286624"
+          },
+          {
+            "code": "6B05",
+            "title_en": "Separation anxiety disorder",
+            "title_kr": "분리불안장애",
+            "definition_en": "Separation anxiety disorder is characterised by marked and excessive fear or anxiety about separation from specific attachment figures. In children and adolescents, separation anxiety typically focuses on caregivers, parents or other family members and the fear or anxiety is beyond what would be considered developmentally normative. In adults, the focus is typically a romantic partner or children. Manifestations of separation anxiety may include thoughts of harm or untoward events befalling the attachment figure, reluctance to go to school or work, recurrent excessive distress upon separation, reluctance or refusal to sleep away from the attachment figure, and recurrent nightmares about separation. The symptoms persist for at least several months and are sufficiently severe to result in significant distress or significant impairment in personal, family, social, educational, occupational, or other important areas of functioning.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "mood [affective] disorders",
+              "Selective mutism",
+              "Social anxiety disorder"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/830200631"
+          },
+          {
+            "code": "6B06",
+            "title_en": "Selective mutism",
+            "title_kr": "선택적함구증",
+            "definition_en": "Selective mutism is characterised by consistent selectivity in speaking, such that a child demonstrates adequate language competence in specific social situations, typically at home, but consistently fails to speak in others, typically at school. The disturbance lasts for at least one month, is not limited to the first month of school, and is of sufficient severity to interfere with educational achievement or with social communication. Failure to speak is not due to a lack of knowledge of, or comfort with, the spoken language required in the social situation (e.g. a different language spoken at school than at home).",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Schizophrenia",
+              "transient mutism as part of separation anxiety in young children",
+              "Autism spectrum disorder"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/167946871"
+          }
+        ]
+      },
+      "Obsessive-compulsive or related disorders": {
+        "block_kr": "강박 및 관련 장애",
+        "items": [
+          {
+            "code": "6B20",
+            "title_en": "Obsessive-compulsive disorder",
+            "title_kr": "강박장애",
+            "definition_en": "Obsessive-Compulsive Disorder is characterised by the presence of persistent obsessions or compulsions, or most commonly both. Obsessions are repetitive and persistent thoughts, images, or impulses/urges that are intrusive, unwanted, and are commonly associated with anxiety. The individual attempts to ignore or suppress obsessions or to neutralize them by performing compulsions. Compulsions are repetitive behaviours including repetitive mental acts that the individual feels driven to perform in response to an obsession, according to rigid rules, or to achieve a sense of ‘completeness’. In order for obsessive-compulsive disorder to be diagnosed, obsessions and compulsions must be time consuming (e.g. taking more than an hour per day) or result in significant distress or significant impairment in personal, family, social, educational, occupational or other important areas of functioning.",
+            "inclusions_en": [
+              "anankastic neurosis",
+              "obsessive-compulsive neurosis"
+            ],
+            "exclusions_en": [
+              "obsessive compulsive behaviour"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1582741816"
+          },
+          {
+            "code": "6B21",
+            "title_en": "Body dysmorphic disorder",
+            "title_kr": "신체이형장애",
+            "definition_en": "Body Dysmorphic Disorder is characterised by persistent preoccupation with one or more perceived defects or flaws in appearance that are either unnoticeable or only slightly noticeable to others. Individuals experience excessive self-consciousness, often with ideas of reference (i.e., the conviction that people are taking notice, judging, or talking about the perceived defect or flaw). In response to their preoccupation, individuals engage in repetitive and excessive behaviours that include repeated examination of the appearance or severity of the perceived defect or flaw, excessive attempts to camouflage or alter the perceived defect, or marked avoidance of social situations or triggers that increase distress about the perceived defect or flaw. The symptoms are sufficiently severe to result in significant distress or significant impairment in personal, family, social, educational, occupational or other important areas of functioning.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Anorexia Nervosa",
+              "Bodily distress disorder",
+              "Concern about body appearance"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/731724655"
+          },
+          {
+            "code": "6B22",
+            "title_en": "Olfactory reference disorder",
+            "title_kr": "후각관계장애",
+            "definition_en": "Olfactory Reference Disorder is characterised by persistent preoccupation with the belief that one is emitting a perceived foul or offensive body odour or breath that is either unnoticeable or only slightly noticeable to others. Individuals experience excessive self-consciousness about the perceived odour, often with ideas of reference (i.e., the conviction that people are taking notice, judging, or talking about the odour). In response to their preoccupation, individuals engage in repetitive and excessive behaviours such as repeatedly checking for body odour or checking the perceived source of the smell, or repeatedly seeking reassurance, excessive attempts to camouflage, alter, or prevent the perceived odour, or marked avoidance of social situations or triggers that increase distress about the perceived foul or offensive odour. The symptoms are sufficiently severe to result in significant distress or significant impairment in personal, family, social, educational, occupational or other important areas of functioning.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1119008568"
+          },
+          {
+            "code": "6B23",
+            "title_en": "Hypochondriasis",
+            "title_kr": "건강염려증 (질병불안장애)",
+            "definition_en": "Hypochondriasis is characterised by persistent preoccupation or fear about the possibility of having one or more serious, progressive or life-threatening illnesses. The preoccupation is accompanied by either: 1) repetitive and excessive health-related behaviours, such as repeatedly checking the body for evidence of illness, spending inordinate amounts of time searching for information about the feared illness, repeatedly seeking reassurance (e.g. arranging multiple medical consultations); or 2) maladaptive avoidance behaviour related to health (e.g. avoids medical appointments). The symptoms result in significant distress or significant impairment in personal, family, social, educational, occupational or other important areas of functioning.",
+            "inclusions_en": [
+              "Hypochondriacal neurosis",
+              "Illness anxiety disorder"
+            ],
+            "exclusions_en": [
+              "Body dysmorphic disorder",
+              "Bodily distress disorder",
+              "Fear of cancer"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/675329566"
+          },
+          {
+            "code": "6B24",
+            "title_en": "Hoarding disorder",
+            "title_kr": "저장장애",
+            "definition_en": "Hoarding disorder is characterised by accumulation of possessions that results in living spaces becoming cluttered to the point that their use or safety is compromised. Accumulation occurs due to both repetitive urges or behaviours related to amassing items and difficulty discarding possessions due to a perceived need to save items and distress associated with discarding them. If living areas are uncluttered this is only due to the intervention of third parties (e.g., family members, cleaners, authorities). Amassment may be passive (e.g. accumulation of incoming flyers or mail) or active (e.g. excessive acquisition of free, purchased, or stolen items). The symptoms result in significant distress or significant impairment in personal, family, social, educational, occupational or other important areas of functioning.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1991016628"
+          },
+          {
+            "code": "6B25",
+            "title_en": "Body-focused repetitive behaviour disorders",
+            "title_kr": "신체초점 반복행동장애",
+            "definition_en": "Body focused repetitive behaviour disorders are characterised by recurrent and habitual actions directed at the integument (e.g. hair-pulling, skin-picking, lip-biting), typically accompanied by unsuccessful attempts to decrease or stop the behaviour involved, and which lead to dermatological sequelae (e.g., hair loss, skin lesions, lip abrasions). The behaviour may occur in brief episodes scattered throughout the day or in less frequent but more sustained periods. The symptoms result in significant distress or significant impairment in personal, family, social, educational, occupational or other important areas of functioning.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1121465374"
+          }
+        ]
+      },
+      "Disorders specifically associated with stress": {
+        "block_kr": "스트레스 관련 특정 장애",
+        "items": [
+          {
+            "code": "6B40",
+            "title_en": "Post traumatic stress disorder",
+            "title_kr": "외상후스트레스장애 (PTSD)",
+            "definition_en": "Post traumatic stress disorder (PTSD) may develop following exposure to an extremely threatening or horrific event or series of events. It is characterised by all of the following: 1) re-experiencing the traumatic event or events in the present in the form of vivid intrusive memories, flashbacks, or nightmares. Re-experiencing may occur via one or multiple sensory modalities and is typically accompanied by strong or overwhelming emotions, particularly fear or horror, and strong physical sensations; 2) avoidance of thoughts and memories of the event or events, or avoidance of activities, situations, or people reminiscent of the event(s); and 3) persistent perceptions of heightened current threat, for example as indicated by hypervigilance or an enhanced startle reaction to stimuli such as unexpected noises. The symptoms persist for at least several weeks and cause significant impairment in personal, family, social, educational, occupational or other important areas of functioning.",
+            "inclusions_en": [
+              "Traumatic neurosis"
+            ],
+            "exclusions_en": [
+              "Acute stress reaction",
+              "Complex post traumatic stress disorder"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/2070699808"
+          },
+          {
+            "code": "6B41",
+            "title_en": "Complex post traumatic stress disorder",
+            "title_kr": "복합 외상후스트레스장애",
+            "definition_en": "Complex post traumatic stress disorder (Complex PTSD) is a disorder that may develop following exposure to an event or series of events of an extremely threatening or horrific nature, most commonly prolonged or repetitive events from which escape is difficult or impossible (e.g. torture, slavery, genocide campaigns, prolonged domestic violence, repeated childhood sexual or physical abuse). All diagnostic requirements for PTSD are met. In addition, Complex PTSD is characterised by severe and persistent 1) problems in affect regulation; 2) beliefs about oneself as diminished, defeated or worthless, accompanied by feelings of shame, guilt or failure related to the traumatic event; and 3) difficulties in sustaining relationships and in feeling close to others. These symptoms cause significant impairment in personal, family, social, educational, occupational or other important areas of functioning.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Post traumatic stress disorder",
+              "Personality disorder"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/585833559"
+          },
+          {
+            "code": "6B42",
+            "title_en": "Prolonged grief disorder",
+            "title_kr": "지속성 비탄장애",
+            "definition_en": "Prolonged grief disorder is a disturbance in which, following the death of a partner, parent, child, or other person close to the bereaved, there is persistent and pervasive grief response characterised by longing for the deceased or persistent preoccupation with the deceased accompanied by intense emotional pain (e.g. sadness, guilt, anger, denial, blame, difficulty accepting the death, feeling one has lost a part of one’s self, an inability to experience positive mood, emotional numbness, difficulty in engaging with social or other activities). The grief response has persisted for an atypically long period of time following the loss (more than 6 months at a minimum) and clearly exceeds expected social, cultural or religious norms for the individual’s culture and context. Grief reactions that have persisted for longer periods that are within a normative period of grieving given the person’s cultural and religious context are viewed as normal bereavement responses and are not assigned a diagnosis. The disturbance causes significant impairment in personal, family, social, educational, occupational or other important areas of functioning.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1183832314"
+          },
+          {
+            "code": "6B43",
+            "title_en": "Adjustment disorder",
+            "title_kr": "적응장애",
+            "definition_en": "Adjustment disorder is a maladaptive reaction to an identifiable psychosocial stressor or multiple stressors (e.g. divorce, illness or disability, socio-economic problems, conflicts at home or work) that usually emerges within a month of the stressor. The disorder is characterised by preoccupation with the stressor or its consequences, including excessive worry, recurrent and distressing thoughts about the stressor, or constant rumination about its implications, as well as by failure to adapt to the stressor that causes significant impairment in personal, family, social, educational, occupational or other important areas of functioning. The symptoms are not better explained by another mental disorder (e.g., Mood Disorder, another Disorder Specifically Associated with Stress) and typically resolve within 6 months, unless the stressor persists for a longer duration.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "separation anxiety disorder of childhood",
+              "Recurrent depressive disorder",
+              "Single episode depressive disorder",
+              "Prolonged grief disorder",
+              "Uncomplicated bereavement",
+              "Burnout",
+              "Acute stress reaction"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/264310751"
+          },
+          {
+            "code": "6B44",
+            "title_en": "Reactive attachment disorder",
+            "title_kr": "반응성애착장애",
+            "definition_en": "Reactive attachment disorder is characterised by grossly abnormal attachment behaviours in early childhood, occurring in the context of a history of grossly inadequate child care (e.g., severe neglect, maltreatment, institutional deprivation). Even when an adequate primary caregiver is newly available, the child does not turn to the primary caregiver for comfort, support and nurture, rarely displays security-seeking behaviours towards any adult, and does not respond when comfort is offered. Reactive attachment disorder can only be diagnosed in children, and features of the disorder develop within the first 5 years of life. However, the disorder cannot be diagnosed before the age of 1 year (or a developmental age of less than 9 months), when the capacity for selective attachments may not be fully developed, or in the context of Autism spectrum disorder.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Asperger syndrome",
+              "disinhibited attachment disorder of childhood"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1867081699"
+          },
+          {
+            "code": "6B45",
+            "title_en": "Disinhibited social engagement disorder",
+            "title_kr": "탈억제성사회관여장애",
+            "definition_en": "Disinhibited social engagement disorder is characterised by grossly abnormal social behaviour, occurring in the context of a history of grossly inadequate child care (e.g., severe neglect, institutional deprivation). The child approaches adults indiscriminately, lacks reticence to approach, will go away with unfamiliar adults, and exhibits overly familiar behaviour towards strangers. Disinhibited social engagement disorder can only be diagnosed in children, and features of the disorder develop within the first 5 years of life. However, the disorder cannot be diagnosed before the age of 1 year (or a developmental age of less than 9 months), when the capacity for selective attachments may not be fully developed, or in the context of Autism spectrum disorder.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Asperger syndrome",
+              "Adjustment disorder",
+              "Attention deficit hyperactivity disorder",
+              "reactive attachment disorder of childhood"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/467941148"
+          }
+        ]
+      },
+      "Dissociative disorders": {
+        "block_kr": "해리장애",
+        "items": [
+          {
+            "code": "6B60",
+            "title_en": "Dissociative neurological symptom disorder",
+            "title_kr": "해리성 신경학적 증상장애",
+            "definition_en": "Dissociative neurological symptom disorder is characterised by the presentation of motor, sensory, or cognitive symptoms that imply an involuntary discontinuity in the normal integration of motor, sensory, or cognitive functions and are not consistent with a recognised disease of the nervous system, other mental or behavioural disorder, or other medical condition. The symptoms do not occur exclusively during another dissociative disorder and are not due to the effects of a substance or medication on the central nervous system, including withdrawal effects, or a Sleep-Wake disorder.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Factitious disorders"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1069443471"
+          },
+          {
+            "code": "6B61",
+            "title_en": "Dissociative amnesia",
+            "title_kr": "해리성기억상실증",
+            "definition_en": "Dissociative amnesia is characterised by an inability to recall important autobiographical memories, typically of recent traumatic or stressful events, that is inconsistent with ordinary forgetting. The amnesia does not occur exclusively during another dissociative disorder and is not better explained by another mental, behavioural or neurodevelopmental disorder. The amnesia is not due to the direct effects of a substance or medication on the central nervous system, including withdrawal effects, and is not due to a disease of the nervous system or to head trauma. The amnesia results in significant impairment in personal, family, social, educational, occupational or other important areas of functioning.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "amnesia NOS",
+              "Amnestic disorder due to use of alcohol",
+              "Anterograde amnesia",
+              "Retrograde amnesia",
+              "nonalcoholic organic amnesic syndrome",
+              "postictal amnesia in epilepsy"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/626975732"
+          },
+          {
+            "code": "6B62",
+            "title_en": "Trance disorder",
+            "title_kr": "트랜스장애",
+            "definition_en": "Trance disorder is characterised by trance states in which there is a marked alteration in the individual’s state of consciousness or a loss of the individual’s customary sense of personal identity in which the individual experiences a narrowing of awareness of immediate surroundings or unusually narrow and selective focusing on environmental stimuli and restriction of movements, postures, and speech to repetition of a small repertoire that is experienced as being outside of one’s control. The trance state is not characterised by the experience of being replaced by an alternate identity. Trance episodes are recurrent or, if the diagnosis is based on a single episode, the episode has lasted for at least several days. The trance state is involuntary and unwanted and is not accepted as a part of a collective cultural or religious practice. The symptoms do not occur exclusively during another dissociative disorder and are not better explained by another mental, behavioural or neurodevelopmental disorder. The symptoms are not due to the direct effects of a substance or medication on the central nervous system, including withdrawal effects, exhaustion, or to hypnagogic or hypnopompic states, and are not due to a disease of the nervous system, head trauma, or a sleep-wake disorder. The symptoms result in significant distress or significant impairment in personal, family, social, educational, occupational or other important areas of functioning.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1807490186"
+          },
+          {
+            "code": "6B63",
+            "title_en": "Possession trance disorder",
+            "title_kr": "빙의트랜스장애",
+            "definition_en": "Possession trance disorder is characterised by trance states in which there is a marked alteration in the individual’s state of consciousness and the individual’s customary sense of personal identity is replaced by an external ‘possessing’ identity and in which the individual’s behaviours or movements are experienced as being controlled by the possessing agent. Possession trance episodes are recurrent or, if the diagnosis is based on a single episode, the episode has lasted for at least several days. The possession trance state is involuntary and unwanted and is not accepted as a part of a collective cultural or religious practice. The symptoms do not occur exclusively during another dissociative disorder and are not better explained by another mental, behavioural or neurodevelopmental disorder. The symptoms are not due to the direct effects of a substance or medication on the central nervous system, including withdrawal effects, exhaustion, or to hypnagogic or hypnopompic states, and are not due to a disease of the nervous system or a sleep-wake disorder. The symptoms result in significant distress or significant impairment in personal, family, social, educational, occupational or other important areas of functioning.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Schizophrenia",
+              "Disorders due to use of other specified psychoactive substances, including medications",
+              "Acute and transient psychotic disorder",
+              "Secondary personality change"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1374925579"
+          },
+          {
+            "code": "6B64",
+            "title_en": "Dissociative identity disorder",
+            "title_kr": "해리성정체감장애",
+            "definition_en": "Dissociative identity disorder is characterised by disruption of identity in which there are two or more distinct personality states (dissociative identities) associated with marked discontinuities in the sense of self and agency. Each personality state includes its own pattern of experiencing, perceiving, conceiving, and relating to self, the body, and the environment. At least two distinct personality states recurrently take executive control of the individual’s consciousness and functioning in interacting with others or with the environment, such as in the performance of specific aspects of daily life such as parenting, or work, or in response to specific situations (e.g., those that are perceived as threatening). Changes in personality state are accompanied by related alterations in sensation, perception, affect, cognition, memory, motor control, and behaviour. There are typically episodes of amnesia, which may be severe. The symptoms are not better explained by another mental, behavioural or neurodevelopmental disorder and are not due to the direct effects of a substance or medication on the central nervous system, including withdrawal effects, and are not due to a disease of the nervous system or a sleep-wake disorder. The symptoms result in significant impairment in personal, family, social, educational, occupational or other important areas of functioning.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1829103493"
+          },
+          {
+            "code": "6B65",
+            "title_en": "Partial dissociative identity disorder",
+            "title_kr": "부분적 해리성정체감장애",
+            "definition_en": "Partial dissociative identity disorder is characterised by disruption of identity in which there are two or more distinct personality states (dissociative identities) associated with marked discontinuities in the sense of self and agency. Each personality state includes its own pattern of experiencing, perceiving, conceiving, and relating to self, the body, and the environment. One personality state is dominant and normally functions in daily life, but is intruded upon by one or more non-dominant personality states (dissociative intrusions). These intrusions may be cognitive, affective, perceptual, motor, or behavioural. They are experienced as interfering with the functioning of the dominant personality state and are typically aversive. The non-dominant personality states do not recurrently take executive control of the individual’s consciousness and functioning, but there may be occasional, limited and transient episodes in which a distinct personality state assumes executive control to engage in circumscribed behaviours, such as in response to extreme emotional states or during episodes of self-harm or the reenactment of traumatic memories. The symptoms are not better explained by another mental, behavioural or neurodevelopmental disorder and are not due to the direct effects of a substance or medication on the central nervous system, including withdrawal effects, and are not due to a disease of the nervous system or a sleep-wake disorder. The symptoms result in significant impairment in personal, family, social, educational, occupational or other important areas of functioning.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/988400777"
+          },
+          {
+            "code": "6B66",
+            "title_en": "Depersonalization-derealization disorder",
+            "title_kr": "이인증-비현실감장애",
+            "definition_en": "Depersonalization-derealization disorder is characterised by persistent or recurrent experiences of depersonalization, derealization, or both. Depersonalization is characterised by experiencing the self as strange or unreal, or feeling detached from, or as though one were an outside observer of, one’s thoughts, feelings, sensations, body, or actions. Derealization is characterised by experiencing other persons, objects, or the world as strange or unreal (e.g., dreamlike, distant, foggy, lifeless, colourless, or visually distorted) or feeling detached from one’s surroundings. During experiences of depersonalization or derealization, reality testing remains intact. The experiences of depersonalization or derealization do not occur exclusively during another dissociative disorder and are not better explained by another mental, behavioural or neurodevelopmental disorder. The experiences of depersonalization or derealization are not due to the direct effects of a substance or medication on the central nervous system, including withdrawal effects, and are not due to a disease of the nervous system or to head trauma. The symptoms result in significant distress or impairment in personal, family, social, educational, occupational or other important areas of functioning.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/253124068"
+          }
+        ]
+      },
+      "Feeding or eating disorders": {
+        "block_kr": "급식 및 섭식장애",
+        "items": [
+          {
+            "code": "6B80",
+            "title_en": "Anorexia Nervosa",
+            "title_kr": "신경성 식욕부진증",
+            "definition_en": "Anorexia Nervosa is characterised by significantly low body weight for the individual’s height, age and developmental stage that is not due to another health condition or to the unavailability of food. A commonly used threshold is body mass index (BMI) less than 18.5 kg/m² in adults and BMI-for-age under 5th percentile in children and adolescents. Rapid weight loss (e.g. more than 20% of total body weight within 6 months) may replace the low body weight guideline as long as other diagnostic requirements are met. Children and adolescents may exhibit failure to gain weight as expected based on the individual developmental trajectory rather than weight loss. Low body weight is accompanied by a persistent pattern of behaviours to prevent restoration of normal weight, which may include behaviours aimed at reducing energy intake (restricted eating), purging behaviours (e.g. self-induced vomiting, misuse of laxatives), and behaviours aimed at increasing energy expenditure (e.g. excessive exercise), typically associated with a fear of weight gain. Low body weight or shape is central to the person's self-evaluation or is inaccurately perceived to be normal or even excessive.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/263852475"
+          },
+          {
+            "code": "6B81",
+            "title_en": "Bulimia Nervosa",
+            "title_kr": "신경성 폭식증",
+            "definition_en": "Bulimia Nervosa is characterised by frequent, recurrent episodes of binge eating (e.g. once a week or more over a period of at least one month). A binge eating episode is a distinct period of time during which the individual experiences a subjective loss of control over eating, eating notably more or differently than usual, and feels unable to stop eating or limit the type or amount of food eaten. Binge eating is accompanied by repeated inappropriate compensatory behaviours aimed at preventing weight gain (e.g. self-induced vomiting, misuse of laxatives or enemas, strenuous exercise). The individual is preoccupied with body shape or weight, which strongly influences self-evaluation. There is marked distress about the pattern of binge eating and inappropriate compensatory behaviour or significant impairment in personal, family, social, educational, occupational or other important areas of functioning. The individual does not meet the diagnostic requirements of Anorexia Nervosa.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Binge eating disorder"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/509381842"
+          },
+          {
+            "code": "6B82",
+            "title_en": "Binge eating disorder",
+            "title_kr": "폭식장애",
+            "definition_en": "Binge eating disorder is characterised by frequent, recurrent episodes of binge eating (e.g. once a week or more over a period of several months). A binge eating episode is a distinct period of time during which the individual experiences a subjective loss of control over eating, eating notably more or differently than usual, and feels unable to stop eating or limit the type or amount of food eaten. Binge eating is experienced as very distressing, and is often accompanied by negative emotions such as guilt or disgust. However, unlike in Bulimia Nervosa, binge eating episodes are not regularly followed by inappropriate compensatory behaviours aimed at preventing weight gain (e.g. self-induced vomiting, misuse of laxatives or enemas, strenuous exercise). There is marked distress about the pattern of binge eating or significant impairment in personal, family, social, educational, occupational or other important areas of functioning.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Bulimia Nervosa"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1673294767"
+          },
+          {
+            "code": "6B83",
+            "title_en": "Avoidant-restrictive food intake disorder",
+            "title_kr": "회피적/제한적 음식섭취장애",
+            "definition_en": "Avoidant-restrictive food intake disorder (ARFID) is characterised by avoidance or restriction of food intake that results in: 1) the intake of an insufficient quantity or variety of food to meet adequate energy or nutritional requirements that has resulted in significant weight loss, clinically significant nutritional deficiencies, dependence on oral nutritional supplements or tube feeding, or has otherwise negatively affected the physical health of the individual; or 2) significant impairment in personal, family, social, educational, occupational or other important areas of functioning (e.g., due to avoidance or distress related to participating in social experiences involving eating). The pattern of eating behaviour is not motivated by preoccupation with body weight or shape. Restricted food intake and its effects on weight, other aspects of health, or functioning are not due to unavailability of food, not a manifestation of another medical condition (e.g. food allergies, hyperthyroidism) or mental disorder, and are not due to the effect of a substance or medication on the central nervous system including withdrawal effects.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Anorexia Nervosa",
+              "Feeding problem of infant",
+              "Feeding problems of newborn"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1242188600"
+          },
+          {
+            "code": "6B84",
+            "title_en": "Pica",
+            "title_kr": "이식증",
+            "definition_en": "Pica is characterised by the regular consumption of non-nutritive substances, such as non-food objects and materials (e.g., clay, soil, chalk, plaster, plastic, metal and paper) or raw food ingredients (e.g., large quantities of salt or corn flour) that is persistent or severe enough to require clinical attention in an individual who has reached a developmental age at which they would be expected to distinguish between edible and non-edible substances (approximately 2 years). That is, the behaviour causes damage to health, impairment in functioning, or significant risk due to the frequency, amount or nature of the substances or objects ingested.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/833390860"
+          },
+          {
+            "code": "6B85",
+            "title_en": "Rumination-regurgitation disorder",
+            "title_kr": "되새김장애",
+            "definition_en": "Rumination-regurgitation disorder is characterised by the intentional and repeated bringing up of previously swallowed food back to the mouth (i.e., regurgitation), which may be re-chewed and re-swallowed (i.e. rumination), or may be deliberately spat out (but not as in vomiting). The regurgitation behaviour is frequent (at least several times per week) and sustained over a period of at least several weeks. The regurgitation behaviour is not fully accounted for by another medical condition that directly causes regurgitation (e.g., oesophageal strictures or neuromuscular disorders affecting oesophageal functioning) or causes nausea or vomiting (e.g. pyloric stenosis). Rumination-regurgitation disorder should only be diagnosed in individuals who have reached a developmental age of at least 2 years.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Adult rumination syndrome",
+              "Nausea or vomiting"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1205760590"
+          }
+        ]
+      },
+      "Elimination disorders": {
+        "block_kr": "배설장애",
+        "items": [
+          {
+            "code": "6C00",
+            "title_en": "Enuresis",
+            "title_kr": "유뇨증",
+            "definition_en": "Enuresis is the repeated voiding of urine into clothes or bed, which may occur during the day or at night, in an individual who has reached a developmental age when urinary continence is ordinarily expected (5 years). The urinary incontinence may have been present from birth (i.e., an atypical extension of normal infantile incontinence), or may have arisen following a period of acquired bladder control. In most cases, the behaviour is involuntary but in some cases it appears intentional. Enuresis should not be diagnosed if unintentional voiding of urine is due to a health condition that interferes with continence (e.g., diseases of the nervous system or musculoskeletal disorders) or by congenital or acquired abnormalities of the urinary tract.",
+            "inclusions_en": [
+              "Functional enuresis",
+              "Psychogenic enuresis",
+              "Urinary incontinence of nonorganic origin"
+            ],
+            "exclusions_en": [
+              "Stress incontinence",
+              "Urge Incontinence",
+              "Functional urinary incontinence",
+              "Overflow Incontinence",
+              "Reflex incontinence",
+              "Extraurethral urinary incontinence"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1157749237"
+          },
+          {
+            "code": "6C01",
+            "title_en": "Encopresis",
+            "title_kr": "유분증",
+            "definition_en": "Encopresis is the repeated passage of faeces in inappropriate places. Encopresis should be diagnosed if inappropriate passage of faeces occurs repeatedly (e.g., at least once per month over a period of several months) in an individual who has reached the developmental age when faecal continence is ordinarily expected (4 years). The faecal incontinence may have been present from birth (i.e., an atypical extension of normal infantile incontinence), or may have arisen following a period of acquired bowel control. Encopresis should not be diagnosed if faecal soiling is fully attributable to another health condition (e.g., aganglionic megacolon, spina bifida, dementia), congenital or acquired abnormalities of the bowel, gastrointestinal infection, or excessive use of laxatives.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/313374467"
+          }
+        ]
+      },
+      "Disorders of bodily distress or bodily experience": {
+        "block_kr": "신체적 고통 또는 신체 경험 장애",
+        "items": [
+          {
+            "code": "6C20",
+            "title_en": "Bodily distress disorder",
+            "title_kr": "신체적고통장애",
+            "definition_en": "Bodily distress disorder is characterised by the presence of bodily symptoms that are distressing to the individual and excessive attention directed toward the symptoms, which may be manifest by repeated contact with health care providers. If another health condition is causing or contributing to the symptoms, the degree of attention is clearly excessive in relation to its nature and progression. Excessive attention is not alleviated by appropriate clinical examination and investigations and appropriate reassurance. Bodily symptoms are persistent, being present on most days for at least several months. Typically, bodily distress disorder involves multiple bodily symptoms that may vary over time. Occasionally there is a single symptom—usually pain or fatigue—that is associated with the other features of the disorder. The symptoms and associated distress and preoccupation have at least some impact on the individual’s functioning (e.g. strain in relationships, less effective academic or occupational functioning, abandonment of specific leisure activities).",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Tourette syndrome",
+              "Hair pulling disorder",
+              "Dissociative disorders",
+              "hair-plucking",
+              "Hypochondriasis",
+              "Body dysmorphic disorder",
+              "Excoriation disorder",
+              "Gender incongruence",
+              "Sexual dysfunctions",
+              "Tic disorders",
+              "Sexual pain-penetration disorder",
+              "Postviral fatigue syndrome",
+              "Chronic fatigue syndrome",
+              "Myalgic encephalomyelitis"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/767044268"
+          },
+          {
+            "code": "6C21",
+            "title_en": "Body integrity dysphoria",
+            "title_kr": "신체통합정체성장애",
+            "definition_en": "Body integrity dysphoria is characterised by an intense and persistent desire to become physically disabled in a significant way (e.g. major limb amputee, paraplegic, blind), with onset by early adolescence accompanied by persistent discomfort, or intense feelings of inappropriateness concerning current non-disabled body configuration. The desire to become physically disabled results in harmful consequences, as manifested by either the preoccupation with the desire (including time spent pretending to be disabled) significantly interfering with productivity, with leisure activities, or with social functioning (e.g. person is unwilling to have a close relationship because it would make it difficult to pretend) or by attempts to actually become disabled having resulted in the person putting his or her health or life in significant jeopardy. The disturbance is not better accounted for by another mental, behavioural or neurodevelopmental disorder, by a Disease of the Nervous System or by another medical condition, or by Malingering.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Gender incongruence of adolescence or adulthood"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/256572629"
+          }
+        ]
+      },
+      "Disorders due to substance use": {
+        "block_kr": "물질사용에 의한 장애",
+        "items": [
+          {
+            "code": "6C40",
+            "title_en": "Disorders due to use of alcohol",
+            "title_kr": "알코올사용에 의한 장애",
+            "definition_en": "Disorders due to use of alcohol are characterised by the pattern and consequences of alcohol use. Alcohol—more specifically termed ethyl alcohol or ethanol—is an intoxicating compound produced by fermentation of sugars usually in agricultural products such as fruits, cereals, and vegetables with or without subsequent distillation. There are a wide variety of alcoholic drinks, with alcohol concentrations typically ranging from 1.5% to 60%. Alcohol is predominantly a central nervous system depressant. In addition to ability to produce Alcohol Intoxication, alcohol has dependence-producing properties, resulting in Alcohol Dependence in some people and Alcohol Withdrawal when alcohol use is reduced or discontinued. Unlike most other substances, elimination of alcohol from the body occurs at a constant rate, such that its clearance follows a linear rather than a logarithmic course. Alcohol is implicated in a wide range of harms affecting most organs and systems of the body (e.g., cirrhosis of the liver, gastrointestinal cancers, pancreatitis). Harm to others resulting from behaviour during Alcohol Intoxication is well recognized and is included in the definitions of harmful use of alcohol (i.e., Episode of Harmful Use of Alcohol and Harmful Pattern of Use of Alcohol). Several alcohol-induced mental disorders (e.g., Alcohol-Induced Psychotic Disorder) and alcohol-related forms of neurocognitive impairment (e.g., Dementia Due to Use of Alcohol) are recognized.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Hazardous alcohol use"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1676588433"
+          },
+          {
+            "code": "6C41",
+            "title_en": "Disorders due to use of cannabis",
+            "title_kr": "대마사용에 의한 장애",
+            "definition_en": "Disorders due to use of cannabis are characterised by the pattern and consequences of cannabis use. Cannabis is the collective term for a range of psychoactive preparations of the cannabis plant, Cannabis sativa, and related species and hybrids. Cannabis contains cannabinoids, a class of diverse chemical compounds that act on endogenous cannabinoid receptors that modulate neurotransmitter release in the brain. The principal psychoactive cannabinoid is δ-9-tetrahydrocannabinol (THC). Cannabis is typically smoked in the form of the flowering heads or leaves of the marijuana plant; tobacco is often mixed with cannabis when smoked. There are also cannabis oils that are prepared from these same sources. These preparations vary considerably in their THC potency. Cannabis has predominantly central nervous system depressant effects and produces a characteristic euphoria that may be part of the presenting features of Cannabis Intoxication, which may also include impairment in cognitive and psychomotor functioning. Cannabis has dependence-producing properties resulting in Cannabis Dependence in some people and Cannabis Withdrawal when use is reduced or discontinued. Cannabis is associated with a range of Cannabis-Induced Mental Disorders.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Disorders due to use of synthetic cannabinoids",
+              "Hazardous use of cannabis"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1913137404"
+          },
+          {
+            "code": "6C42",
+            "title_en": "Disorders due to use of synthetic cannabinoids",
+            "title_kr": "합성 카나비노이드 사용에 의한 장애",
+            "definition_en": "Disorders due to use of synthetic cannabinoids are characterised by the pattern and consequences of synthetic cannabinoid use. Synthetic cannabinoids are synthesized diverse chemical compounds that are potent agonists for endogenous cannabinoid receptors. There are several hundred such compounds. The synthetic compound is typically sprayed onto a vehicle such as cannabis or tea leaves and then smoked. The effect of these compounds is distinctly different from smoking naturally cultivated cannabis in that the euphoric effects are typically accompanied or dominated by psychotic-like symptoms (e.g., paranoia, hallucinations, and disorganized behavior). Synthetic Cannabinoid Intoxication may therefore present more frequently with psychotic symptoms in addition to the more typical effects of cannabis. Synthetic cannabinoids are also dependence-producing and Synthetic Cannabinoid Dependence and Synthetic Cannabinoid Withdrawal are recognized. Synthetic Cannabinoid-Induced Mental Disorders also occur; in particular Synthetic Cannabinoid-Induced Psychotic Disorder is recognized.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Disorders due to use of cannabis"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/804833492"
+          },
+          {
+            "code": "6C43",
+            "title_en": "Disorders due to use of opioids",
+            "title_kr": "오피오이드사용에 의한 장애",
+            "definition_en": "Disorders due to use of opioids are characterised by the pattern and consequences of opioid use. Opioids is a generic term that encompasses the constituents or derivatives of the opium poppy Papaver somniferum as well as a range of synthetic and semisynthetic compounds, some related to morphine and others chemically distinct but all having their primary actions on the µ opioid receptor. Examples of opioids include morphine, diacetylmorphine (heroin), fentanyl, pethidine, oxycodone, hydromorphone, methadone, buprenorphine, codeine and d-propoxyphene. The opioids all have analgesic properties of different potencies and are primarily central nervous system depressants. They suppress respiration as well as other vital functions and are a common cause of overdose and related deaths. Certain opioids are used or administered parenterally, including heroin, a common and potent opioid that is primarily used non-medically. Therapeutic opioids are prescribed for a range of indications worldwide, and are essential for pain management in cancer pain and palliative care, although they are also used for non-therapeutic reasons. In some countries morbidity and mortality related to therapeutic opioids is greater than that related to heroin. All opioids may result in Opioid Intoxication, Opioid Dependence and Opioid Withdrawal. A range of Opioid-Induced Disorders occur, some of which occur following Opioid Withdrawal.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Hazardous use of opioids"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/111507461"
+          },
+          {
+            "code": "6C44",
+            "title_en": "Disorders due to use of sedatives, hypnotics or anxiolytics",
+            "title_kr": "진정제·수면제 또는 항불안제 사용에 의한 장애",
+            "definition_en": "Disorders due to use of sedatives, hypnotics or anxiolytics are characterised by the pattern and consequences of use of these substances. Sedatives, hypnotics, and anxiolytics are typically prescribed for the short-term treatment of anxiety or insomnia and are also employed to provide sedation for medical procedures. They include the benzodiazepines and the non-benzodiazepine positive allosteric modulators of GABA receptors (i.e., ‘Z-drugs’) as well as many other compounds. Sedatives, hypnotics, and anxiolytics include barbiturates, which are available much less commonly now than in previous decades. Sedatives, hypnotics, and anxiolytics have dependence-inducing properties that are related to the dose and duration of their use. They may cause intoxication, dependence and withdrawal. Several other mental disorders induced by sedatives, hypnotics, or anxiolytics are recognized.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Hazardous use of sedatives, hypnotics or anxiolytics"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/390325614"
+          },
+          {
+            "code": "6C45",
+            "title_en": "Disorders due to use of cocaine",
+            "title_kr": "코카인사용에 의한 장애",
+            "definition_en": "Disorders due to use of cocaine are characterised by the pattern and consequences of cocaine use. Cocaine is a compound found in the leaves of the coca plant, Erythroxylum coca, which is indigenous to countries in northern regions of South America. Cocaine has a limited place in medical treatment as an anaesthetic and vasoconstrictive agent. It is commonly used illicitly and widely available across the world, where it is found in two main forms: cocaine hydrochloride and cocaine freebase (also known as ‘crack’). Cocaine is a central nervous system stimulant, and Cocaine Intoxication typically includes a state of euphoria and hyperactivity. Cocaine has potent dependence-producing properties and Cocaine Dependence is a common cause of morbidity and of clinical presentations. Cocaine Withdrawal has a characteristic course that includes lethargy and depressed mood. A range of Cocaine-Induced Mental Disorders is described.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Disorders due to use of stimulants including amphetamines, methamphetamine or methcathinone",
+              "Hazardous use of cocaine"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1689089786"
+          },
+          {
+            "code": "6C46",
+            "title_en": "Disorders due to use of stimulants including amphetamines, methamphetamine or methcathinone",
+            "title_kr": "암페타민류(메스암페타민·메스카티논 포함) 흥분제 사용에 의한 장애",
+            "definition_en": "Disorders due to use of stimulants including amphetamines, methamphetamine or methcathinone are characterised by the pattern and consequences of use of these substances. There is a wide array of naturally occurring and synthetically produced psychostimulants other than cocaine. The most numerous of this group are the amphetamine-type substances, including methamphetamine. Prescribed stimulants including dexamphetamine are indicated for a limited number of conditions such as for Attention Deficit Hyperactivity Disorder. Methcathinone, known in many countries as ephedrone, is a synthetic potent stimulant that is a structural analogue of methamphetamine and is related to cathinone. All these drugs have primarily psychostimulant properties and are also vasoconstrictors to a varying degree. They induce euphoria and hyperactivity as may be seen in Stimulant Intoxication. They have potent dependence-producing properties, which may lead to the diagnosis of Stimulant Dependence and Stimulant Withdrawal following the cessation of use. Several Stimulant-Induced Mental Disorders are described.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Disorders due to use of synthetic cathinones",
+              "Disorders due to use of caffeine",
+              "Disorders due to use of cocaine",
+              "Hazardous use of stimulants including amphetamines or methamphetamine"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1016273204"
+          },
+          {
+            "code": "6C47",
+            "title_en": "Disorders due to use of synthetic cathinones",
+            "title_kr": "합성 카티논 사용에 의한 장애",
+            "definition_en": "Disorders due to use of synthetic cathinones are characterised by the pattern and consequences of synthetic cathinone use. Synthetic cathinones (also known as ‘bath salts’) are synthetic compounds with stimulant properties related to cathinone found in the khat plant, Catha edulis. The use of synthetic cathinones is common in young populations in many countries. They may produce a range of disorders including Synthetic Cathinone Intoxication, Synthetic Cathinone Dependence and Synthetic Cathinone Withdrawal. Several synthetic cathinone-induced mental disorders are recognised.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1605818663"
+          },
+          {
+            "code": "6C48",
+            "title_en": "Disorders due to use of caffeine",
+            "title_kr": "카페인사용에 의한 장애",
+            "definition_en": "Disorders due to use of caffeine are characterised by the pattern and consequences of caffeine use. Caffeine is a mild psychostimulant and diuretic that is found in the beans of the coffee plant (Coffea species) and is a constituent of coffee, cola drinks, chocolate, a range of proprietary 'energy drinks' and weight-loss aids. It is the most commonly used psychoactive substance worldwide and several clinical conditions related to its use are described, although severe disorders are comparatively rare considering its ubiquity. Caffeine Intoxication related to consumption of relatively higher doses (i.e., > 1 g per day) is described. Caffeine Withdrawal is common upon cessation of use among individuals who have used caffeine for a prolonged period or in large amounts. Caffeine-Induced Anxiety Disorder has been described, often following intoxication or heavy use.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Disorders due to use of stimulants including amphetamines, methamphetamine or methcathinone",
+              "Hazardous use of caffeine"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/31898480"
+          },
+          {
+            "code": "6C49",
+            "title_en": "Disorders due to use of hallucinogens",
+            "title_kr": "환각제사용에 의한 장애",
+            "definition_en": "Disorders due to use of hallucinogens are characterised by the pattern and consequences of hallucinogen use. Several thousand compounds have hallucinogenic properties, many of which are found in plants (e.g., mescaline) and fungi (e.g., psilocybin) or are chemically synthesized (e.g., lysergic acid diethylamide [LSD]). These compounds have primarily hallucinogenic properties, but some may also be stimulants. Much of the morbidity associated with these compounds arises from the acute effects related to Hallucinogen Intoxication. Hallucinogen Dependence is rare and Hallucinogen Withdrawal is not described. Among the mental disorders related to hallucinogen use, Hallucinogen-Induced Psychotic Disorder is the most frequently seen, although worldwide it is still fairly uncommon.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1967909777"
+          },
+          {
+            "code": "6C4A",
+            "title_en": "Disorders due to use of nicotine",
+            "title_kr": "니코틴사용에 의한 장애",
+            "definition_en": "Disorders due to use of nicotine are characterised by the pattern and consequences of nicotine use. Nicotine is the active dependence-producing constituent of the tobacco plant, Nicotiana tabacum. Nicotine is used overwhelmingly through smoking cigarettes. Increasingly, it is also used in electronic cigarettes that vaporize nicotine dissolved in a carrier solvent for inhalation (i.e., “vaping”). Pipe smoking, chewing tobacco and inhaling snuff are minor forms of use. Nicotine is a highly potent addictive compound and is the third most common psychoactive substance used worldwide after caffeine and alcohol. Nicotine Dependence and Nicotine Withdrawal are well described and Nicotine-Induced Mental Disorders are recognized.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/268445189"
+          },
+          {
+            "code": "6C4B",
+            "title_en": "Disorders due to use of volatile inhalants",
+            "title_kr": "휘발성 흡입제 사용에 의한 장애",
+            "definition_en": "Disorders due to use of volatile inhalants are characterised by the pattern and consequences of volatile inhalant use. Volatile inhalants include a range of compounds that are in the gaseous or vapour phase at ambient temperatures and include various organic solvents, glues, gasoline (petrol), nitrites and gases such as nitrous oxide, trichloroethane, butane, toluene, fluorocarbons, ether and halothane. They have a range of pharmacological properties but are predominantly central nervous system depressants, with many also having vasoactive effects. They tend to be used by younger persons and may be used when access to alternative psychoactive substances is difficult or impossible. Volatile Inhalant Intoxication is well recognized. Volatile inhalants have dependence-producing properties and Volatile Inhalant Dependence and Volatile Inhalant Withdrawal is recognized although comparatively uncommon worldwide. Volatile Inhalant-Induced Mental Disorders are described. They may also cause neurocognitive impairment, including Dementia.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1835610951"
+          },
+          {
+            "code": "6C4C",
+            "title_en": "Disorders due to use of MDMA or related drugs, including MDA",
+            "title_kr": "MDMA 등 관련 약물 사용에 의한 장애",
+            "definition_en": "Disorders due to use of MDMA or related drugs, including MDA are characterised by the pattern and consequences of MDMA or related drug use. MDMA is methylene-dioxymethamphetamine and is a common drug of abuse in many countries especially among young people. It is predominantly available in tablet form known as ‘ecstasy’. Pharmacologically, MDMA has stimulant and empathogenic properties and these encourage its use among young people for social and other interactions. Considering its wide prevalence in many countries and among many sub-groups of young people, MDMA and Related Drug Dependence and MDMA and Related Drug Withdrawal are comparatively uncommon. Substance-Induced Mental Disorders may arise from its use. Several analogues of MDMA exist, including MDA (methylene-dioxyamphetamine).",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Hazardous use of MDMA or related drugs"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1218193465"
+          },
+          {
+            "code": "6C4D",
+            "title_en": "Disorders due to use of dissociative drugs including ketamine and phencyclidine [PCP]",
+            "title_kr": "케타민·펜사이클리딘(PCP) 등 해리성 약물 사용에 의한 장애",
+            "definition_en": "Disorders due to use of dissociative drugs including ketamine and phencyclidine [PCP] are characterised by the pattern and consequences of dissociative drug use. Dissociative drugs include ketamine and phencyclidine (PCP) and their (comparatively rare) chemical analogues. Ketamine is an intravenous anaesthetic widely used in low- and middle-income countries, particularly in Africa, and in emergency situations. Ketamine is also undergoing evaluation for treatment of some mental disorders (e.g., treatment resistant Depressive Disorders). It is also a widespread drug of nonmedical use in many countries and may be taken by the oral or nasal routes or injected. It produces a sense of euphoria but depending on the dose, emergent hallucinations and dissociation are recognised as unpleasant side effects. Phencyclidine has a more restricted worldwide distribution and also has euphoric and dissociative effects. Its use may result in bizarre behaviour uncharacteristic for the individual, including self-harm. Dissociative Drug Dependence is described but a withdrawal syndrome is not recognized by most authorities. Several Dissociative Drug-Induced Mental Disorders are recognised.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Hazardous use of dissociative drugs including ketamine or PCP"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/470484338"
+          },
+          {
+            "code": "6C4E",
+            "title_en": "Disorders due to use of other specified psychoactive substances, including medications",
+            "title_kr": "기타 명시된 정신작용물질(의약품 포함) 사용에 의한 장애",
+            "definition_en": "Disorders due to use of other specified psychoactive substances, including medications are characterised by the pattern and consequences of psychoactive substances that are not included among the major substance classes specifically identified. Examples include khat, antidepressants, medications with anticholinergic properties (e.g., benztropine), and some antihistamines.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/136511187"
+          },
+          {
+            "code": "6C4F",
+            "title_en": "Disorders due to use of multiple specified psychoactive substances, including medications",
+            "title_kr": "다수의 명시된 정신작용물질(의약품 포함) 사용에 의한 장애",
+            "definition_en": "Disorders due to use of multiple specified psychoactive substances, including medications are characterised by the pattern and consequences of multiple psychoactive substances. Although this grouping is provided for coding purposes, in most clinical situations it is recommended that multiple specific disorders due to substance use be assigned rather than using categories from this grouping.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/601226803"
+          },
+          {
+            "code": "6C4G",
+            "title_en": "Disorders due to use of unknown or unspecified psychoactive substances",
+            "title_kr": "미상 또는 명시되지 않은 정신작용물질 사용에 의한 장애",
+            "definition_en": "Disorders due to use of unknown or unspecified psychoactive substances are characterised by the pattern and consequences of psychoactive substance use when the specific substance is unknown or unspecified. These categories may be used in clinical situations in which it is clear that the disturbance is due to substance use but the specific class of substance is unknown. Once the relevant substance is identified, the disturbance should be recoded under the appropriate substance class.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1414319298"
+          },
+          {
+            "code": "6C4H",
+            "title_en": "Disorders due to use of non-psychoactive substances",
+            "title_kr": "비정신작용물질 사용에 의한 장애",
+            "definition_en": "Disorders due to use of non-psychoactive substances are characterised by the pattern and consequences of non-medical use of non-psychoactive substances. Non-psychoactive substances include laxatives, anabolic steroids, growth hormone, erythropoietin, and non-steroidal anti-inflammatory drugs. They may also include proprietary or over-the-counter medicines and folk remedies. Non-medical use of these substances may be associated with harm to the individual due to the direct or secondary toxic effects of the non-psychoactive substance on body organs and systems, or a harmful route of administration (e.g., infections due to intravenous self-administration). They are not associated with intoxication or with a dependence or withdrawal syndrome and are not recognized causes of substance-induced mental disorders.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/247116319"
+          }
+        ]
+      },
+      "Disorders due to addictive behaviours": {
+        "block_kr": "중독행동에 의한 장애",
+        "items": [
+          {
+            "code": "6C50",
+            "title_en": "Gambling disorder",
+            "title_kr": "도박장애",
+            "definition_en": "Gambling disorder is characterised by a pattern of persistent or recurrent gambling behaviour, which may be online (i.e., over the internet) or offline, manifested by:\n\n1. impaired control over gambling (e.g., onset, frequency, intensity, duration, termination, context);\n\n2. increasing priority given to gambling to the extent that gambling takes precedence over other life interests and daily activities; and\n\n3. continuation or escalation of gambling despite the occurrence of negative consequences.\n\nThe pattern of gambling behaviour may be continuous or episodic and recurrent. The pattern of gambling behaviour results in significant distress or in significant impairment in personal, family, social, educational, occupational or other important areas of functioning. The gambling behaviour and other features are normally evident over a period of at least 12 months in order for a diagnosis to be assigned, although the required duration may be shortened if all diagnostic requirements are met and symptoms are severe.",
+            "inclusions_en": [
+              "Compulsive gambling"
+            ],
+            "exclusions_en": [
+              "Bipolar type I disorder",
+              "Bipolar type II disorder",
+              "Hazardous gambling or betting"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1041487064"
+          },
+          {
+            "code": "6C51",
+            "title_en": "Gaming disorder",
+            "title_kr": "게임장애",
+            "definition_en": "Gaming disorder is characterised by a pattern of persistent or recurrent gaming behaviour (‘digital gaming’ or ‘video-gaming’), which may be online (i.e., over the internet) or offline, manifested by:\n\n1. impaired control over gaming (e.g., onset, frequency, intensity, duration, termination, context);\n\n2. increasing priority given to gaming to the extent that gaming takes precedence over other life interests and daily activities; and\n\n3. continuation or escalation of gaming despite the occurrence of negative consequences.\n\nThe pattern of gaming behaviour may be continuous or episodic and recurrent. The pattern of gaming behaviour results in marked distress or significant impairment in personal, family, social, educational, occupational, or other important areas of functioning. The gaming behaviour and other features are normally evident over a period of at least 12 months in order for a diagnosis to be assigned, although the required duration may be shortened if all diagnostic requirements are met and symptoms are severe.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Hazardous gaming",
+              "Bipolar type I disorder",
+              "Bipolar type II disorder"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1448597234"
+          }
+        ]
+      },
+      "Impulse control disorders": {
+        "block_kr": "충동조절장애",
+        "items": [
+          {
+            "code": "6C70",
+            "title_en": "Pyromania",
+            "title_kr": "방화광",
+            "definition_en": "Pyromania is characterised by a recurrent failure to control strong impulses to set fires, resulting in multiple acts of, or attempts at, setting fire to property or other objects, in the absence of an apparent motive (e.g., monetary gain, revenge, sabotage, political statement, attracting attention or recognition). There is an increasing sense of tension or affective arousal prior to instances of fire setting, persistent fascination or preoccupation with fire and related stimuli (e.g., watching fires, building fires, fascination with firefighting equipment), and a sense of pleasure, excitement, relief or gratification during, and immediately after the act of setting the fire, witnessing its effects, or participating in its aftermath. The behaviour is not better explained by intellectual impairment, another mental and behavioural disorder, or substance intoxication.",
+            "inclusions_en": [
+              "pathological fire-setting"
+            ],
+            "exclusions_en": [
+              "Conduct-dissocial disorder",
+              "Bipolar type I disorder",
+              "Schizophrenia or other primary psychotic disorders",
+              "Fire-setting as the reason for observation for suspected mental or behavioural disorders, ruled out"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1532500290"
+          },
+          {
+            "code": "6C71",
+            "title_en": "Kleptomania",
+            "title_kr": "도벽증",
+            "definition_en": "Kleptomania is characterised by a recurrent failure to control strong impulses to steal objects in the absence of an apparent motive (e.g., objects are not acquired for personal use or monetary gain). There is an increasing sense of tension or affective arousal before instances of theft and a sense of pleasure, excitement, relief, or gratification during and immediately after the act of stealing. The behaviour is not better explained by intellectual impairment, another mental and behavioural disorder, or substance intoxication.",
+            "inclusions_en": [
+              "pathological stealing"
+            ],
+            "exclusions_en": [
+              "shoplifting as the reason for observation for suspected mental disorder, ruled out"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/804604349"
+          },
+          {
+            "code": "6C72",
+            "title_en": "Compulsive sexual behaviour disorder",
+            "title_kr": "강박적 성행동장애",
+            "definition_en": "Compulsive sexual behaviour disorder is characterised by a persistent pattern of failure to control intense, repetitive sexual impulses or urges resulting in repetitive sexual behaviour. Symptoms may include repetitive sexual activities becoming a central focus of the person’s life to the point of neglecting health and personal care or other interests, activities and responsibilities; numerous unsuccessful efforts to significantly reduce repetitive sexual behaviour; and continued repetitive sexual behaviour despite adverse consequences or deriving little or no satisfaction from it. The pattern of failure to control intense, sexual impulses or urges and resulting repetitive sexual behaviour is manifested over an extended period of time (e.g., 6 months or more), and causes marked distress or significant impairment in personal, family, social, educational, occupational, or other important areas of functioning. Distress that is entirely related to moral judgments and disapproval about sexual impulses, urges, or behaviours is not sufficient to meet this requirement.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Paraphilic disorders"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1630268048"
+          },
+          {
+            "code": "6C73",
+            "title_en": "Intermittent explosive disorder",
+            "title_kr": "간헐적폭발장애",
+            "definition_en": "Intermittent explosive disorder is characterised by repeated brief episodes of verbal or physical aggression or destruction of property that represent a failure to control aggressive impulses, with the intensity of the outburst or degree of aggressiveness being grossly out of proportion to the provocation or precipitating psychosocial stressors. The symptoms are not better explained by another mental, behavioural, or neurodevelopmental disorder and are not part of a pattern of chronic anger and irritability (e.g., in oppositional defiant disorder). The behaviour pattern is of sufficient severity to result in significant impairment in personal, family, social, educational, occupational or other important areas of functioning.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Oppositional defiant disorder"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/295017661"
+          }
+        ]
+      },
+      "Disruptive behaviour or dissocial disorders": {
+        "block_kr": "파괴적 행동 또는 반사회적 장애",
+        "items": [
+          {
+            "code": "6C90",
+            "title_en": "Oppositional defiant disorder",
+            "title_kr": "적대적반항장애",
+            "definition_en": "Oppositional defiant disorder is a persistent pattern (e.g., 6 months or more) of markedly defiant, disobedient, provocative or spiteful behaviour that occurs more frequently than is typically observed in individuals of comparable age and developmental level and that is not restricted to interaction with siblings. Oppositional defiant disorder may be manifest in prevailing, persistent angry or irritable mood, often accompanied by severe temper outbursts or in headstrong, argumentative and defiant behaviour. The behaviour pattern is of sufficient severity to result in significant impairment in personal, family, social, educational, occupational or other important areas of functioning",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1487528823"
+          },
+          {
+            "code": "6C91",
+            "title_en": "Conduct-dissocial disorder",
+            "title_kr": "품행-반사회적장애",
+            "definition_en": "Conduct-dissocial disorder is characterised by a repetitive and persistent pattern of behaviour in which the basic rights of others or major age-appropriate societal norms, rules, or laws are violated such as aggression towards people or animals; destruction of property; deceitfulness or theft; and serious violations of rules. The behaviour pattern is of sufficient severity to result in significant impairment in personal, family, social, educational, occupational or other important areas of functioning. To be diagnosed, the behaviour pattern must be enduring over a significant period of time (e.g., 12 months or more). Isolated dissocial or criminal acts are thus not in themselves grounds for the diagnosis.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/719572464"
+          }
+        ]
+      },
+      "Personality disorders and related traits": {
+        "block_kr": "성격장애 및 관련 특성",
+        "items": [
+          {
+            "code": "6D10",
+            "title_en": "Personality disorder",
+            "title_kr": "성격장애",
+            "definition_en": "Personality disorder is characterised by problems in functioning of aspects of the self (e.g., identity, self-worth, accuracy of self-view, self-direction), and/or interpersonal dysfunction (e.g., ability to develop and maintain close and mutually satisfying relationships, ability to understand others’ perspectives and to manage conflict in relationships) that have persisted over an extended period of time (e.g., 2 years or more). The disturbance is manifest in patterns of cognition, emotional experience, emotional expression, and behaviour that are maladaptive (e.g., inflexible or poorly regulated) and is manifest across a range of personal and social situations (i.e., is not limited to specific relationships or social roles). The patterns of behaviour characterizing the disturbance are not developmentally appropriate and cannot be explained primarily by social or cultural factors, including socio-political conflict. The disturbance is associated with substantial distress or significant impairment in personal, family, social, educational, occupational or other important areas of functioning.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/941859884"
+          },
+          {
+            "code": "6D11",
+            "title_en": "Prominent personality traits or patterns",
+            "title_kr": "두드러진 성격특성 또는 양상",
+            "definition_en": "Trait domain qualifiers may be applied to Personality Disorders or Personality Difficulty to describe the characteristics of the individual’s personality that are most prominent and that contribute to personality disturbance. Trait domains are continuous with normal personality characteristics in individuals who do not have Personality Disorder or Personality Difficulty. Trait domains are not diagnostic categories, but rather represent a set of dimensions that correspond to the underlying structure of personality. As many trait domain qualifiers may be applied as necessary to describe personality functioning. Individuals with more severe personality disturbance tend to have a greater number of prominent trait domains.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1128733473"
+          }
+        ]
+      },
+      "Paraphilic disorders": {
+        "block_kr": "성도착장애",
+        "items": [
+          {
+            "code": "6D30",
+            "title_en": "Exhibitionistic disorder",
+            "title_kr": "노출장애",
+            "definition_en": "Exhibitionistic disorder is characterised by a sustained, focused and intense pattern of sexual arousal—as manifested by persistent sexual thoughts, fantasies, urges, or behaviours—that involves exposing one’s genitals to an unsuspecting individual in public places, usually without inviting or intending closer contact. In addition, in order for Exhibitionistic Disorder to be diagnosed, the individual must have acted on these thoughts, fantasies or urges or be markedly distressed by them. Exhibitionistic Disorder specifically excludes consensual exhibitionistic behaviours that occur with the consent of the person or persons involved as well as socially sanctioned forms of exhibitionism.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/141881468"
+          },
+          {
+            "code": "6D31",
+            "title_en": "Voyeuristic disorder",
+            "title_kr": "관음장애",
+            "definition_en": "Voyeuristic disorder is characterised by a sustained, focused and intense pattern of sexual arousal—as manifested by persistent sexual thoughts, fantasies, urges, or behaviours—that involves observing an unsuspecting individual who is naked, in the process of disrobing, or engaging in sexual activity. In addition, in order for Voyeuristic Disorder to be diagnosed, the individual must have acted on these thoughts, fantasies or urges or be markedly distressed by them. Voyeuristic Disorder specifically excludes consensual voyeuristic behaviours that occur with the consent of the person or persons being observed.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1832861162"
+          },
+          {
+            "code": "6D32",
+            "title_en": "Pedophilic disorder",
+            "title_kr": "소아성애장애",
+            "definition_en": "Pedophilic disorder is characterised by a sustained, focused, and intense pattern of sexual arousal—as manifested by persistent sexual thoughts, fantasies, urges, or behaviours—involving pre-pubertal children. In addition, in order for Pedophilic Disorder to be diagnosed, the individual must have acted on these thoughts, fantasies or urges or be markedly distressed by them. This diagnosis does not apply to sexual behaviours among pre- or post-pubertal children with peers who are close in age.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/517058174"
+          },
+          {
+            "code": "6D33",
+            "title_en": "Coercive sexual sadism disorder",
+            "title_kr": "강압적 성적가학장애",
+            "definition_en": "Coercive sexual sadism disorder is characterised by a sustained, focused and intense pattern of sexual arousal—as manifested by persistent sexual thoughts, fantasies, urges or behaviours—that involves the infliction of physical or psychological suffering on a non-consenting person. In addition, in order for Coercive Sexual Sadism Disorder to be diagnosed, the individual must have acted on these thoughts, fantasies or urges or be markedly distressed by them. Coercive Sexual Sadism Disorder specifically excludes consensual sexual sadism and masochism.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1890228613"
+          },
+          {
+            "code": "6D34",
+            "title_en": "Frotteuristic disorder",
+            "title_kr": "마찰도착장애",
+            "definition_en": "Frotteuristic disorder is characterised by a sustained, focused and intense pattern of sexual arousal—as manifested by persistent sexual thoughts, fantasies, urges, or behaviours—that involves touching or rubbing against a non-consenting person in crowded public places. In addition, in order for Frotteuristic Disorder to be diagnosed, the individual must have acted on these thoughts, fantasies or urges or be markedly distressed by them. Frotteuristic Disorder specifically excludes consensual touching or rubbing that occurs with the consent of the person or persons involved.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1580013387"
+          },
+          {
+            "code": "6D35",
+            "title_en": "Other paraphilic disorder involving non-consenting individuals",
+            "title_kr": "비동의 대상과 관련된 기타 성도착장애",
+            "definition_en": "Other paraphilic disorder involving non-consenting individuals is characterised by a persistent and intense pattern of atypical sexual arousal — manifested by sexual thoughts, fantasies, urges, or behaviours — in which the focus of the arousal pattern involves others who are unwilling or unable to consent but that is not specifically described in any of the other named Paraphilic Disorders categories (e.g., arousal patterns involving corpses or animals). The individual must have acted on these thoughts, fantasies or urges or be markedly distressed by them. The disorder specifically excludes sexual behaviours that occur with the consent of the person or persons involved, provided that they are considered able to provide such consent.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1582257458"
+          },
+          {
+            "code": "6D36",
+            "title_en": "Paraphilic disorder involving solitary behaviour or consenting individuals",
+            "title_kr": "단독행동 또는 동의한 대상과 관련된 성도착장애",
+            "definition_en": "Paraphilic disorder involving solitary behaviour or consenting individuals is characterised by a persistent and intense pattern of atypical sexual arousal — manifested by sexual thoughts, fantasies, urges, or behaviours — that involves consenting adults or solitary behaviours. One of the following two elements must be present: 1) the person is markedly distressed by the nature of the arousal pattern and the distress is not simply a consequence of rejection or feared rejection of the arousal pattern by others; or 2) the nature of the paraphilic behaviour involves significant risk of injury or death either to the individual or to the partner (e.g., asphyxophilia).",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/2055403635"
+          }
+        ]
+      },
+      "Factitious disorders": {
+        "block_kr": "인위성장애",
+        "items": [
+          {
+            "code": "6D50",
+            "title_en": "Factitious disorder imposed on self",
+            "title_kr": "스스로에게 부과한 인위성장애",
+            "definition_en": "Factitious disorder imposed on self is characterised by feigning, falsifying, or inducing medical, psychological, or behavioural signs and symptoms or injury associated with identified deception. If a pre-existing disorder or disease is present, the individual intentionally aggravates existing symptoms or falsifies or induces additional symptoms. The individual seeks treatment or otherwise presents himself or herself as ill, injured, or impaired based on the feigned, falsified, or self-induced signs, symptoms, or injuries. The deceptive behaviour is not solely motivated by obvious external rewards or incentives (e.g., obtaining disability payments or evading criminal prosecution). This is in contrast to Malingering, in which obvious external rewards or incentives motivate the behaviour",
+            "inclusions_en": [
+              "Münchhausen syndrome"
+            ],
+            "exclusions_en": [
+              "Excoriation disorder",
+              "Malingering"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/790764418"
+          },
+          {
+            "code": "6D51",
+            "title_en": "Factitious disorder imposed on another",
+            "title_kr": "타인에게 부과한 인위성장애",
+            "definition_en": "Factitious disorder imposed on another is characterised by feigning, falsifying, or inducing medical, psychological, or behavioural signs and symptoms or injury in another person, most commonly a child dependent, associated with identified deception. If a pre-existing disorder or disease is present in the other person, the individual intentionally aggravates existing symptoms or falsifies or induces additional symptoms. The individual seeks treatment for the other person or otherwise presents him or her as ill, injured, or impaired based on the feigned, falsified, or induced signs, symptoms, or injuries. The deceptive behaviour is not solely motivated by obvious external rewards or incentives (e.g., obtaining disability payments or avoiding criminal prosecution for child or elder abuse).",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Malingering"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/775605963"
+          }
+        ]
+      },
+      "Neurocognitive disorders": {
+        "block_kr": "신경인지장애",
+        "items": [
+          {
+            "code": "6D70",
+            "title_en": "Delirium",
+            "title_kr": "섬망",
+            "definition_en": "Delirium is characterized by a disturbance of attention, orientation, and awareness that develops within a short period of time, typically presenting as significant confusion or global neurocognitive impairment, with transient symptoms that may fluctuate depending on the underlying causal condition or etiology. Delirium often includes disturbance of behaviour and emotion, and may include impairment in multiple cognitive domains. A disturbance of the sleep-wake cycle, including reduced arousal of acute onset or total sleep loss with reversal of the sleep-wake cycle, may also be present. Delirium may be caused by the direct physiological effects of a medical condition not classified under mental, behavioural or neurodevelopmental disorders, by the direct physiological effects of a substance or medication, including withdrawal, or by multiple or unknown etiological factors.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/897917531"
+          },
+          {
+            "code": "6D71",
+            "title_en": "Mild neurocognitive disorder",
+            "title_kr": "경도신경인지장애",
+            "definition_en": "Mild neurocognitive disorder is characterized by mild impairment in one or more cognitive domains relative to that expected given the individual’s age and general premorbid level of cognitive functioning, which represents a decline from the individual’s previous level of functioning. Diagnosis is based on report from the patient, informant, or clinical observation, and is accompanied by objective evidence of impairment by quantified clinical assessment or standardized cognitive testing. Cognitive impairment is not severe enough to significantly interfere with an individual’s ability to perform activities related to personal, family, social, educational, and/or occupational functioning or other important functional areas. Cognitive impairment is not attributable to normal aging and may be static, progressive, or may resolve or improve depending on underlying cause or treatment. Cognitive impairment may be attributable to an underlying acquired disease of the nervous system, a trauma, an infection or other disease process affecting the brain, use of specific substances or medications, nutritional deficiency or exposure to toxins, or the etiology may be undetermined. The impairment is not due to current substance intoxication or withdrawal.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/195531803"
+          },
+          {
+            "code": "6D72",
+            "title_en": "Amnestic disorder",
+            "title_kr": "기억상실장애",
+            "definition_en": "Amnestic disorder is characterised by prominent memory impairment relative to expectations for age and general premorbid level of cognitive functioning, which represents a decline from the individual’s previous level of functioning, in the absence of other significant cognitive impairment. It is manifested by a deficit in acquiring, learning, and/or retaining new information, and may include the inability to recall previously learned information, without disturbance of consciousness, altered mental status, or delirium. Recent memory is typically more disturbed than remote memory, and the ability to immediately recall a limited amount of information is usually relatively preserved. The memory impairment is severe enough to result in significant impairment in personal, family, social, educational, occupational, or other important areas of functioning. It is presumed to be attributable to an underlying acquired disease of the nervous system, a trauma, an infection or other disease process affecting the brain, to use of specific substances or medications, nutritional deficiency or exposure to toxins, or the etiology may be undetermined. The impairment is not due to current substance intoxication or withdrawal.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Delirium",
+              "Dementia",
+              "Mild neurocognitive disorder"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/386330688"
+          }
+        ]
+      },
+      "Dementia": {
+        "block_kr": "치매",
+        "items": [
+          {
+            "code": "6D80",
+            "title_en": "Dementia due to Alzheimer disease",
+            "title_kr": "알츠하이머병으로 인한 치매",
+            "definition_en": "Dementia due to Alzheimer disease is the most common form of dementia. Onset is insidious with memory impairment typically reported as the initial presenting complaint. The characteristic course is a slow but steady decline from a previous level of cognitive functioning with impairment in additional cognitive domains (such as executive functions, attention, language, social cognition and judgment, psychomotor speed, visuoperceptual or visuospatial abilities) emerging with disease progression. Dementia due to Alzheimer disease may be accompanied by mental and behavioural symptoms such as depressed mood and apathy in the initial stages of the disease and may be accompanied by psychotic symptoms, irritability, aggression, confusion, abnormalities of gait and mobility, and seizures at later stages. Positive genetic testing, family history and gradual cognitive decline are suggestive of Dementia due to Alzheimer disease.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/795022044"
+          },
+          {
+            "code": "6D81",
+            "title_en": "Dementia due to cerebrovascular disease",
+            "title_kr": "뇌혈관질환으로 인한 치매",
+            "definition_en": "Dementia due to brain parenchyma injury resulting from cerebrovascular disease (ischemic or haemorrhagic). The onset of the cognitive deficits is temporally related to one or more vascular events. Cognitive decline is typically most prominent in speed of information processing, complex attention, and frontal-executive functioning. There is evidence of the presence of cerebrovascular disease considered to be sufficient to account for the neurocognitive deficits from history, physical examination and neuroimaging.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Alzheimer disease dementia, mixed type, with cerebrovascular disease"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1365258270"
+          },
+          {
+            "code": "6D82",
+            "title_en": "Dementia due to Lewy body disease",
+            "title_kr": "루이소체병으로 인한 치매",
+            "definition_en": "Dementia preceding or occurring within one year after the onset of motor parkinsonian signs in the setting of Lewy body disease. Characterized by presence of Lewy bodies, which are intraneuronal inclusions containing α-synuclein and ubiquitin in the brain stem, limbic area, forebrain, and neocortex. Onset is insidious with attentional and executive functioning deficits often present. These cognitive deficits are often accompanied by visual hallucinations and symptoms of REM sleep behaviour disorder. Hallucinations in other sensory modalities, depressive symptoms, and delusions may also be present. The symptom presentation usually varies significantly over the course of days necessitating longitudinal assessment and differentiation from delirium. Spontaneous onset of Parkinsonism within approximately 1 year of the onset of cognitive symptoms is common.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1777436789"
+          },
+          {
+            "code": "6D83",
+            "title_en": "Frontotemporal dementia",
+            "title_kr": "전두측두엽치매",
+            "definition_en": "Frontotemporal dementia (FTD) is a group of primary neurodegenerative disorders primarily affecting the frontal and temporal lobes. Onset is typically insidious with a gradual and worsening course. Several syndromic variants (some with an identified genetic basis or familiality) are described that include presentations with predominantly marked personality and behavioral changes (such as executive dysfunction, apathy, deterioration of social cognition, repetitive behaviours, and dietary changes), predominantly language deficits (that include semantic, agrammatic/nonfluent, and logopenic forms), predominantly movement-related deficits (progressive supranuclear palsy, corticobasal degeneration, multiple systems atrophy, or amyotrophic lateral sclerosis), or a combination of these deficits. Memory function often remains relatively intact, particularly during the early stages of the disorder.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/831337417"
+          },
+          {
+            "code": "6D84",
+            "title_en": "Dementia due to psychoactive substances including medications",
+            "title_kr": "정신작용물질(의약품 포함)로 인한 치매",
+            "definition_en": "Dementia due to psychoactive substances including medications includes forms of dementia that are judged to be a direct consequence of substance use and that persist beyond the usual duration of action or withdrawal syndrome associated with the substance. The amount and duration of substance use must be sufficient to produce the cognitive impairment. The cognitive impairment is not better accounted for by a disorder that is not induced by substances such as a dementia due to another medical condition.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Dementia due to exposure to heavy metals and other toxins"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1710319105"
+          },
+          {
+            "code": "6D85",
+            "title_en": "Dementia due to diseases classified elsewhere",
+            "title_kr": "다른 곳에 분류된 질환으로 인한 치매",
+            "definition_en": "",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1468768235"
+          },
+          {
+            "code": "6D86",
+            "title_en": "Behavioural or psychological disturbances in dementia",
+            "title_kr": "치매의 행동 및 심리증상 (BPSD)",
+            "definition_en": "In addition to the cognitive disturbances characteristic of dementia, the current clinical picture includes clinically significant behavioural or psychological disturbances.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Secondary mental or behavioural syndromes associated with disorders or diseases classified elsewhere"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/148241182"
+          }
+        ]
+      },
+      "Mental or behavioural disorders associated with pregnancy, childbirth or the puerperium": {
+        "block_kr": "임신·출산·산욕기 관련 정신 또는 행동장애",
+        "items": [
+          {
+            "code": "6E20",
+            "title_en": "Mental or behavioural disorders associated with pregnancy, childbirth or the puerperium, without psychotic symptoms",
+            "title_kr": "임신·출산·산욕기 관련 정신 또는 행동장애, 정신병적 증상 없음",
+            "definition_en": "A syndrome associated with pregnancy or the puerperium (commencing within about 6 weeks after delivery) that involves significant mental and behavioural features, most commonly depressive symptoms. The syndrome does not include delusions, hallucinations, or other psychotic symptoms. If the symptoms meet the diagnostic requirements for a specific mental disorder, that diagnosis should also be assigned. This designation should not be used to describe mild and transient depressive symptoms that do not meet the diagnostic requirements for a depressive episode, which may occur soon after delivery (so-called postpartum blues).",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1124422593"
+          },
+          {
+            "code": "6E21",
+            "title_en": "Mental or behavioural disorders associated with pregnancy, childbirth or the puerperium, with psychotic symptoms",
+            "title_kr": "임신·출산·산욕기 관련 정신 또는 행동장애, 정신병적 증상 동반",
+            "definition_en": "A syndrome associated with pregnancy or the puerperium (commencing within about 6 weeks after delivery) that involves significant mental and behavioural features, including delusions, hallucinations, or other psychotic symptoms. Mood symptoms (depressive and/or manic) are also typically present. If the symptoms meet the diagnostic requirements for a specific mental disorder, that diagnosis should also be assigned.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/380591392"
+          }
+        ]
+      },
+      "Mental, behavioural or neurodevelopmental disorders": {
+        "block_kr": "정신·행동·신경발달장애 (기타)",
+        "items": [
+          {
+            "code": "6E40",
+            "title_en": "Psychological or behavioural factors affecting disorders or diseases classified elsewhere",
+            "title_kr": "다른 곳에 분류된 질환에 영향을 미치는 심리적 또는 행동적 요인",
+            "definition_en": "Psychological and behavioural factors affecting disorders or diseases classified elsewhere are those that may adversely affect the manifestation, treatment, or course of a condition classified in another chapter of the ICD. These factors may adversely affect the manifestation, treatment, or course of the disorder or disease classified in another chapter by: interfering with the treatment of the disorder or disease by affecting treatment adherence or care seeking; constituting an additional health risk; or influencing the underlying pathophysiology to precipitate or exacerbate symptoms or otherwise necessitate medical attention. This diagnosis should be assigned only when the factors increase the risk of suffering, disability, or death and represent a focus of clinical attention, and should be assigned together with the diagnosis for the relevant other condition.",
+            "inclusions_en": [
+              "Psychological factors affecting physical conditions"
+            ],
+            "exclusions_en": [
+              "Mental or behavioural disorders associated with pregnancy, childbirth or the puerperium"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/523677473"
+          }
+        ]
+      },
+      "Secondary mental or behavioural syndromes associated with disorders or diseases classified elsewhere": {
+        "block_kr": "다른 곳에 분류된 질환과 관련된 이차성 정신 또는 행동 증후군",
+        "items": [
+          {
+            "code": "6E60",
+            "title_en": "Secondary neurodevelopmental syndrome",
+            "title_kr": "이차성 신경발달증후군",
+            "definition_en": "A syndrome that involves significant neurodevelopmental features that do not fulfill the diagnostic requirements of any of the specific neurodevelopmental disorders that is judged to be a direct pathophysiological consequence of a health condition not classified under mental and behavioural disorders (e.g., autistic-like features in Rett syndrome; aggression and self-mutilation in Lesch-Nyhan syndrome, abnormalities in language development in Williams syndrome), based on evidence from the history, physical examination, or laboratory findings.\n\nThis category should be used in addition to the diagnosis for the presumed underlying disorder or disease when the neurodevelopmental problems are sufficiently severe to warrant specific clinical attention.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Autism spectrum disorder",
+              "Disorders of intellectual development",
+              "Stereotyped movement disorder"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/255980141"
+          },
+          {
+            "code": "6E61",
+            "title_en": "Secondary psychotic syndrome",
+            "title_kr": "이차성 정신병적증후군",
+            "definition_en": "A syndrome characterised by the presence of prominent hallucinations or delusions judged to be a direct pathophysiological consequence of a health condition not classified under mental and behavioural disorders, based on evidence from the history, physical examination, or laboratory findings. The symptoms are not accounted for by delirium or by another mental and behavioural disorder, and are not a psychologically mediated response to a severe medical condition (e.g., an acute stress reaction in response to a life-threatening diagnosis). This category should be used in addition to the diagnosis for the presumed underlying disorder or disease when the psychotic symptoms are sufficiently severe to warrant specific clinical attention.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Acute and transient psychotic disorder",
+              "Delirium",
+              "Mood disorders"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/696956921"
+          },
+          {
+            "code": "6E62",
+            "title_en": "Secondary mood syndrome",
+            "title_kr": "이차성 기분증후군",
+            "definition_en": "A syndrome characterised by the presence of prominent mood symptoms (i.e., depression, elevated mood, irritability) judged to be a direct pathophysiological consequence of a health condition not classified under mental and behavioural disorders, based on evidence from the history, physical examination, or laboratory findings. The symptoms are not accounted for by delirium or by another mental and behavioural disorder, and are not a psychologically mediated response to a severe medical condition (e.g., depressive symptoms in response to a life-threatening diagnosis). This category should be used in addition to the diagnosis for the presumed underlying disorder or disease when the mood symptoms are sufficiently severe to warrant specific clinical attention.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Adjustment disorder",
+              "Delirium"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/216291184"
+          },
+          {
+            "code": "6E63",
+            "title_en": "Secondary anxiety syndrome",
+            "title_kr": "이차성 불안증후군",
+            "definition_en": "A syndrome characterised by the presence of prominent anxiety symptoms judged to be a direct pathophysiological consequence of a health condition not classified under mental and behavioural disorders, based on evidence from the history, physical examination, or laboratory findings. The symptoms are not accounted for by delirium or by another mental and behavioural disorder, and are not a psychologically mediated response to a severe medical condition (e.g., anxiety symptoms or panic attacks in response to a life-threatening diagnosis). This category should be used in addition to the diagnosis for the presumed underlying disorder or disease when the anxiety symptoms are sufficiently severe to warrant specific clinical attention.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Adjustment disorder",
+              "Delirium"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/2131412196"
+          },
+          {
+            "code": "6E64",
+            "title_en": "Secondary obsessive-compulsive or related syndrome",
+            "title_kr": "이차성 강박 및 관련 증후군",
+            "definition_en": "A syndrome characterised by the presence of prominent obsessions, compulsions, hoarding, skin picking, hair pulling, other body-focused repetitive behaviours, or other symptoms characteristic of obsessive-compulsive and related disorder that is judged to be the direct pathophysiological consequence of a disorder or disease not classified under Mental and behavioural disorders, based on evidence from the history, physical examination, or laboratory findings. The symptoms are not accounted for by Delirium or by another Mental and behavioural disorder, and are not a psychologically mediated response to a severe medical condition (e.g., repetitive ruminations in response to a life-threatening diagnosis). This category should be used in addition to the diagnosis for the presumed underlying disorder or disease when the obsessive-compulsive or related symptoms are sufficiently severe to warrant specific clinical attention.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Delirium",
+              "Obsessive-compulsive or related disorder induced by other specified psychoactive substance",
+              "Tic disorders"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1126473669"
+          },
+          {
+            "code": "6E65",
+            "title_en": "Secondary dissociative syndrome",
+            "title_kr": "이차성 해리증후군",
+            "definition_en": "A syndrome characterised by the presence of prominent dissociative symptoms (e.g., depersonalization, derealization) that is judged to be the direct pathophysiological consequence of a health condition not classified under mental and behavioural disorders, based on evidence from the history, physical examination, or laboratory findings. The symptoms are not accounted for by delirium or by another mental and behavioural disorder, and are not a psychologically mediated response to a severe medical condition (e.g., as part of an acute stress reaction in response to a life-threatening diagnosis). This category should be used in addition to the diagnosis for the presumed underlying disorder or disease when the dissociative symptoms are sufficiently severe to warrant specific clinical attention.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Delirium",
+              "Acute stress reaction"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/440469874"
+          },
+          {
+            "code": "6E66",
+            "title_en": "Secondary impulse control syndrome",
+            "title_kr": "이차성 충동조절증후군",
+            "definition_en": "A syndrome characterised by the presence of prominent symptoms that are characteristic of Impulse Control Disorders or Disorders Due to Addictive Behaviours (e.g., stealing, fire-setting, aggressive outbursts, compulsive sexual behaviour, excessive gambling) that are judged to be a direct pathophysiological consequence of a health condition not classified under mental and behavioural disorders, based on evidence from the history, physical examination, or laboratory findings. The symptoms are not accounted for by delirium or by another mental and behavioural disorder, and are not a psychologically mediated response to a severe medical condition (e.g., as part of an adjustment disorder in response to a life-threatening diagnosis). This category should be used in addition to the diagnosis for the presumed underlying disorder or disease when the impulse control symptoms are sufficiently severe to warrant specific clinical attention.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Delirium"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1638354338"
+          },
+          {
+            "code": "6E67",
+            "title_en": "Secondary neurocognitive syndrome",
+            "title_kr": "이차성 신경인지증후군",
+            "definition_en": "A syndrome that involves significant cognitive features that do not fulfill the diagnostic requirements of any of the specific neurocognitive disorders and are judged to be a direct pathophysiological consequence of a health condition or injury not classified under mental and behavioural disorders (e.g., cognitive changes due to a brain tumour), based on evidence from the history, physical examination, or laboratory findings. This category should be used in addition to the diagnosis for the presumed underlying disorder or disease when the cognitive symptoms are sufficiently severe to warrant specific clinical attention.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Disorders with neurocognitive impairment as a major feature"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/235421675"
+          },
+          {
+            "code": "6E68",
+            "title_en": "Secondary personality change",
+            "title_kr": "이차성 성격변화",
+            "definition_en": "A syndrome characterised by a persistent personality disturbance that represents a change from the individual’s previous characteristic personality pattern that is judged to be a direct pathophysiological consequence of a health condition not classified under Mental and behavioural disorders, based on evidence from the history, physical examination, or laboratory findings. The symptoms are not accounted for by delirium or by another mental and behavioural disorder, and are not a psychologically mediated response to a severe medical condition (e.g., social withdrawal, avoidance, or dependence in response to a life-threatening diagnosis). This category should be used in addition to the diagnosis for the presumed underlying disorder or disease when the personality symptoms are sufficiently severe to warrant specific clinical attention.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Personality difficulty",
+              "Personality disorder",
+              "Delirium"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1324394161"
+          },
+          {
+            "code": "6E69",
+            "title_en": "Secondary catatonia syndrome",
+            "title_kr": "이차성 긴장증후군",
+            "definition_en": "Secondary catatonia syndrome is a syndrome of primarily psychomotor disturbances, characterized by the co-occurrence of several symptoms of decreased, increased, or abnormal psychomotor activity, which occurs as a direct pathophysiological consequence of a medical condition not classified under Mental, Behavioural or Neurodevelopmental Disorders. Examples of medical conditions that may be associated with Catatonia include diabetic ketoacidosis, hypercalcaemia, hepatic encephalopathy, homocystinuria, neoplasms head trauma, cerebrovascular disease, and encephalitis.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/518306574"
+          }
+        ]
+      }
+    },
+    "07": {
+      "Insomnia disorders": {
+        "block_kr": "불면장애",
+        "items": [
+          {
+            "code": "7A00",
+            "title_en": "Chronic insomnia",
+            "title_kr": "만성불면증",
+            "definition_en": "Chronic insomnia is a frequent and persistent difficulty initiating or maintaining sleep that occurs despite adequate opportunity and circumstances for sleep and that results in general sleep dissatisfaction and some form of daytime impairment. Daytime symptoms typically include fatigue, depressed mood or irritability, general malaise, and cognitive impairment. The sleep disturbance and associated daytime symptoms occur at least several times per week for at least 3 months. Some individuals with chronic insomnia may show a more episodic course, with recurrent episodes of sleep/wake difficulties lasting several weeks at a time over several years. Individuals who report sleep related symptoms in the absence of daytime impairment are not regarded as having an insomnia disorder. If the insomnia is due to another sleep-wake disorder, a mental disorder, another medical condition, or a substance or medication, chronic insomnia should only be diagnosed if the insomnia is an independent focus of clinical attention.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/323148092"
+          },
+          {
+            "code": "7A01",
+            "title_en": "Short-term insomnia",
+            "title_kr": "단기불면증",
+            "definition_en": "Short-term insomnia is characterised by difficulty initiating or maintaining sleep of less than 3 months duration that occurs despite adequate opportunity and circumstances for sleep and results in general sleep dissatisfaction and some form of daytime impairment. Daytime symptoms typically include fatigue, depressed mood or irritability, general malaise, and cognitive impairment. Individuals who report sleep related symptoms in the absence of daytime impairment are not regarded as having an insomnia disorder. If the insomnia is due to another sleep-wake disorder, a mental disorder, another medical condition, or a substance or medication, short-term insomnia should only be diagnosed if the insomnia is an independent focus of clinical attention.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1832877760"
+          }
+        ]
+      },
+      "Hypersomnolence disorders": {
+        "block_kr": "과다수면장애",
+        "items": [
+          {
+            "code": "7A20",
+            "title_en": "Narcolepsy",
+            "title_kr": "기면증",
+            "definition_en": "Narcolepsy is a disorder characterised by daily periods of irrepressible need to sleep or daytime lapses into sleep occurring for at least several months, accompanied by abnormal manifestations of REM sleep. Multiple sleep latency testing (MSLT) demonstrates a mean sleep latency of <8 minutes and two or more sleep-onset REM periods (SOREMP’s), or one or more SOREMP’s on MSLT and a SOREMP on the preceding overnight polysomnography (PSG). Nighttime sleep is often disturbed, and brief daytime naps are typically refreshing.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1201727099"
+          },
+          {
+            "code": "7A21",
+            "title_en": "Idiopathic hypersomnia",
+            "title_kr": "특발성 과다수면증",
+            "definition_en": "Idiopathic hypersomnia is characterised by daily periods of irrepressible need to sleep or daytime lapses into sleep occurring for at least several months in the absence of cataplexy or hypocretin deficiency (if determined). Polysomnography/multiple sleep latency test (MSLT) findings characteristic of narcolepsy (i.e., two or more sleep-onset REM periods (SOREMP’s), or one or more SOREMP’s on MSLT and a SOREMP on the preceding overnight polysomnography) should also be absent. The daytime sleepiness is not better explained by another disorder (e.g., insufficient sleep syndrome, obstructive sleep apnoea, circadian rhythm sleep-wake disorder), a substance or medication, or a medical condition). Objective evidence of hypersomnolence is indicated by an MSLT showing a mean sleep latency of ≤ 8 minutes or by polysomnography or wrist actigraphy showing a total 24-hour sleep time of 11 hours or more. Prolonged and severe sleep inertia is often observed and consists of sustained difficulty waking up with repeated returns to sleep, irritability, automatic behaviour, and confusion. In contrast to narcolepsy, naps are generally long, often more than 60 minutes, and unrefreshing.\n\nNote: A definitive diagnosis requires daily periods of irrepressible need to sleep or daytime lapses into sleep, objective demonstration of excessive sleepiness and absence of REM-related findings by multiple sleep latency test (MSLT/PSG).",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/631826564"
+          },
+          {
+            "code": "7A22",
+            "title_en": "Kleine-Levin syndrome",
+            "title_kr": "클라인-레빈증후군",
+            "definition_en": "Kleine-Levin syndrome is characterised by recurrent episodes of severe sleepiness in association with cognitive, psychiatric, and behavioural disturbances. A typical episode lasts a median of 10 days (range 2.5–80 days), with rare episodes lasting several weeks to months. During episodes, patients may sleep as long as 16 to 20 hours per day, waking or getting up only to eat and void. When awake during episodes, most patients are exhausted, apathetic, confused, and slow in speaking and answering. Hyperphagia, hypersexuality, childish behaviour, depression, anxiety, hallucinations and delusions are often observed during the episodes. Patients are normal between episodes with regard to sleep, cognition, mood, and eating. Rarely, Kleine Levin syndrome may occur exclusively during menstrual periods.",
+            "inclusions_en": [
+              "recurrent hypersomnolence"
+            ],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1180849398"
+          },
+          {
+            "code": "7A23",
+            "title_en": "Hypersomnia due to a medical condition",
+            "title_kr": "의학적상태로 인한 과다수면증",
+            "definition_en": "Hypersomnia due to a medical condition is characterised by excessive nocturnal sleep, daytime sleepiness, or excessive napping of at least several months duration that is attributable to a coexisting medical or neurological disorder (e.g. head trauma, Parkinson disease, certain genetic conditions, metabolic, neurologic or endocrine disorders) and is sufficiently severe to require an independent focus of clinical attention. Hypersomnia due to a medical condition is only diagnosed if the hypersomnia is a direct physiological consequence of the medical condition. Residual sleepiness in patients with adequately-treated obstructive sleep apnoea is classified here under the assumption that it is due to central nervous system damage from recurrent hypoxemia.\n\nNote: A definitive diagnosis requires use of polysomnography and multiple sleep latency test (MSLT) to rule out other hypersomnolence disorders or other sleep disorders (e.g. obstructive sleep apnea) which might better explain the sleepiness.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/2088456351"
+          },
+          {
+            "code": "7A24",
+            "title_en": "Hypersomnia due to a medication or substance",
+            "title_kr": "약물 또는 물질로 인한 과다수면증",
+            "definition_en": "Hypersomnia due to a medication or substance is characterised by excessive nocturnal sleep, daytime sleepiness, or excessive napping that is attributable to the sedating effects of medications, alcohol, or other psychoactive substances, including withdrawal syndromes (e.g., from stimulants) and is sufficiently severe to constitute an independent focus of clinical attention.\n\nNote: A definitive diagnosis requires use of polysomnography and multiple sleep latency test (MSLT) to rule out other hypersomnolence disorders or other sleep disorders (e.g. obstructive sleep apnea) which might better explain the sleepiness.",
+            "inclusions_en": [
+              "Hypersomnia due to substances including medications"
+            ],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/300740103"
+          },
+          {
+            "code": "7A25",
+            "title_en": "Hypersomnia associated with a mental disorder",
+            "title_kr": "정신질환과 관련된 과다수면증",
+            "definition_en": "Hypersomnia associated with a mental disorder is characterised by excessive nocturnal sleep, daytime sleepiness, or excessive napping that is sufficiently severe to constitute an independent focus of clinical attention. This is most typical of depressive disorders or the depressed phase of bipolar disorders. Patients often feel that their sleep is of poor quality and nonrestorative and may be intensely focused on their hypersomnolence. Objective evidence of excessive sleepiness on MSLT is often absent.\n\nNote: A definitive diagnosis requires use of polysomnography and multiple sleep latency test (MSLT) to rule out other hypersomnolence disorders or other sleep disorders (e.g. obstructive sleep apnea) which might better explain the sleepiness.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1930903815"
+          },
+          {
+            "code": "7A26",
+            "title_en": "Insufficient sleep syndrome",
+            "title_kr": "수면부족증후군",
+            "definition_en": "Insufficient sleep syndrome occurs when an individual persistently fails to obtain the amount of sleep required relative to their own physiological sleep requirements to maintain normal levels of alertness and wakefulness and is thus chronically sleep deprived. The curtailed sleep pattern is present most days for at least several months.\n\nThe person’s ability to initiate and maintain sleep is unimpaired. Sleep time is often markedly extended on weekend nights or during holidays compared to weekday. Extension of total sleep time results in resolution of the symptoms of sleepiness.",
+            "inclusions_en": [
+              "Behaviourally induced hypersomnia"
+            ],
+            "exclusions_en": [
+              "Narcolepsy"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1980306606"
+          }
+        ]
+      },
+      "Sleep-related breathing disorders": {
+        "block_kr": "수면관련 호흡장애",
+        "items": [
+          {
+            "code": "7A40",
+            "title_en": "Central sleep apnoeas",
+            "title_kr": "중추성수면무호흡증",
+            "definition_en": "Central sleep apnoeas are characterised by reduction or cessation of airflow due to absent or reduced respiratory effort. Central apnoea (cessation of airflow) or hypopnea (reduction in airflow) may occur in a cyclical or intermittent fashion. Patients with central sleep apnoea of various etiologies may also exhibit obstructive events, in which case diagnoses of both central sleep apnoea and obstructive sleep apnoea may be given.\n\nNote: A definitive diagnosis requires objective evidence based on polysomnography.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Central neonatal apnoea"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1193320862"
+          },
+          {
+            "code": "7A41",
+            "title_en": "Obstructive sleep apnoea",
+            "title_kr": "폐쇄성수면무호흡증",
+            "definition_en": "Obstructive sleep apnoea is characterised by repetitive episodes of apnoea or hypopnea that are caused by upper airway obstruction occurring during sleep. These events often result in reductions in blood oxygen saturation and are usually terminated by brief arousals from sleep. Excessive sleepiness is a major presenting complaint in many but not all cases. Reports of insomnia, poor sleep quality, and fatigue are also common. Upper airway resistance syndrome shares the same pathophysiology and should be classified here. In adults (> 18 years), obstructive sleep apnoea is diagnosed when the frequency of obstructive events (apnoeas, hypopneas or respiratory event-related arousals) is greater than 15 per hour. The disorder may also be diagnosed when the frequency is greater than five per hour and: a) symptoms attributable to the disorder (e.g., sleepiness or sleep disruption) are present; or b) nocturnal respiratory distress or observed apnoea/habitual snoring are reported; or c) when hypertension, a mood disorder, cognitive dysfunction, coronary artery disease, stroke, congestive heart failure, atrial fibrillation, or type 2 diabetes mellitus are present. In children, the disorder is diagnosed when the frequency of obstructive events is greater than one per hour, accompanied by signs or symptoms related to the breathing disorder.\n\nNote: A definitive diagnosis requires objective evidence based on polysomnography.",
+            "inclusions_en": [],
+            "exclusions_en": [
+              "Obstructive neonatal apnoea"
+            ],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1919233290"
+          },
+          {
+            "code": "7A42",
+            "title_en": "Sleep-related hypoventilation or hypoxemia disorders",
+            "title_kr": "수면관련 저환기 또는 저산소혈증장애",
+            "definition_en": "The primary feature of these disorders is insufficient sleep related ventilation, resulting in abnormally elevated arterial partial pressure of carbon dioxide (PaCO2) during sleep. Sleep-related hypoxemia is diagnosed when overnight monitoring reveals sustained (> 5 minutes) decline in oxygen saturation to ≤ 88% in adults (or ≤ 90% in children) for ≥ 5 minutes.\n\nNote: A definitive diagnosis requires objective evidence based on polysomnography as well as carbon dioxide (CO2) monitoring during sleep (by arterial, end-tidal or transcutaneous measures).",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/224267797"
+          }
+        ]
+      },
+      "Circadian rhythm sleep-wake disorders": {
+        "block_kr": "일주기리듬 수면-각성장애",
+        "items": [
+          {
+            "code": "7A60",
+            "title_en": "Delayed sleep-wake phase disorder",
+            "title_kr": "수면위상지연장애",
+            "definition_en": "Delayed sleep-wake phase disorder is a recurrent pattern of disturbance of the sleep-wake schedule characterised by persistent delay in the major sleep period compared to conventional or desired sleep times. The disorder results in difficulty falling asleep and difficulty awakening at desired or required times. When sleep is allowed to occur on the delayed schedule, it is essentially normal in quality and duration. The symptoms should have persisted for at least several months and result in significant distress or mental, physical, social, occupational or academic impairment.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1996513332"
+          },
+          {
+            "code": "7A61",
+            "title_en": "Advanced sleep-wake phase disorder",
+            "title_kr": "수면위상전진장애",
+            "definition_en": "Advanced sleep-wake phase disorder is a recurrent pattern of disturbance of the sleep-wake schedule characterised by persistent advance (to an earlier time) of the major sleep period compared to conventional or desired sleep times. The disorder results in evening sleepiness (prior to the desired bedtime) and awakening earlier than the desired or required times. When sleep is allowed to occur on the advanced schedule, it is essentially normal in quality and duration. The symptoms should have persisted for at least several months and result in significant distress or mental, physical, social, occupational or academic impairment.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/138101549"
+          },
+          {
+            "code": "7A62",
+            "title_en": "Irregular sleep-wake rhythm disorder",
+            "title_kr": "불규칙 수면-각성리듬장애",
+            "definition_en": "Irregular sleep-wake rhythm disorder is characterised by absence of a clearly-defined cycle of sleep and wake. Sleep becomes distributed in multiple episodes of variable duration throughout the 24-hour period. Patients typically complain of insomnia and/or excessive daytime sleepiness as a result of the condition. The symptoms should have persisted for at least several months and result in significant distress or mental, physical, social, occupational or academic impairment.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/934354997"
+          },
+          {
+            "code": "7A63",
+            "title_en": "Non-24 hour sleep-wake rhythm disorder",
+            "title_kr": "비24시간 수면-각성리듬장애",
+            "definition_en": "Non-24 hour sleep-wake rhythm disorder is characterised by periods of insomnia and/or daytime sleepiness, alternating with periods of relatively normal sleep, due to a lack of entrainment of the circadian clock to the 24-hour environmental cycle. The period length of the circadian/sleep-wake cycle is typically longer than 24 hours. Symptoms occur as the circadian-controlled sleep-wake propensity cycles in and out of phase with the environmental day-night cycle. The disorder is seen most commonly in individuals with complete blindness. The symptoms should have persisted for at least several months and result in significant distress or mental, physical, social, occupational or academic impairment.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/312051047"
+          },
+          {
+            "code": "7A64",
+            "title_en": "Circadian rhythm sleep-wake disorder, shift work type",
+            "title_kr": "일주기리듬 수면-각성장애, 교대근무형",
+            "definition_en": "Circadian rhythm sleep-wake disorder, shift work type is characterised by complaints of insomnia and/or excessive sleepiness that occur as a result of work shifts that overlap with all or a portion of conventional nighttime sleep periods. The disorder is also associated with a reduction in total sleep time. The symptoms should have persisted for at least several months and result in significant distress or mental, physical, social, occupational or academic impairment.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/756278911"
+          },
+          {
+            "code": "7A65",
+            "title_en": "Circadian rhythm sleep-wake disorder, jet lag type",
+            "title_kr": "일주기리듬 수면-각성장애, 시차형",
+            "definition_en": "Circadian rhythm sleep-wake disorder, jet lag type is characterised by a temporary mismatch between the timing of the sleep and wake cycle generated by the endogenous circadian clock and that of the sleep and wake pattern required by transmeridian travel across at least two time zones. Individuals complain of disturbed sleep, sleepiness and fatigue, somatic symptoms (e.g. gastrointestinal distress) or impaired daytime function. The severity and duration of symptoms is dependent on the number of time zones traveled, the ability to sleep while traveling, exposure to appropriate circadian times cues in the new environment, tolerance to circadian misalignment when awake during the biological night, and the direction of the travel. The symptoms result in significant distress or mental, physical, social, occupational or academic impairment.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1378403680"
+          }
+        ]
+      },
+      "Sleep-related movement disorders": {
+        "block_kr": "수면관련 운동장애",
+        "items": [
+          {
+            "code": "7A80",
+            "title_en": "Restless legs syndrome",
+            "title_kr": "하지불안증후군",
+            "definition_en": "Restless legs syndrome is a waking sensorimotor disorder characterised by a complaint of a strong, nearly irresistible urge to move the limbs. This urge to move is often but not always accompanied by other uncomfortable sensations felt deep inside the limbs. Although the legs are most prominently affected, a significant percentage of individuals with Restless legs syndrome describe some arm sensations. The symptoms of Restless legs syndrome are worse at rest, alleviated with movement, and predominant in the evening or night. The symptoms are sufficiently severe to result in significant distress or impairment in personal, family, social, educational, occupational or other important areas of functioning (e.g., due to frequent disruptions in sleep). The vast majority of individuals with Restless legs syndrome also exhibit periodic limb movements during sleep. A separate diagnosis of Periodic limb movement disorder is not warranted in such cases because the limb movements during sleep are considered to be an expected part of Restless legs syndrome.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1254916765"
+          },
+          {
+            "code": "7A81",
+            "title_en": "Periodic limb movement disorder",
+            "title_kr": "주기성사지운동장애",
+            "definition_en": "Periodic limb movement disorder is characterised by periodic episodes of repetitive (> 5/hour in children or > 15/hour in adults), highly stereotyped limb movements that occur during sleep, in conjunction with significant difficulties with sleep initiation or maintenance or fatigue that cannot be accounted for by another primary sleep disorder or other etiology. Specifically, when periodic limb movements are associated with Restless legs syndrome, narcolepsy or REM sleep behaviour disorder, a separate diagnosis of Periodic limb movement disorder is not warranted because the limb movements during sleep are considered an expected part of these disorders. Periodic limb movements occur most frequently in the lower extremities but may be seen in the arms as well. They may be associated with recurrent arousal from sleep, which gives rise to sleep disruption. The symptoms are sufficiently severe to result in significant distress or impairment in personal, family, social, educational, occupational or other important areas of functioning (e.g., due to frequent disruptions in sleep.\n\nNote: A definitive diagnosis requires objective evidence based on polysomnography.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1846518306"
+          },
+          {
+            "code": "7A82",
+            "title_en": "Sleep-related leg cramps",
+            "title_kr": "수면관련 다리경련",
+            "definition_en": "Sleep related leg cramps are painful sensations in the leg or foot associated with sudden, involuntary muscle hardness or tightness, indicating a strong muscle contraction. They typically last from a few seconds to several minutes. The symptoms are sufficiently severe to result in significant distress or impairment in personal, family, social, educational, occupational or other important areas of functioning (e.g., due to frequent disruptions in sleep).",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1009451323"
+          },
+          {
+            "code": "7A83",
+            "title_en": "Sleep-related bruxism",
+            "title_kr": "수면관련 이갈이",
+            "definition_en": "Sleep-related bruxism is characterised by repetitive, rhythmic jaw muscle contractions that occur during sleep. These contractions can take the form of repetitive phasic muscle contractions or isolated sustained jaw clenching (tonic contractions). These contractions during sleep produce tooth-grinding sounds. The symptoms are sufficiently severe to result in significant distress or impairment in personal, family, social, educational, occupational or other important areas of functioning (e.g., due to frequent disruptions in sleep) or significant damage to the teeth.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/60908067"
+          },
+          {
+            "code": "7A84",
+            "title_en": "Sleep-related rhythmic movement disorder",
+            "title_kr": "수면관련 율동적운동장애",
+            "definition_en": "Sleep related rhythmic movement disorder is characterised by repetitive, stereotyped, and rhythmic motor behaviours that involve large muscle groups (e.g., banging head against pillow or mattress, head rolling, body rocking, body rolling). The symptoms are sufficiently severe to result in significant distress or impairment in personal, family, social, educational, occupational or other important areas of functioning (e.g., due to frequent disruptions in sleep) or result in bodily injury (e.g., due to falling out of bed).",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1125130790"
+          },
+          {
+            "code": "7A85",
+            "title_en": "Benign sleep myoclonus of infancy",
+            "title_kr": "영아 양성수면근간대경련",
+            "definition_en": "Benign sleep myoclonus of infancy is characterised by repetitive myoclonic jerks that occur during sleep in neonates and infants. Benign sleep myoclonus of infancy is commonly confused with epilepsy. However, unlike the jerks of myoclonic seizures and myoclonic encephalopathy, the jerks of Benign sleep myoclonus of infancy occur exclusively during sleep. The jerks are often bilateral and massive, typically involving large muscle groups.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/217911841"
+          },
+          {
+            "code": "7A86",
+            "title_en": "Propriospinal myoclonus at sleep onset",
+            "title_kr": "입면기 척수고유근간대경련",
+            "definition_en": "Propriospinal myoclonus at sleep onset consists of sudden myoclonic jerks of the trunk, hips, and knees in a fixed pattern that occur during the transition from wakefulness to sleep and, more rarely, during nighttime awakenings or upon awakening in the morning. The jerks arise mainly in spinally innervated muscles and thereafter propagate to rostral and caudal muscles at a low speed, typical of propriospinal pathways. The movements result in clinically significant difficulty with sleep initiation or maintenance.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/756998404"
+          },
+          {
+            "code": "7A87",
+            "title_en": "Sleep-related movement disorder due to a medical condition",
+            "title_kr": "의학적상태로 인한 수면관련 운동장애",
+            "definition_en": "Sleep-related movement disorder due to a medical condition is characterised by sleep-related movement abnormalities that are directly attributable to an underlying neurological or medical condition. Many medical conditions, particularly diseases of the nervous system, may be associated with movement abnormalities that are evident in wake and sleep. In some cases, the nocturnal manifestations of the movement abnormalities may be apparent before establishment of a firm neurological diagnosis. Once the presence of a medical or neurological condition is clearly established, this diagnosis should only be assigned if the sleep-related aspects of the movement abnormality or its sequelae are the focus of independent clinical attention.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/2113831613"
+          },
+          {
+            "code": "7A88",
+            "title_en": "Sleep-related movement disorder due to a medication or substance",
+            "title_kr": "약물 또는 물질로 인한 수면관련 운동장애",
+            "definition_en": "Sleep-related movement disorder due to a medication or substance is characterised by sleep-related movement abnormalities that are directly attributable to the effect of a medication or substance. Many substances may be associated with movement abnormalities that are evident in wake and sleep. To the extent that the movement abnormality is an expected complication of the substance(s) involved (e.g., tardive dyskinesia or akathisia associated with neuroleptic usage), this diagnosis should only be assigned if the sleep-related aspects of the movement abnormality or its sequelae are the focus of independent clinical attention.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/158240175"
+          }
+        ]
+      },
+      "Parasomnia disorders": {
+        "block_kr": "사건수면(파라솜니아) 장애",
+        "items": [
+          {
+            "code": "7B00",
+            "title_en": "Disorders of arousal from non-REM sleep",
+            "title_kr": "비REM수면 각성장애",
+            "definition_en": "Disorders of arousal from non-REM sleep are characterised by experiences or behaviours such as confusion, ambulation, terror, or extreme autonomic arousal that typically arise as a result of incomplete arousals from deep non-REM (N3) sleep. An exception is sleep-related eating disorder, which has been observed to arise during all stages of non-REM sleep. This group of disorders is also characterised by partial or complete amnesia for the event, inappropriate or absent responsiveness to efforts by others to intervene or redirect the person during the episode, and limited (e.g., a single visual scene) or no associated cognition or dream imagery. The experiences or behaviours are sufficiently severe to result in significant distress or significant impairment in personal, family, social, educational, occupational or other important areas of functioning or significant risk of injury to the individual or to others (e.g., thrashing or striking out in response to efforts to restrain the individual).",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/883900763"
+          },
+          {
+            "code": "7B01",
+            "title_en": "Parasomnias related to REM sleep",
+            "title_kr": "REM수면관련 사건수면",
+            "definition_en": "Parasomnias related to REM (rapid eye movement) sleep are characterised by experiences or behaviours such as vocalization or complex motor behaviours, sleep paralysis, or nightmares that are associated with REM sleep. The experiences are sufficiently severe to result in significant distress or significant impairment in personal, family, social, educational, occupational or other important areas of functioning or significant risk of injury to the individual or to others.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/1264934516"
+          },
+          {
+            "code": "7B02",
+            "title_en": "Other parasomnias",
+            "title_kr": "기타 사건수면",
+            "definition_en": "Other parasomnias include Hypnogogic exploding head syndrome, Sleep-related hallucinations, and abnormal sleep related complex movements, behaviours, emotions, perceptions, dreams, or autonomic nervous system activity related to a medical condition or due to a medication or substance. The experiences are sufficiently severe to result in significant distress or significant impairment in personal, family, social, educational, occupational or other important areas of functioning or significant risk of injury to the individual or to others.",
+            "inclusions_en": [],
+            "exclusions_en": [],
+            "uri": "http://id.who.int/icd/release/11/2024-01/mms/192130563"
+          }
+        ]
+      }
+    }
+  }
+}

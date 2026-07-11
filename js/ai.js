@@ -107,8 +107,19 @@ function formatDiagnosisDictionary(diagnoses) {
   );
 }
 
-function buildSystemPrompt(dictionaryText) {
-  return [
+// 후속질문 섹션을 UI가 파싱할 수 있도록 마커 문자열을 고정해둔다.
+const FOLLOWUP_MARKER = '### 추가확인질문';
+const FOLLOWUP_NONE_TEXT = '(추가 질문 없음)';
+
+// 실제 임상가의 가설연역적 추론(hypothetico-deductive reasoning) 단계를 그대로
+// 프롬프트 구조로 반영: 단서 정리 → 소수의 유력 가설 생성 → 확인 불가능한 항목
+// 식별(지속기간·배제기준 등, 정적 체크리스트로는 못 채우는 부분) → 후속 질문 →
+// (후속 답변이 있다면) 가설 재평가 → 근거를 명시한 최종 후보 제시.
+// 참고: Elstein & Schwarz(2002) 가설연역 모델, Google AMIE(대화형으로 되물어
+// 병력을 채우는 방식), AegisDx(안전지향 가설연역 프레임워크 — 넓은 감별 후
+// 소수로 압축 + 위험징후 우선 스크리닝).
+function buildSystemPrompt(dictionaryText, isFollowUp) {
+  const lines = [
     '당신은 정신건강 임상 스크리닝을 보조하는 한국어 도구입니다.',
     '아래 "진단 기준 사전"은 DSM-5-TR의 개념을 참고하여 재서술한 체크리스트 데이터이며,',
     '당신이 근거로 삼을 수 있는 것은 이 사전에 적힌 항목뿐입니다. 사전에 없는 진단명이나',
@@ -118,15 +129,47 @@ function buildSystemPrompt(dictionaryText) {
     dictionaryText,
     '=== 사전 끝 ===',
     '',
-    '위 사전을 참고하여, 아래 내담자 소견을 분석하세요.',
-    '가능성이 있는 진단 후보를 최대 5개까지, 반드시 사전에 있는 이름으로만 한국어로 제시하세요.',
-    '각 후보마다 사전의 어떤 기준 항목과 소견의 어떤 표현이 근거가 되었는지 함께 설명하세요.',
-    '사전의 항목들과 뚜렷이 겹치는 근거가 없다면 "뚜렷이 부합하는 후보 없음"이라고 답하세요.',
+    '실제 임상가처럼 다음 사고 과정을 거쳐 분석하세요. 사전 항목을 단순히 소견과',
+    '겹치는 대로 전부 나열하지 말고, 아래 단계를 거쳐 소수로 압축하세요.',
+    '',
+    '1) 소견에서 확인된 핵심 증상을 짧게 정리하세요.',
+    '2) 사전 후보 중 가장 유력한 가설을 최대 5개까지만 선정하세요 (전체 나열 금지).',
+  ];
+
+  if (!isFollowUp) {
+    lines.push(
+      '3) 각 가설마다, 사전 기준 항목 중 "이 소견 텍스트만으로는 확인할 수 없는 항목"',
+      '   (증상 지속기간, 배제기준, 심각도·기능손상 정도 등)이 있는지 짚어내세요.',
+      '4) 확인이 필요한 항목이 있다면, 상담자에게 되물을 구체적 질문을 만들어',
+      '   반드시 아래 형식 그대로 맨 마지막 별도 섹션에 모으세요:',
+      '',
+      FOLLOWUP_MARKER,
+      '1. (질문)',
+      '2. (질문)',
+      '확인할 필요가 없다면 그 섹션에 "' + FOLLOWUP_NONE_TEXT + '"라고만 쓰세요.',
+      '5) 위 사고 과정을 반영해 현재까지의 최종 후보를 정리하세요 (후속 질문 답변은',
+      '   아직 없는 상태이므로 잠정적 결론임을 밝히세요).',
+    );
+  } else {
+    lines.push(
+      '상담자가 이전 질문에 아래 [추가 확인 답변]으로 응답했습니다. 이를 반영해',
+      '가설별 그럴듯함을 갱신하고 최종 후보를 확정하세요.',
+      '이번에는 ' + FOLLOWUP_MARKER + ' 섹션을 쓰지 말고, 갱신된 최종 결론만 제시하세요.',
+    );
+  }
+
+  lines.push(
+    '',
+    '각 후보마다 사전의 어떤 기준 항목과 소견(및 추가 답변)의 어떤 표현이 근거가',
+    '되었는지, 그리고 왜 다른 후보는 배제했는지 함께 설명하세요.',
+    '사전 항목들과 뚜렷이 겹치는 근거가 없다면 "뚜렷이 부합하는 후보 없음"이라고 답하세요.',
     '반드시 "가능성이 있는 후보"로만 표현하고 확정적으로 단정하지 마세요.',
     '소견에 위기 징후(자살사고, 자해, 급성 정신병적 증상 등)가 보이면 가장 먼저 강조하세요.',
     '마지막 줄에 반드시 다음 문장을 그대로 포함하세요:',
     '"이는 참고용 스크리닝 결과이며 실제 진단이 아닙니다. 자격을 갖춘 임상가의 평가가 반드시 필요합니다."',
-  ].join('\n');
+  );
+
+  return lines.join('\n');
 }
 
 // ---------- Ollama (설치형 로컬 엔진) 연동 ----------
@@ -178,7 +221,9 @@ async function analyzeWithOllama(systemPrompt, noteText) {
         { role: 'user', content: noteText },
       ],
       stream: false,
-      options: { temperature: 0.3, num_predict: 800 },
+      // 가설 생성→확인불가 항목 식별→후속질문 단계가 늘어난 만큼 여유를 둔다.
+      // 1200에서도 최종 결론 직전에 잘리는 경우가 실측되어 1800으로 상향.
+      options: { temperature: 0.3, num_predict: 1800 },
     }),
   });
   if (!res.ok) throw new Error('Ollama 응답 오류 (HTTP ' + res.status + ')');
@@ -237,14 +282,30 @@ export function currentEngine() {
   return ollamaAvailable === true ? 'ollama' : 'browser';
 }
 
-export async function analyzeWithAI(noteText, onProgress) {
+// AI 응답에서 후속질문 섹션을 분리해 UI가 표시할 수 있게 해준다.
+// followUpQuestionsText가 null이면 섹션 자체가 없었던 것(2차 분석 등).
+export function splitFollowUpSection(answerText) {
+  const idx = answerText.indexOf(FOLLOWUP_MARKER);
+  if (idx === -1) return { mainText: answerText, followUpQuestionsText: null };
+
+  const before = answerText.slice(0, idx).trim();
+  const after = answerText.slice(idx + FOLLOWUP_MARKER.length).trim();
+  const hasQuestions = after && after.indexOf(FOLLOWUP_NONE_TEXT) === -1;
+  return { mainText: before, followUpQuestionsText: hasQuestions ? after : null };
+}
+
+export async function analyzeWithAI(noteText, onProgress, followUpAnswerText) {
+  const isFollowUp = !!(followUpAnswerText && followUpAnswerText.trim());
   const relevant = pickRelevantDiagnoses(noteText, MAX_DICT_DIAGNOSES);
   const dictionaryText = formatDiagnosisDictionary(relevant);
-  const systemPrompt = buildSystemPrompt(dictionaryText);
+  const systemPrompt = buildSystemPrompt(dictionaryText, isFollowUp);
+  const userMessage = isFollowUp
+    ? noteText + '\n\n[추가 확인 답변]\n' + followUpAnswerText.trim()
+    : noteText;
 
   // 1순위: PC에 설치된 Ollama (빠름). 없으면 브라우저 내 모델로 폴백.
   if (await detectOllama()) {
-    return cleanModelOutput(await analyzeWithOllama(systemPrompt, noteText));
+    return cleanModelOutput(await analyzeWithOllama(systemPrompt, userMessage));
   }
 
   await ensureModelLoaded(onProgress);
@@ -252,9 +313,9 @@ export async function analyzeWithAI(noteText, onProgress) {
   const result = await wllama.createChatCompletion({
     messages: [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: noteText },
+      { role: 'user', content: userMessage },
     ],
-    max_tokens: 800,
+    max_tokens: 1800,
     temperature: 0.3,
   });
 

@@ -1,4 +1,4 @@
-import { analyzeWithAI, isModelReady, currentEngine } from './ai.js?v=11';
+import { analyzeWithAI, isModelReady, currentEngine, splitFollowUpSection, detectOllama } from './ai.js?v=12';
 
 function formatBytes(n) {
   return (n / (1024 * 1024 * 1024)).toFixed(2) + 'GB';
@@ -42,7 +42,49 @@ document.addEventListener('DOMContentLoaded', function () {
   var resultText = document.getElementById('ai-result-text');
   var copyBtn = document.getElementById('copy-ai-result-btn');
   var emptyHint = document.getElementById('results-empty-hint');
+  var followUpBox = document.getElementById('ai-followup-box');
+  var followUpQuestionsEl = document.getElementById('ai-followup-questions');
+  var followUpAnswerEl = document.getElementById('ai-followup-answer');
+  var followUpSubmitBtn = document.getElementById('ai-followup-submit-btn');
+  var engineInfoBtn = document.getElementById('ai-engine-info-btn');
+  var engineModalOverlay = document.getElementById('ai-engine-modal-overlay');
+  var engineModalClose = document.getElementById('ai-engine-modal-close');
+  var engineCurrentEl = document.getElementById('ai-engine-current');
   if (!btn || !notesInput) return;
+
+  // "AI 엔진 안내" 모달 — 지금 어떤 엔진이 쓰이는지, 더 빠른 엔진을 쓰려면
+  // 무엇을 설치해야 하는지 안내한다 (설치 자체는 웹페이지가 대신 해줄 수 없음).
+  if (engineInfoBtn && engineModalOverlay) {
+    engineInfoBtn.addEventListener('click', async function () {
+      engineModalOverlay.hidden = false;
+      engineCurrentEl.textContent = '현재 상태를 확인하는 중입니다...';
+      var usingOllama = await detectOllama();
+      engineCurrentEl.textContent = usingOllama
+        ? '현재 상태: 2단계(Ollama · qwen3:4b-instruct)가 감지되어 사용 중입니다.'
+        : '현재 상태: 1단계(브라우저 내장 Kanana)가 사용 중입니다. Ollama가 감지되지 않았습니다.';
+    });
+    if (engineModalClose) {
+      engineModalClose.addEventListener('click', function () {
+        engineModalOverlay.hidden = true;
+      });
+    }
+    engineModalOverlay.addEventListener('click', function (e) {
+      if (e.target === engineModalOverlay) engineModalOverlay.hidden = true;
+    });
+  }
+
+  // 후속 질문에 답변을 반영해 재분석할 때 원본 소견 텍스트가 필요해 기억해둔다.
+  var lastNoteText = '';
+
+  function showFollowUp(followUpQuestionsText) {
+    if (!followUpBox || !followUpQuestionsText) {
+      if (followUpBox) followUpBox.hidden = true;
+      return;
+    }
+    followUpQuestionsEl.textContent = followUpQuestionsText;
+    followUpAnswerEl.value = '';
+    followUpBox.hidden = false;
+  }
 
   if (copyBtn) {
     copyBtn.addEventListener('click', function () {
@@ -67,6 +109,9 @@ document.addEventListener('DOMContentLoaded', function () {
       statusEl.textContent = '먼저 위 칸에 내담자 소견을 입력해 주세요.';
       return;
     }
+
+    lastNoteText = noteText;
+    if (followUpBox) followUpBox.hidden = true;
 
     btn.disabled = true;
     btn.classList.add('loading');
@@ -104,7 +149,9 @@ document.addEventListener('DOMContentLoaded', function () {
       statusEl.hidden = true;
       if (emptyHint) emptyHint.hidden = true;
       resultCard.hidden = false;
-      resultText.textContent = answer;
+      var split = splitFollowUpSection(answer);
+      resultText.textContent = split.mainText;
+      showFollowUp(split.followUpQuestionsText);
       var badge = document.getElementById('ai-mode-badge');
       if (badge) {
         badge.textContent = currentEngine() === 'ollama'
@@ -122,4 +169,39 @@ document.addEventListener('DOMContentLoaded', function () {
       btn.classList.remove('loading');
     }
   });
+
+  if (followUpSubmitBtn) {
+    followUpSubmitBtn.addEventListener('click', async function () {
+      var answerText = followUpAnswerEl.value.trim();
+      if (!answerText || !lastNoteText) return;
+
+      followUpSubmitBtn.disabled = true;
+      followUpSubmitBtn.classList.add('loading');
+      statusEl.hidden = true;
+
+      try {
+        var answer = await analyzeWithAI(lastNoteText, null, answerText);
+        var split = splitFollowUpSection(answer);
+        resultText.textContent = split.mainText;
+        // 2차 분석 프롬프트는 후속질문 섹션을 다시 만들지 않도록 지시했으므로
+        // 정상적으로는 항상 숨겨지지만, 혹시 모델이 재차 질문을 붙였다면 보여준다.
+        showFollowUp(split.followUpQuestionsText);
+        var badge = document.getElementById('ai-mode-badge');
+        if (badge) {
+          badge.textContent = currentEngine() === 'ollama'
+            ? '로컬 엔진 (Ollama · Qwen3-4B)'
+            : '브라우저 내 로컬 AI (Kanana)';
+        }
+        resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        playDing();
+      } catch (err) {
+        statusEl.hidden = false;
+        statusEl.textContent =
+          'AI 재분석 중 오류가 발생했습니다: ' + (err && err.message ? err.message : String(err));
+      } finally {
+        followUpSubmitBtn.disabled = false;
+        followUpSubmitBtn.classList.remove('loading');
+      }
+    });
+  }
 });

@@ -1,0 +1,169 @@
+/* ICD-11 분류 지도 페이지 전용 스타일 */
+
+.icd11-main{
+  max-width:960px;
+  margin:0 auto;
+  padding:32px 20px 60px;
+}
+.icd11-inner{
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+}
+
+.icd11-intro p{
+  font-size:14px;
+  line-height:1.7;
+  color:var(--gray-700);
+  margin:0 0 10px;
+}
+.icd11-caveat{
+  background:var(--primary-50);
+  border:1px solid var(--primary-100);
+  border-radius:var(--radius-sm);
+  padding:10px 12px;
+  font-size:13px;
+}
+.icd11-controls{
+  display:flex;
+  gap:8px;
+  margin-top:12px;
+}
+
+.icd11-tree{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.icd11-loading,.icd11-error{
+  font-size:14px;
+  color:var(--gray-500);
+  padding:20px;
+}
+
+/* 챕터(최상위) */
+details.icd11-chapter{
+  background:var(--white);
+  border:1px solid var(--gray-200);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-md);
+  padding:6px 20px 14px;
+}
+details.icd11-chapter > summary{
+  font-size:17px;
+  font-weight:700;
+  color:var(--primary);
+  padding:14px 0;
+  cursor:pointer;
+  list-style:none;
+}
+details.icd11-chapter > summary::-webkit-details-marker{ display:none; }
+details.icd11-chapter > summary::before{
+  content:'▸';
+  display:inline-block;
+  margin-right:8px;
+  transition:transform .15s ease;
+  color:var(--primary);
+}
+details.icd11-chapter[open] > summary::before{ transform:rotate(90deg); }
+
+.icd11-blocks{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  padding-left:14px;
+  border-left:2px solid var(--primary-100);
+  margin-left:6px;
+}
+
+/* 대분류(block) */
+details.icd11-block{
+  background:var(--gray-100);
+  border:1px solid var(--gray-200);
+  border-radius:var(--radius-sm);
+  padding:2px 14px;
+}
+details.icd11-block > summary{
+  font-size:14.5px;
+  font-weight:600;
+  color:var(--gray-700);
+  padding:10px 0;
+  cursor:pointer;
+  list-style:none;
+}
+details.icd11-block > summary::-webkit-details-marker{ display:none; }
+details.icd11-block > summary::before{
+  content:'▸';
+  display:inline-block;
+  margin-right:6px;
+  transition:transform .15s ease;
+  color:var(--gray-500);
+  font-size:12px;
+}
+details.icd11-block[open] > summary::before{ transform:rotate(90deg); }
+
+.icd11-items{
+  list-style:none;
+  margin:0 0 10px;
+  padding-left:14px;
+  border-left:2px solid var(--gray-200);
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+/* 진단명(leaf) */
+details.icd11-item{
+  background:var(--white);
+  border:1px solid var(--gray-200);
+  border-radius:var(--radius-sm);
+  padding:0 12px;
+}
+details.icd11-item > summary{
+  font-size:13.5px;
+  color:var(--gray-700);
+  padding:8px 0;
+  cursor:pointer;
+  list-style:none;
+}
+details.icd11-item > summary::-webkit-details-marker{ display:none; }
+details.icd11-item > summary::before{
+  content:'+';
+  display:inline-block;
+  width:14px;
+  margin-right:4px;
+  color:var(--primary);
+  font-weight:700;
+}
+details.icd11-item[open] > summary::before{ content:'−'; }
+
+.icd11-code{
+  display:inline-block;
+  font-family:'SFMono-Regular', Consolas, monospace;
+  font-size:11.5px;
+  color:var(--primary);
+  background:var(--primary-50);
+  border-radius:4px;
+  padding:1px 6px;
+  margin-right:4px;
+}
+.icd11-en{
+  color:var(--gray-500);
+  font-size:12px;
+  font-style:italic;
+}
+.icd11-count{
+  color:var(--gray-500);
+  font-size:12px;
+  font-weight:400;
+  font-style:normal;
+}
+
+.icd11-detail{
+  padding:2px 4px 12px 18px;
+  font-size:12.5px;
+  line-height:1.6;
+  color:var(--gray-700);
+}
+.icd11-def-en{ margin:0 0 6px; }
+.icd11-incl,.icd11-excl{ margin:0 0 4px; color:var(--gray-500); }
