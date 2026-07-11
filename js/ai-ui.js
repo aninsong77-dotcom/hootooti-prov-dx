@@ -77,7 +77,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     try {
       var answer = await analyzeWithAI(noteText, function (loaded, total) {
-        if (isModelReady() || !total || loaded >= total) return;
+        if (isModelReady() || !total) return;
+        if (loaded >= total) {
+          // 다운로드 완료 후 적재/분석 단계 — 진행률 신호가 더 안 오므로 문구를 전환해둔다.
+          if (sawRealDownload) {
+            statusEl.hidden = false;
+            statusEl.textContent = '다운로드 완료 — 모델을 준비하고 분석 중입니다 (수 분 걸릴 수 있습니다)...';
+          }
+          return;
+        }
         // 실제로 바이트 단위로 늘어나는 경우만 "다운로드 중"으로 표시.
         // (캐시에서 불러올 때는 loaded===total로 즉시 호출되어 여기로 안 옴 — 버튼 스피너만으로 충분)
         if (!sawRealDownload) {
