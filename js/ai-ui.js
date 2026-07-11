@@ -4,6 +4,13 @@ function formatBytes(n) {
   return (n / (1024 * 1024 * 1024)).toFixed(2) + 'GB';
 }
 
+function formatRemaining(seconds) {
+  if (!isFinite(seconds) || seconds <= 0) return '';
+  if (seconds < 60) return ' · 예상 남은 시간 약 ' + Math.ceil(seconds) + '초';
+  var min = Math.round(seconds / 60);
+  return ' · 예상 남은 시간 약 ' + min + '분';
+}
+
 document.addEventListener('DOMContentLoaded', function () {
   var btn = document.getElementById('ai-analyze-btn');
   var notesInput = document.getElementById('notes-input');
@@ -39,25 +46,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
     btn.disabled = true;
     statusEl.hidden = false;
-    statusEl.textContent = isModelReady()
-      ? 'AI가 분석 중입니다...'
-      : 'Kanana 모델을 준비하는 중입니다...';
+    statusEl.textContent = isModelReady() ? '생각 중...' : '생각 중... (최초 1회 모델 준비 필요)';
 
     var sawRealDownload = false;
+    var downloadStartedAt = 0;
 
     try {
       var answer = await analyzeWithAI(noteText, function (loaded, total) {
         if (isModelReady() || !total) return;
         if (loaded < total) {
           // 실제로 바이트 단위로 늘어나는 경우만 "다운로드"로 표시.
-          sawRealDownload = true;
+          if (!sawRealDownload) {
+            sawRealDownload = true;
+            downloadStartedAt = Date.now();
+          }
+          var elapsedSec = (Date.now() - downloadStartedAt) / 1000;
+          var speed = elapsedSec > 1 ? loaded / elapsedSec : 0;
+          var remainingSec = speed > 0 ? (total - loaded) / speed : NaN;
           statusEl.textContent =
-            '모델 다운로드 중 (최초 1회, 약 1.4GB)... ' + formatBytes(loaded) + ' / ' + formatBytes(total);
-        } else if (sawRealDownload) {
-          statusEl.textContent = '모델을 초기화하는 중입니다...';
+            '모델 다운로드 중 (최초 1회, 약 1.4GB)... ' + formatBytes(loaded) + ' / ' + formatBytes(total) +
+            formatRemaining(remainingSec);
         } else {
-          // 캐시에 이미 있는 경우 진행률 콜백이 곧바로 100%로 옴 — 다운로드가 아니라 로딩임.
-          statusEl.textContent = '캐시된 모델을 불러오는 중입니다 (다운로드 없음)...';
+          statusEl.textContent = '생각 중...';
         }
       });
 
