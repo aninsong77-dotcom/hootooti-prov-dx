@@ -55,21 +55,6 @@
 </div>
 
 <section class="assist-section">
-  <div class="assist-card">
-    <h2>내담자 증상 소견</h2>
-    <p class="assist-desc">관찰된 증상, 행동, 진술 등을 자유롭게 서술해 주세요.</p>
-    <textarea id="notes-input" class="notes-textarea" rows="8" placeholder="예: 최근 2주간 잠을 잘 못 자고 식욕이 크게 줄었다고 함. 매사에 흥미가 없고, 죽고 싶다는 말을 자주 함. 집중이 안 되고 스스로를 자책하는 말을 많이 함..."></textarea>
-    <div class="notes-actions">
-      <button class="btn btn-primary" id="analyze-btn">가진단 받기</button>
-      <button class="btn" id="ai-analyze-btn">AI 분석 (Kanana)</button>
-      <button class="btn" id="clear-notes-btn">지우기</button>
-      <button class="btn" id="save-result-btn">결과 저장 (.txt)</button>
-      <span class="notes-hint">입력한 소견은 이 브라우저 화면에만 남고 저장·전송되지 않습니다.</span>
-      <span class="footer-copyright notes-copyright">© 2026. An In-song. Distributed for free.<br>(2026. 안인성. 무료 배포)</span>
-    </div>
-    <div class="ai-status" id="ai-status" hidden></div>
-  </div>
-
   <div class="candidates-card" id="ai-result-card" hidden>
     <div class="candidates-head">
       <h2>AI 분석 결과 (Kanana)</h2>
@@ -95,6 +80,21 @@
       문맥·부정문·돌려 말하는 표현은 이해하지 못하니 참고만 하세요. 입력한 내용은 서버로 전송되지 않고
       이 브라우저 화면에만 남으며 새로고침 시 사라집니다.
     </p>
+  </div>
+
+  <div class="assist-card">
+    <h2>내담자 증상 소견</h2>
+    <p class="assist-desc">관찰된 증상, 행동, 진술 등을 자유롭게 서술해 주세요.</p>
+    <textarea id="notes-input" class="notes-textarea" rows="8" placeholder="예: 최근 2주간 잠을 잘 못 자고 식욕이 크게 줄었다고 함. 매사에 흥미가 없고, 죽고 싶다는 말을 자주 함. 집중이 안 되고 스스로를 자책하는 말을 많이 함..."></textarea>
+    <div class="notes-actions">
+      <button class="btn btn-primary" id="analyze-btn">가진단 받기</button>
+      <button class="btn" id="ai-analyze-btn">AI 분석 (Kanana)</button>
+      <button class="btn" id="clear-notes-btn">지우기</button>
+      <button class="btn" id="save-result-btn">결과 저장 (.txt)</button>
+      <span class="notes-hint">입력한 소견은 이 브라우저 화면에만 남고 저장·전송되지 않습니다.</span>
+      <span class="footer-copyright notes-copyright">© 2026. An In-song. Distributed for free.<br>(2026. 안인성. 무료 배포)</span>
+    </div>
+    <div class="ai-status" id="ai-status" hidden></div>
   </div>
 </section>
 
