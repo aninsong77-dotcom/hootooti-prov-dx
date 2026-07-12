@@ -11,6 +11,15 @@
    AI는 js/data.js의 DSM-5-TR 기반 진단 기준("사전")과 무관하게 자기 지식만으로
    답하면 근거가 부실해지므로, 소견과 겹치는 진단 후보를 먼저 키워드로 추려
    그 기준 항목을 프롬프트에 함께 제공(그라운딩)한다.
+
+   Ollama(설치형 로컬 엔진) 쪽은 더 이상 모델 1개로 고정되지 않는다.
+   OLLAMA_MODELS 레지스트리에 "생각과정 없음/있음" 두 모델을 기술해두고,
+   setSelectedModelId()로 선택 상태를 바꿀 수 있다(engine-selector 트랙
+   TICKET-1). 선택 UI 자체는 이후 티켓(TICKET-5)에서 붙는다.
+
+   analyzeWithAI()는 "소견 1개 + 후속답변 1개" 2-메시지 고정 구조에서
+   대화 배열(conversation) 전체를 받는 구조로 전환됐다(symptom-chat-interview
+   트랙 TICKET-1). 요약 압축 없이 전체 히스토리를 매번 그대로 모델에 전달한다.
    ========================================================================== */
 
 import { Wllama } from 'https://cdn.jsdelivr.net/npm/@wllama/wllama@3.5.1/esm/index.js';
@@ -110,6 +119,11 @@ function formatDiagnosisDictionary(diagnoses) {
 // 후속질문 섹션을 UI가 파싱할 수 있도록 마커 문자열을 고정해둔다.
 const FOLLOWUP_MARKER = '### 추가확인질문';
 const FOLLOWUP_NONE_TEXT = '(추가 질문 없음)';
+// 결과 패널(대화창 옆, "유력한 진단")이 매 턴 응답에서 최종 후보 부분만
+// 깔끔하게 뽑아 보여줄 수 있도록 별도 마커로 감싼다. 항상 FOLLOWUP_MARKER
+// 보다 앞에 오도록 프롬프트 순서를 고정해, extractFinalCandidates()가
+// "이 마커부터 FOLLOWUP_MARKER(있다면) 전까지"로 일관되게 잘라낼 수 있다.
+const FINAL_CANDIDATES_MARKER = '### 최종 후보';
 
 // 실제 임상가의 가설연역적 추론(hypothetico-deductive reasoning) 단계를 그대로
 // 프롬프트 구조로 반영: 단서 정리 → 소수의 유력 가설 생성 → 확인 불가능한 항목
@@ -118,7 +132,7 @@ const FOLLOWUP_NONE_TEXT = '(추가 질문 없음)';
 // 참고: Elstein & Schwarz(2002) 가설연역 모델, Google AMIE(대화형으로 되물어
 // 병력을 채우는 방식), AegisDx(안전지향 가설연역 프레임워크 — 넓은 감별 후
 // 소수로 압축 + 위험징후 우선 스크리닝).
-function buildSystemPrompt(dictionaryText, isFollowUp) {
+function buildSystemPrompt(dictionaryText, forceConclusion) {
   const lines = [
     '당신은 정신건강 임상 스크리닝을 보조하는 한국어 도구입니다.',
     '아래 "진단 기준 사전"은 DSM-5-TR의 개념을 참고하여 재서술한 체크리스트 데이터이며,',
@@ -129,45 +143,62 @@ function buildSystemPrompt(dictionaryText, isFollowUp) {
     dictionaryText,
     '=== 사전 끝 ===',
     '',
+    '이 대화는 상담자와 당신이 여러 차례 주고받는 채팅입니다. 이전 turn들의 소견·질문·답변이',
+    '모두 대화 기록으로 이미 주어져 있으니, 그 전체 맥락을 반영해 분석하세요.',
+    '',
     '실제 임상가처럼 다음 사고 과정을 거쳐 분석하세요. 사전 항목을 단순히 소견과',
     '겹치는 대로 전부 나열하지 말고, 아래 단계를 거쳐 소수로 압축하세요.',
     '',
-    '1) 소견에서 확인된 핵심 증상을 짧게 정리하세요.',
+    '1) 지금까지의 대화에서 확인된 핵심 증상을 짧게 정리하세요.',
     '2) 사전 후보 중 가장 유력한 가설을 최대 5개까지만 선정하세요 (전체 나열 금지).',
   ];
 
-  if (!isFollowUp) {
+  if (!forceConclusion) {
     lines.push(
-      '3) 각 가설마다, 사전 기준 항목 중 "이 소견 텍스트만으로는 확인할 수 없는 항목"',
+      '3) 각 가설마다, 사전 기준 항목 중 "지금까지의 대화만으로는 확인할 수 없는 항목"',
       '   (증상 지속기간, 배제기준, 심각도·기능손상 정도 등)이 있는지 짚어내세요.',
-      '4) 확인이 필요한 항목이 있다면, 상담자에게 되물을 구체적 질문을 만들어',
-      '   반드시 아래 형식 그대로 맨 마지막 별도 섹션에 모으세요:',
-      '',
-      FOLLOWUP_MARKER,
-      '1. (질문)',
-      '2. (질문)',
-      '확인할 필요가 없다면 그 섹션에 "' + FOLLOWUP_NONE_TEXT + '"라고만 쓰세요.',
-      '5) 위 사고 과정을 반영해 현재까지의 최종 후보를 정리하세요 (후속 질문 답변은',
-      '   아직 없는 상태이므로 잠정적 결론임을 밝히세요).',
-    );
-  } else {
-    lines.push(
-      '상담자가 이전 질문에 아래 [추가 확인 답변]으로 응답했습니다. 이를 반영해',
-      '가설별 그럴듯함을 갱신하고 최종 후보를 확정하세요.',
-      '이번에는 ' + FOLLOWUP_MARKER + ' 섹션을 쓰지 말고, 갱신된 최종 결론만 제시하세요.',
     );
   }
 
+  // 최종 후보 섹션 — 결과 패널이 이 섹션만 깔끔하게 뽑아 보여주므로, 항상
+  // 이 섹션 하나에 "지금 시점 결론"에 필요한 내용을 전부 담는다(근거·배제
+  // 사유·위기 징후 강조·필수 고지 문장까지). FOLLOWUP_MARKER보다 먼저 오게 해서
+  // extractFinalCandidates()가 두 마커 사이만 잘라내면 되도록 순서를 고정한다.
   lines.push(
+    '4) 위 사고 과정을 반영한 현재 시점의 최종 후보를 아래 형식 그대로 별도 섹션에',
+    '   정리하세요(확인할 항목이 남아 있다면 잠정적 결론임을 밝히고, 남은 게',
+    '   없다면 그 자체가 결론입니다):',
     '',
+    FINAL_CANDIDATES_MARKER,
     '각 후보마다 사전의 어떤 기준 항목과 소견(및 추가 답변)의 어떤 표현이 근거가',
-    '되었는지, 그리고 왜 다른 후보는 배제했는지 함께 설명하세요.',
+    '되었는지, 그리고 왜 다른 후보는 배제했는지 설명하세요.',
     '사전 항목들과 뚜렷이 겹치는 근거가 없다면 "뚜렷이 부합하는 후보 없음"이라고 답하세요.',
     '반드시 "가능성이 있는 후보"로만 표현하고 확정적으로 단정하지 마세요.',
     '소견에 위기 징후(자살사고, 자해, 급성 정신병적 증상 등)가 보이면 가장 먼저 강조하세요.',
     '마지막 줄에 반드시 다음 문장을 그대로 포함하세요:',
     '"이는 참고용 스크리닝 결과이며 실제 진단이 아닙니다. 자격을 갖춘 임상가의 평가가 반드시 필요합니다."',
   );
+
+  if (!forceConclusion) {
+    lines.push(
+      '5) 확인이 필요한 항목이 있다면, 상담자에게 되물을 구체적 질문을 만들어',
+      '   바로 위 최종 후보 섹션 다음에, 반드시 아래 형식 그대로 별도 섹션으로 이어 붙이세요:',
+      '',
+      FOLLOWUP_MARKER,
+      '1. (질문)',
+      '2. (질문)',
+      '확인할 필요가 없다고 판단되면 그 섹션에 "' + FOLLOWUP_NONE_TEXT + '"라고만 쓰세요.',
+      '   상담자가 (이전 turn에서) "그만 물어봐도 돼요", "이 정도면 충분해요" 같은 자연어로',
+      '   대화 종료 의사를 표현했다면, 더 이상 묻지 말고 이 섹션에 "' + FOLLOWUP_NONE_TEXT + '"만 쓰세요.',
+    );
+  } else {
+    lines.push(
+      '',
+      '상담자가 "이제 충분히 확인됐다"고 판단해 대화를 종료했습니다. 지금까지의',
+      '전체 대화 내용을 반영해 위 최종 후보 섹션의 내용을 갱신·확정하세요.',
+      '이번에는 ' + FOLLOWUP_MARKER + ' 섹션을 쓰지 마세요.',
+    );
+  }
 
   return lines.join('\n');
 }
@@ -177,53 +208,193 @@ function buildSystemPrompt(dictionaryText, isFollowUp) {
 // 훨씬 빠르고(네이티브 실행) 더 큰 모델을 쓸 수 있다. 소견은 localhost로만
 // 전송되므로 개인정보는 동일하게 PC 밖으로 나가지 않는다.
 const OLLAMA_URL = 'http://localhost:11434';
+
+// 모델 레지스트리 — Ollama로 돌릴 수 있는 모델과 그 파라미터를 한곳에 모아둔다.
+// 기존에는 OLLAMA_MODEL 단일 상수(qwen3:4b-instruct 고정)였으나, 생각과정
+// 있음/없음 두 모델 중 사용자가 고를 수 있어야 해서 레지스트리로 승격했다.
 // qwen3:4b(생각모드 버전)는 최종 답을 내기 전 영어로 아주 길게 "생각"하다가
-// 토큰 한도를 다 써버려 실사용이 어려움 — 바로 한국어 최종 답만 내는
-// instruct(생각모드 없는) 버전을 쓴다.
-const OLLAMA_MODEL = 'qwen3:4b-instruct';
+// 토큰 한도를 다 써버려 실사용이 어려웠으므로, 생각모드 버전은 numPredict를
+// 넉넉히 잡는다(아래 TODO 참고 — 실측 전 잠정값).
+const OLLAMA_MODELS = {
+  'qwen3:4b-instruct': {
+    id: 'qwen3:4b-instruct',
+    label: '생각과정 없음 (현재 기본)',
+    thinking: false,
+    tooltip: '',
+    // 기존 하드코딩값(1800)을 그대로 보존 — 회귀 없음 보장.
+    numPredict: 1800,
+    // ollama.com/library/qwen3:4b-instruct 공식 페이지 확인(2.5GB).
+    approxSizeGB: 2.5,
+  },
+  'qwen3:4b-thinking': {
+    id: 'qwen3:4b-thinking',
+    label: '생각과정 있음 (qwen3:4b-thinking)',
+    thinking: true,
+    tooltip: '',
+    // TODO(실측 검증 필요, TICKET-3에서도 미해소): 이번 TICKET-3 구현
+    // 세션에도 실제 Ollama 서버에 접근 가능한 환경이 없어 pullOllamaModel()로
+    // 직접 qwen3:4b-thinking을 받아 검증하지 못했다. requirements.md §3.5가
+    // 제시한 잠정 범위(4000~6000) 중간값을 그대로 유지한다 — 실제 pull·분석
+    // 요청을 실행할 수 있는 환경에서 값을 확정해야 한다(00-overview.md §5
+    // 위험#7).
+    numPredict: 5000,
+    // ollama.com/library/qwen3:4b-thinking 공식 페이지 확인(2.5GB).
+    approxSizeGB: 2.5,
+  },
+};
+const DEFAULT_OLLAMA_MODEL_ID = 'qwen3:4b-instruct';
 
-let ollamaAvailable = null; // null = 미확인, true/false = 확인됨
+// 현재 선택된 모델. 기본값은 기존 동작과 동일한 qwen3:4b-instruct.
+let selectedOllamaModelId = DEFAULT_OLLAMA_MODEL_ID;
 
-export async function detectOllama() {
-  if (ollamaAvailable !== null) return ollamaAvailable;
+export function getSelectedModelId() {
+  return selectedOllamaModelId;
+}
+
+export function setSelectedModelId(modelId) {
+  if (!OLLAMA_MODELS[modelId]) throw new Error('알 수 없는 모델: ' + modelId);
+  selectedOllamaModelId = modelId;
+}
+
+// TICKET-5가 옵션 목록 렌더링에 사용.
+export function listOllamaModels() {
+  return Object.values(OLLAMA_MODELS);
+}
+
+// TICKET-2: 기존 단일 boolean 캐시(ollamaAvailable)를 "연결 가능 여부"와
+// "설치된 모델 목록"으로 분리한다. 이유 — 두 모델(생각과정 없음/있음)을
+// 다루게 되면서 "Ollama 자체가 켜져 있는가"와 "지금 선택한 모델이 설치돼
+// 있는가"가 서로 다른 실패 사유이기 때문(연결 실패인데 "모델 없음"으로
+// 잘못 안내하면 사용자가 이미 설치된 모델을 재설치하는 등 헛수고를 함).
+let ollamaConnectionState = null; // null=미확인, 'connected'|'unreachable'
+let installedModelNames = null;   // string[] | null(미확인)
+let lastOllamaError = null;       // { stage, message, raw, timestamp } | null
+
+// forceRefresh: 캐시를 무시하고 강제로 재검사할 때 true로 넘긴다(기본
+// falsy). 인자를 안 넘기던 기존 호출부(js/ai-ui.js:61, 아래 analyzeWithAI()
+// 내부)를 깨지 않기 위한 하위 호환 목적 — 인자 없이 호출하면 기존과 동일하게
+// 캐시된 값을 즉시 반환한다.
+export async function detectOllama(forceRefresh) {
+  if (!forceRefresh && ollamaConnectionState !== null) {
+    return ollamaConnectionState === 'connected' && isModelInstalled(selectedOllamaModelId);
+  }
+
+  let res;
   try {
     // 첫 방문 시 "PC의 사설망(localhost) 접근 허용" 권한 창이 뜨는데, 사용자가
     // 그 창을 확인하고 누르는 시간까지 감안해 넉넉하게 잡는다 (너무 짧으면
     // 권한 창이 떠 있는 동안 자체적으로 타임아웃돼 버려 항상 실패로 오판했었음).
-    const res = await fetch(OLLAMA_URL + '/api/tags', { signal: AbortSignal.timeout(15000) });
-    if (!res.ok) throw new Error('bad status');
-    const data = await res.json();
-    const models = (data.models || []).map((m) => m.name);
-    ollamaAvailable = models.some((n) => n === OLLAMA_MODEL || n.startsWith(OLLAMA_MODEL));
+    res = await fetch(OLLAMA_URL + '/api/tags', { signal: AbortSignal.timeout(15000) });
   } catch (e) {
-    ollamaAvailable = false;
+    // fetch 자체가 실패 — 네트워크 연결 불가·타임아웃·CORS 등. "모델이
+    // 없다"가 아니라 "연결 자체가 안 됐다"이므로 stage를 구분해 보존한다.
+    ollamaConnectionState = 'unreachable';
+    installedModelNames = [];
+    lastOllamaError = { stage: 'fetch', message: e && e.message, raw: String(e), timestamp: Date.now() };
+    return false;
   }
-  return ollamaAvailable;
+
+  if (!res.ok) {
+    // 연결은 됐지만 서버가 비정상 응답(HTTP 오류)을 준 경우.
+    ollamaConnectionState = 'unreachable';
+    installedModelNames = [];
+    lastOllamaError = { stage: 'bad-status', message: 'HTTP ' + res.status, raw: 'HTTP ' + res.status, timestamp: Date.now() };
+    return false;
+  }
+
+  try {
+    const data = await res.json();
+    installedModelNames = (data.models || []).map((m) => m.name);
+    ollamaConnectionState = 'connected';
+    lastOllamaError = null;
+    return isModelInstalled(selectedOllamaModelId);
+  } catch (e) {
+    // 연결·상태코드는 정상이었으나 응답 본문 JSON 파싱이 실패한 경우.
+    ollamaConnectionState = 'unreachable';
+    installedModelNames = [];
+    lastOllamaError = { stage: 'parse', message: e && e.message, raw: String(e), timestamp: Date.now() };
+    return false;
+  }
+}
+
+// TICKET-6(실패 안내 배너)이 소비할 실패 분류 조회용 export.
+export function getOllamaConnectionState() {
+  return ollamaConnectionState; // null | 'connected' | 'unreachable'
+}
+
+export function getLastOllamaError() {
+  return lastOllamaError; // { stage, message, raw, timestamp } | null — 디버그 토글이 그대로 노출
+}
+
+// TICKET-5(설치됨 표시)·detectOllama() 내부가 함께 쓰는 판별 함수.
+export function isModelInstalled(modelId) {
+  return !!(installedModelNames && installedModelNames.some((n) => n === modelId || n.startsWith(modelId)));
+}
+
+export function getInstalledModelNames() {
+  return installedModelNames || [];
 }
 
 // 모델 내부 제어 토큰(<|eot_id|>, <|im_end|> 등)이나 <think> 블록이 응답에
 // 섞여 나오는 경우가 있어 사용자에게 보여주기 전에 걸러낸다.
+//
+// 00-overview.md §5 위험#9: 토큰 한도(num_predict)에 걸려 응답이 <think>
+// 도중 잘리면 </think>가 끝내 나오지 않아 아래 정규식이 매치되지 않고,
+// 길게 이어지는 내부 생각 과정(주로 영어) 원문이 그대로 사용자에게
+// 노출되어 버린다. <think>가 정규식 제거 후에도 남아있다면 곧 미종결
+// 이라는 뜻이므로, 그 지점부터 뒤를 안내 문구로 치환해 원문 노출을 막는다.
 function cleanModelOutput(text) {
-  return String(text)
-    .replace(/<think>[\s\S]*?<\/think>/g, '')
+  let out = String(text).replace(/<think>[\s\S]*?<\/think>/g, '');
+
+  const openIdx = out.indexOf('<think>');
+  if (openIdx !== -1) {
+    out = out.slice(0, openIdx).trim();
+    out += (out ? '\n\n' : '') + '(생각 과정이 길어져 응답이 도중에 잘렸습니다. 다시 시도하거나 관리자에게 토큰 한도 상향을 요청하세요.)';
+  }
+
+  return out
     .replace(/<\|[a-zA-Z0-9_]+\|>/g, '')
     .trim();
 }
 
-async function analyzeWithOllama(systemPrompt, noteText) {
+// buildSystemPrompt()의 공통 마무리(:아래)가 모든 응답에 이 문장을 마지막 줄로
+// 강제하므로, 이 문장이 안 보인다는 것은 응답이 그 지점까지 못 가고 잘렸다는
+// 강한 신호로 쓸 수 있다(계획 리뷰 Suggestion 반영, TICKET-1 §4 세 번째 오판
+// 원인 방어). num_predict/max_tokens 한도에 걸려 FOLLOWUP_MARKER 섹션 자체가
+// 통째로 잘려나간 채 응답이 끝나면, splitFollowUpSection()은 "질문이 정말
+// 없어서" 안 나온 것과 구분하지 못하고 followUpQuestionsText: null을 반환한다.
+// 그 오판을 막기 위해, 마지막 문장이 없으면 잘렸을 가능성을 텍스트에 명시적으로
+// 덧붙여 후속 판정(옵션 1, 아래 analyzeWithAI() 참고)이 "정말 질문이 없다"고
+// 섣불리 확정하지 않도록 한다.
+const FINAL_DISCLAIMER = '이는 참고용 스크리닝 결과이며 실제 진단이 아닙니다. 자격을 갖춘 임상가의 평가가 반드시 필요합니다.';
+const TRUNCATION_NOTICE =
+  '\n\n(주의: 응답이 토큰 한도에 걸려 도중에 끊겼을 수 있습니다. 위 내용에 후속 질문이 없어 보이더라도' +
+  ' 실제로 확인할 게 없어서가 아니라 응답이 잘렸기 때문일 수 있습니다.)';
+
+function finalizeModelOutput(rawText) {
+  const cleaned = cleanModelOutput(rawText);
+  if (cleaned.indexOf(FINAL_DISCLAIMER) === -1) {
+    return cleaned + TRUNCATION_NOTICE;
+  }
+  return cleaned;
+}
+
+// messages: 이미 조립된 { role, content }[] 전체(대화 배열 재설계, TICKET-1).
+// system 프롬프트 조립·대화 히스토리 concat은 모두 호출부(analyzeWithAI)의
+// 책임이며, 이 함수는 그것을 그대로 Ollama에 전달만 한다.
+async function analyzeWithOllama(messages) {
+  const modelConf = OLLAMA_MODELS[selectedOllamaModelId];
   const res = await fetch(OLLAMA_URL + '/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: OLLAMA_MODEL,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: noteText },
-      ],
+      model: modelConf.id,
+      messages: messages,
       stream: false,
       // 가설 생성→확인불가 항목 식별→후속질문 단계가 늘어난 만큼 여유를 둔다.
-      // 1200에서도 최종 결론 직전에 잘리는 경우가 실측되어 1800으로 상향.
-      options: { temperature: 0.3, num_predict: 1800 },
+      // 1200에서도 최종 결론 직전에 잘리는 경우가 실측되어 1800으로 상향
+      // (qwen3:4b-instruct 기준값). 모델별 한도는 이제 레지스트리에서 온다.
+      options: { temperature: 0.3, num_predict: modelConf.numPredict },
     }),
   });
   if (!res.ok) throw new Error('Ollama 응답 오류 (HTTP ' + res.status + ')');
@@ -231,7 +402,111 @@ async function analyzeWithOllama(systemPrompt, noteText) {
   return data.message.content;
 }
 
+// TICKET-6이 소비할 수 있도록 다운로드 실패 사유도 detectOllama()와 동일한
+// { stage, message, raw, timestamp } 형태로 보존한다(00-overview.md §5 위험#6).
+let lastPullError = null;
 
+export function getLastPullError() {
+  return lastPullError; // { stage, message, raw, timestamp } | null
+}
+
+function makeOllamaPullError(stage, message, raw) {
+  const err = new Error(message);
+  err.stage = stage;
+  err.raw = raw;
+  err.timestamp = Date.now();
+  lastPullError = { stage: err.stage, message: err.message, raw: err.raw, timestamp: err.timestamp };
+  return err;
+}
+
+// ---------- Ollama /api/pull 자동 다운로드 ----------
+// TICKET-3: 실제 Ollama가 설치된 환경에 접근할 수 없어 /api/pull이 정말
+// NDJSON 스트리밍 진행률을 주는지 이 세션에서 직접 호출해 확인하지 "못했다".
+// Ollama 공식 문서 지식에 따르면 stream 옵션을 생략(기본값 true)하면
+// 요청 하나에 줄바꿈으로 구분된 JSON 객체들이 순차로 오고, 각 객체가
+// { status, digest, total, completed } 형태의 진행 이벤트라고 알려져
+// 있다 — 이 지식만 근거로 아래 "경로 A(스트리밍 파싱)"를 채택했다.
+// **실측 필요**: 실제 Ollama 서버로 한 번도 검증되지 않았다.
+// 만약 실제 응답 형식이 이 가정과 다르더라도(예: 필드명이 다르거나 줄
+// 단위가 아니거나) 다운로드 자체가 죽지 않도록, 파싱 실패한 줄은 그냥
+// 건너뛰고 "다운로드 중..."만 표시하는 방어적 처리를 넣었다(경로 B에
+// 준하는 안전망을 경로 A 안에 내장한 형태 — 응답 형식이 완전히 달라도
+// 최소한 "요청은 보냈고 완료를 기다리는 중"이라는 사실은 사용자에게
+// 전달된다).
+//
+// modelId: OLLAMA_MODELS의 키(예: 'qwen3:4b-thinking').
+// onProgress(evt): 파싱된 스트림 이벤트를 그대로 넘긴다. evt는
+//   { status, digest, total, completed } 형태를 기대하지만 그 필드가
+//   없을 수도 있으므로, 값 해석(퍼센트 계산 등)은 호출부(TICKET-5 UI)
+//   책임으로 둔다. 진행률 정보를 아예 못 받는 경로에서는
+//   { status: '...' }만 넘어온다.
+export async function pullOllamaModel(modelId, onProgress) {
+  let res;
+  try {
+    res = await fetch(OLLAMA_URL + '/api/pull', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: modelId }),
+    });
+  } catch (e) {
+    throw makeOllamaPullError('fetch', (e && e.message) || '네트워크 요청 실패', String(e));
+  }
+
+  if (!res.ok) {
+    throw makeOllamaPullError('bad-status', 'HTTP ' + res.status, 'HTTP ' + res.status);
+  }
+
+  if (!res.body || !res.body.getReader) {
+    // 스트리밍 body를 못 받는 환경(구형 브라우저 등)이거나 서버가 단일
+    // 응답만 준 경우 — 다운로드는 서버 쪽에서 계속 진행되므로 진행률 없이
+    // 완료(이 fetch가 resolve됨)까지 기다린다.
+    if (onProgress) onProgress({ status: '다운로드 중... (진행률 정보 없음)' });
+  } else {
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          let evt;
+          try {
+            evt = JSON.parse(line);
+          } catch (parseErr) {
+            // 실측 안 된 가정(NDJSON)이 실제와 다를 가능성 대비 — 이 줄
+            // 하나 때문에 전체 다운로드를 실패 처리하지 않는다.
+            if (onProgress) onProgress({ status: '다운로드 중...' });
+            continue;
+          }
+          if (onProgress) onProgress(evt);
+        }
+      }
+    } catch (e) {
+      throw makeOllamaPullError('stream', (e && e.message) || '다운로드 스트림 오류', String(e));
+    }
+  }
+
+  // 성공적으로 요청이 끝났다면 설치 목록을 강제 재검사해 최신 상태를
+  // 반영한다(TICKET-2 detectOllama(forceRefresh)).
+  await detectOllama(true);
+
+  if (!isModelInstalled(modelId)) {
+    // HTTP 응답은 정상이었지만(예: 모델명 오타 등) 설치 목록에서 끝내
+    // 확인되지 않는 경우 — 조용히 성공 취급하지 않는다.
+    throw makeOllamaPullError(
+      'verify',
+      '다운로드 요청은 완료됐지만 설치 목록에서 확인되지 않았습니다.',
+      modelId
+    );
+  }
+
+  lastPullError = null;
+}
 
 // ---------- 브라우저 내 모델 (wllama) ----------
 let wllama = null;
@@ -278,8 +553,26 @@ export function isModelReady() {
 }
 
 // 현재 어떤 엔진이 쓰이는지 UI에서 표시할 수 있도록 노출.
+// 외부 계약('ollama'/'browser' 두 값)은 TICKET-4·5·6이 그대로 소비하므로
+// 바꾸지 않는다(00-overview.md §4.4) — 내부 판단 기준만 새 상태로 교체.
 export function currentEngine() {
-  return ollamaAvailable === true ? 'ollama' : 'browser';
+  return ollamaConnectionState === 'connected' && isModelInstalled(selectedOllamaModelId) ? 'ollama' : 'browser';
+}
+
+// TICKET-4: js/main.js는 <script src="js/main.js">(비-module)로 로드되어
+// export된 함수를 import할 수 없다(00-overview.md §4.1 전역 브릿지 방식
+// 확정). 모듈 톱레벨에서 실행되는 코드이므로, js/ai-ui.js(module)가 이
+// 파일을 import하는 즉시(문서 파싱 완료 후, DOMContentLoaded 발생 전)
+// window.__hututiEngine이 존재함이 보장된다.
+if (typeof window !== 'undefined') {
+  window.__hututiEngine = {
+    currentEngine: currentEngine,
+    getSelectedModelLabel: function () {
+      var models = listOllamaModels();
+      var m = models.filter(function (x) { return x.id === getSelectedModelId(); })[0];
+      return m ? m.label : null;
+    },
+  };
 }
 
 // AI 응답에서 후속질문 섹션을 분리해 UI가 표시할 수 있게 해준다.
@@ -294,30 +587,92 @@ export function splitFollowUpSection(answerText) {
   return { mainText: before, followUpQuestionsText: hasQuestions ? after : null };
 }
 
-export async function analyzeWithAI(noteText, onProgress, followUpAnswerText) {
-  const isFollowUp = !!(followUpAnswerText && followUpAnswerText.trim());
-  const relevant = pickRelevantDiagnoses(noteText, MAX_DICT_DIAGNOSES);
+// 결과 패널("유력한 진단")이 표시할 텍스트만 뽑아낸다. buildSystemPrompt()가
+// FINAL_CANDIDATES_MARKER를 항상 FOLLOWUP_MARKER보다 먼저 쓰도록 지시해두었으므로,
+// "FINAL_CANDIDATES_MARKER부터 FOLLOWUP_MARKER 직전(없으면 끝)까지"만 잘라내면 된다.
+// 모델이 형식을 안 지켜 마커 자체가 없으면 null을 반환 — 이 경우 UI는 이전
+// 턴에서 보여주던 값을 그대로 유지한다(패널이 빈 값으로 덮어써지지 않도록).
+export function extractFinalCandidates(answerText) {
+  const startIdx = answerText.indexOf(FINAL_CANDIDATES_MARKER);
+  if (startIdx === -1) return null;
+  const contentStart = startIdx + FINAL_CANDIDATES_MARKER.length;
+  const followUpIdx = answerText.indexOf(FOLLOWUP_MARKER, contentStart);
+  const contentEnd = followUpIdx === -1 ? answerText.length : followUpIdx;
+  const text = answerText.slice(contentStart, contentEnd).trim();
+  return text || null;
+}
+
+// conversation: [{ role: 'user'|'assistant', text: string }, ...] — 시간순,
+// 최소 1개(최초 소견). 채팅형 다회 순환을 지원하기 위해 "소견 1개 + 답변
+// 1개"였던 기존 2-메시지 고정 구조를 대화 배열 전체로 재설계했다(TICKET-1).
+//
+// forceConclusion: true면 상담자가 "충분함" 버튼을 눌러 AI 판단을 기다리지
+// 않고 즉시 최종 결론만 요청하는 강제 종결 모드다(00-overview.md §4.4).
+//
+// 종료 감지 메커니즘 — 옵션 1(프롬프트 내재화) 채택:
+// forceConclusion=false(진행 중) 모드에서 buildSystemPrompt()가 "상담자가
+// 자연어로 종료 의사를 표현하면 더 묻지 말고 FOLLOWUP_MARKER 섹션에
+// FOLLOWUP_NONE_TEXT만 쓰라"고 지시해두었으므로(위 buildSystemPrompt() 4번
+// 항목), 그 결과 이번 턴 응답에 실질적인 후속 질문이 없어지는 것(
+// splitFollowUpSection().followUpQuestionsText === null)을 "이번 턴에서
+// 자연 종료됨"의 판정 신호로 그대로 재사용한다. 옵션 2(별도 분류 프롬프트,
+// 매 턴 API 호출 2배)나 옵션 3(내부 접두어, "마커 방식 미채택" 확정과
+// 긴장 관계)보다 추가 호출·설계 복잡도가 없고 기존 함수를 그대로 쓸 수
+// 있어 채택했다. 판정 자체(즉 splitFollowUpSection() 호출)는 이 함수의
+// 책임이 아니라 TICKET-3(js/ai-ui.js)의 책임이다 — 이 함수는 원문 텍스트만
+// 반환한다.
+export async function analyzeWithAI(conversation, onProgress, forceConclusion) {
+  const combinedUserText = conversation
+    .filter(function (t) { return t.role === 'user'; })
+    .map(function (t) { return t.text; })
+    .join('\n');
+  // §4.1 결정(옵션 B 채택): 최초 소견 하나가 아니라 대화 내 모든 user 발화를
+  // 합쳐 진단 사전 그라운딩을 매번 재계산한다 — 후속 답변에서 나온 새 키워드도
+  // 후보 추림에 반영되도록. DIAGNOSES 배열 크기상 매 턴 재계산 비용은 무시할
+  // 수준이라 회귀 위험 없이 요구사항 취지("히스토리 전체 활용")에 더 부합한다.
+  const relevant = pickRelevantDiagnoses(combinedUserText, MAX_DICT_DIAGNOSES);
   const dictionaryText = formatDiagnosisDictionary(relevant);
-  const systemPrompt = buildSystemPrompt(dictionaryText, isFollowUp);
-  const userMessage = isFollowUp
-    ? noteText + '\n\n[추가 확인 답변]\n' + followUpAnswerText.trim()
-    : noteText;
+  const systemPrompt = buildSystemPrompt(dictionaryText, !!forceConclusion);
+
+  const messages = [{ role: 'system', content: systemPrompt }]
+    .concat(conversation.map(function (t) { return { role: t.role, content: t.text }; }));
 
   // 1순위: PC에 설치된 Ollama (빠름). 없으면 브라우저 내 모델로 폴백.
+  //
+  // 재검사 정책(계획 리뷰 Warning 1 반영, TICKET-2 §5): 방식 A(실패 시에만
+  // 강제 재검사)를 채택했다. 방식 B(매 분석 시도마다 항상 강제 재검사)는
+  // Ollama가 계속 켜져 있는 대다수 정상 경로에도 매번 최대 15초 타임아웃
+  // 위험을 다시 노출시킨다(00-overview.md §5 위험 #10과 동일 트레이드오프).
+  // 방식 A는 정상 경로엔 지연을 추가하지 않으면서도, "세션 초반엔 감지됐지만
+  // 이후 Ollama가 꺼진" 흔한 시나리오에서 fetch 실패를 계기로 캐시를 무효화해
+  // 최신 상태를 다시 확인한다.
   if (await detectOllama()) {
-    return cleanModelOutput(await analyzeWithOllama(systemPrompt, userMessage));
+    try {
+      return finalizeModelOutput(await analyzeWithOllama(messages));
+    } catch (e) {
+      // Ollama가 세션 중 꺼졌거나 대상 모델이 삭제됐을 가능성 — 캐시된 값을
+      // 더 이상 신뢰하지 않고 강제 재검사로 상태를 갱신한 뒤, 그 결과와
+      // 무관하게 아래 wllama 경로로 폴백한다(재검사 결과가 다시 true여도
+      // 방금 실패한 요청을 이 함수 안에서 또 재시도하지는 않는다 — 무한
+      // 재시도로 인한 지연·중복 요청을 피하기 위함).
+      await detectOllama(true);
+    }
   }
 
   await ensureModelLoaded(onProgress);
 
+  // wllama(브라우저 내 Kanana)는 생각과정 유무 선택 대상이 아닌 별도 고정
+  // 엔진이므로, 이번 engine-selector 트랙의 모델 레지스트리·토큰 파라미터화와
+  // 무관하게 기존 고정값을 그대로 둔다(TICKET-1 판단, 00-overview.md §4·requirements.md §3.5 참고).
+  // N_CTX=4096 컨텍스트 한도(00-overview.md §5 위험#3): 요약 압축 없이 전체
+  // 누적 대화를 그대로 전달하므로, 대화가 매우 길어지면 한도 초과로 요청
+  // 자체가 실패할 수 있다. 이 함수는 그 경우 예외를 그대로 던지며(조용히
+  // 삼키지 않음), 호출부(TICKET-3)가 사용자에게 안내할 수 있게 한다.
   const result = await wllama.createChatCompletion({
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userMessage },
-    ],
+    messages: messages,
     max_tokens: 1800,
     temperature: 0.3,
   });
 
-  return cleanModelOutput(result.choices[0].message.content);
+  return finalizeModelOutput(result.choices[0].message.content);
 }

@@ -1,9 +1,15 @@
 /* ==========================================================================
    후투티 — 상담사를 위한 가진단 툴 — 애플리케이션 로직
    본 스크립트는 브라우저 메모리 상태만 사용하며(새로고침 시 초기화),
-   서버로 어떠한 데이터도 전송하지 않습니다. 지금의 "가진단" 기능은 아직
-   AI가 아니라 단순 키워드 겹침 비교이며, 전부 이 파일 안에서만 계산됩니다.
-   (추후 로컬 LLM이 연결되면 이 부분만 교체될 예정)
+   서버로 어떠한 데이터도 전송하지 않습니다. 정밀 체크리스트(checklist.html)
+   페이지 로직과, 소견 입력 화면의 지우기·결과 저장 버튼을 담당한다.
+   AI 분석 자체는 js/ai.js·js/ai-ui.js가 담당(이 파일은 그 결과를 저장할
+   때만 관여). 과거 있던 키워드 겹침 기반 "가진단 받기" 기능은 제거되었고
+   (정밀 체크리스트로 직접 이동해 확인하는 방식으로 대체), 그 기능 전용
+   함수(computeCandidates 등)도 함께 삭제했다.
+   symptom-chat-interview 트랙(TICKET-4)에서 채팅 대화 배열
+   (window.__hututiChat 브릿지) 기반으로 전환 — 소견 입력 textarea가
+   사라지고 결과 저장·초기화가 대화 스냅샷을 읽는 구조로 바뀌었다.
    ========================================================================== */
 
 (function(){
@@ -30,22 +36,10 @@
     '성격장애'
   ];
 
-  var STOPWORDS = {};
-  ['그리고','그래서','그러나','하지만','그런데','또한','매우','너무','정말','자주','계속',
-   '최근','이전','이후','등을','등이','등은','등','것을','것이','것은','것','같은','같이',
-   '대한','대해','으로','에서','에게','부터','까지','에는','에도','에서도','에서의','합니다',
-   '했다','한다','있다','없다','됩니다','되었다','하며','하고','하는','하지','않고','않았다',
-   '많이','많은','조금','약간','거의','전혀','스스로','자신','때문에','위해','통해','관련'
-  ].forEach(function(w){ STOPWORDS[w] = true; });
-
   var checked = {};
   var checkedCount = 0;
-  var lastCandidates = [];
-  var lastNoteText = '';
-  var ITEM_INDEX = null;
 
-  var $root, $results, $resultsCount, $checkCounter, $search, $notesInput,
-      $candidatesCard, $candidatesList;
+  var $root, $results, $resultsCount, $checkCounter, $search;
 
   function keyOf(diagId, g, i){ return diagId + '::' + g + '::' + i; }
   function checkboxId(diagId, g, i){ return 'chk-' + keyOf(diagId, g, i).split('::').join('-'); }
@@ -272,150 +266,6 @@
     URL.revokeObjectURL(url);
   }
 
-  function buildItemIndex(){
-    if(ITEM_INDEX) return ITEM_INDEX;
-    ITEM_INDEX = [];
-    DIAGNOSES.forEach(function(d){
-      d.groups.forEach(function(g, gi){
-        g.items.forEach(function(text, ii){
-          ITEM_INDEX.push({
-            diagId: d.id, gi: gi, ii: ii, text: text,
-            category: d.category, name_kr: d.name_kr, name_en: d.name_en,
-            keywords: tokenize(text)
-          });
-        });
-      });
-    });
-    return ITEM_INDEX;
-  }
-
-  function tokenize(text){
-    var cleaned = String(text).replace(/[.,!?;:()\[\]"'"'·\/\\-]/g, ' ');
-    var parts = cleaned.split(/\s+/);
-    var out = [];
-    for(var i=0;i<parts.length;i++){
-      var t = parts[i].trim();
-      if(t.length>=2 && !STOPWORDS[t]) out.push(t);
-    }
-    return out;
-  }
-
-  function matchScore(noteTokens, itemTokens){
-    var score = 0;
-    var matched = [];
-    itemTokens.forEach(function(it){
-      for(var j=0;j<noteTokens.length;j++){
-        var nt = noteTokens[j];
-        if(it.indexOf(nt) !== -1 || nt.indexOf(it) !== -1){
-          score++;
-          matched.push(it);
-          break;
-        }
-      }
-    });
-    return { score: score, matched: matched };
-  }
-
-  function computeCandidates(noteText){
-    var noteTokens = tokenize(noteText);
-    if(noteTokens.length === 0) return [];
-
-    var index = buildItemIndex();
-    var perDiag = {};
-    index.forEach(function(entry){
-      var m = matchScore(noteTokens, entry.keywords);
-      if(m.score === 0) return;
-      if(!perDiag[entry.diagId]){
-        perDiag[entry.diagId] = {
-          diagId: entry.diagId, name_kr: entry.name_kr, name_en: entry.name_en,
-          category: entry.category, totalScore: 0, evidences: []
-        };
-      }
-      perDiag[entry.diagId].totalScore += m.score;
-      perDiag[entry.diagId].evidences.push({ text: entry.text, gi: entry.gi, ii: entry.ii, matched: m.matched });
-    });
-
-    var list = Object.keys(perDiag).map(function(k){ return perDiag[k]; });
-    list.sort(function(a,b){ return b.totalScore - a.totalScore; });
-    list = list.slice(0, 8);
-    list.forEach(function(c){
-      c.evidences.sort(function(a,b){ return b.matched.length - a.matched.length; });
-      c.evidences = c.evidences.slice(0, 3);
-    });
-    return list;
-  }
-
-  function hideEmptyResultsHint(){
-    var hint = document.getElementById('results-empty-hint');
-    if(hint) hint.hidden = true;
-  }
-
-  function runDiagnosisAssist(){
-    lastNoteText = $notesInput.value;
-    $candidatesCard.hidden = false;
-    hideEmptyResultsHint();
-    lastCandidates = computeCandidates(lastNoteText);
-
-    if(lastNoteText.replace(/\s/g,'') === ''){
-      $candidatesList.innerHTML = '<div class="candidates-empty">먼저 위 칸에 내담자 소견을 입력해 주세요.</div>';
-      return;
-    }
-    if(lastCandidates.length === 0){
-      $candidatesList.innerHTML = '<div class="candidates-empty">겹치는 키워드를 찾지 못했습니다. 아래 "정밀 체크리스트"에서 직접 확인해 보세요.</div>';
-      return;
-    }
-    renderCandidates(lastCandidates);
-  }
-
-  function renderCandidates(candidates){
-    $candidatesList.innerHTML = candidates.map(function(c, idx){
-      var evidenceHtml = c.evidences.map(function(e){
-        var kw = e.matched.length ? ('<b>[' + e.matched.slice(0,3).join(', ') + ']</b> ') : '';
-        return '<div>' + kw + e.text + '</div>';
-      }).join('');
-      return '\n      <div class="candidate-item" data-diag-id="' + c.diagId + '">' +
-        '\n        <div class="candidate-item-head">' +
-        '\n          <span class="candidate-rank">' + (idx+1) + '</span>' +
-        '\n          <span class="candidate-name">' + c.name_kr + '</span>' +
-        '\n          <span class="candidate-cat">' + c.category + ' · ' + c.name_en + '</span>' +
-        '\n        </div>' +
-        '\n        <div class="candidate-evidence">' + evidenceHtml + '</div>' +
-        '\n        <div class="candidate-actions">' +
-        '\n          <button class="btn check-in-list-btn" data-diag-id="' + c.diagId + '">정밀 체크리스트에서 확인</button>' +
-        '\n        </div>' +
-        '\n      </div>';
-    }).join('');
-
-    Array.prototype.forEach.call($candidatesList.querySelectorAll('.check-in-list-btn'), function(btn){
-      btn.addEventListener('click', function(){
-        window.location.href = 'checklist.html?focus=' + encodeURIComponent(btn.dataset.diagId);
-      });
-    });
-  }
-
-  function flashDiagnosis(diagId){
-    var card = $root.querySelector('[data-diag-id="' + diagId + '"]');
-    if(!card) return;
-    var cat = card.closest('.category');
-    if(cat) cat.classList.add('open');
-    card.scrollIntoView({ behavior:'smooth', block:'center' });
-    card.classList.remove('flash');
-    void card.offsetWidth;
-    card.classList.add('flash');
-  }
-
-  function formatCandidatesAsText(){
-    if(lastCandidates.length === 0) return '';
-    return lastCandidates.map(function(c, idx){
-      var lines = [(idx+1) + '. [' + c.category + '] ' + c.name_kr + ' (' + c.name_en + ')'];
-      c.evidences.forEach(function(e){
-        var kw = e.matched.length ? ('[' + e.matched.slice(0,3).join(', ') + '] ') : '';
-        lines.push('   - ' + kw + e.text);
-      });
-      return lines.join('\n');
-    }).join('\n\n');
-  }
-
   function copyToClipboard(text, btn){
     if(!text) return;
     navigator.clipboard.writeText(text).then(function(){
@@ -430,14 +280,14 @@
   }
 
   function clearNotes(){
-    $notesInput.value = '';
-    $candidatesCard.hidden = true;
-    $candidatesList.innerHTML = '';
-    lastCandidates = [];
-    lastNoteText = '';
-    var aiCard = document.getElementById('ai-result-card');
-    var hint = document.getElementById('results-empty-hint');
-    if(hint && aiCard && aiCard.hidden) hint.hidden = false;
+    // TICKET-4: #notes-input이 사라지면서 "소견 지우기"는 "대화 전체
+    // 초기화"로 의미가 바뀌었다(00-overview.md §5 위험 #7 — 요구사항이
+    // 명시적으로 확정한 항목은 아니며, 채팅 UI 전환에 따른 자연스러운
+    // 귀결로 이 티켓에서 판단). window.__hututiChat 브릿지가 없는 예외
+    // 상황에서도 조용히 무시하고 오류로 막지 않는다.
+    if(window.__hututiChat && typeof window.__hututiChat.resetConversation === 'function'){
+      window.__hututiChat.resetConversation();
+    }
   }
 
   function saveResult(){
@@ -449,53 +299,59 @@
     lines.push('※ 이 결과는 가진단(참고용 후보)이며 실제 진단이 아닙니다. 최종 판단은 반드시');
     lines.push('  자격을 갖춘 임상가의 면담·병력·감별진단을 통해 내려야 합니다.');
     lines.push('');
+
+    // TICKET-4: 저장 대상은 대화 전체(모든 턴)가 아니라 "최초 소견(첫
+    // user 턴) + 최종 진단(마지막 assistant 턴)"만이다(requirements.md
+    // §2.3, structure.md §3.4 확정 사항). 3단 방어: 브릿지 자체 부재 →
+    // 대화 없음 → 정상. 과거 "저장 시 소견 누락" 버그와 동일 계열의
+    // 회귀를 방지하는 것이 최우선 목표(00-overview.md §5 위험 #8).
+    var hasBridge = window.__hututiChat && typeof window.__hututiChat.getConversation === 'function';
+    var conversation = hasBridge ? window.__hututiChat.getConversation() : [];
+
     lines.push('[입력한 소견]');
-    lines.push(($notesInput ? $notesInput.value.trim() : '') || lastNoteText.trim() || '(입력 없음)');
+    var firstUserTurn = conversation.filter(function(t){ return t.role === 'user'; })[0];
+    lines.push(firstUserTurn ? firstUserTurn.text.trim() : '(입력 없음)');
     lines.push('');
     lines.push('----------------------------------------');
     lines.push('');
 
-    var aiResultCard = document.getElementById('ai-result-card');
-    var aiResultText = document.getElementById('ai-result-text');
-    if(aiResultCard && !aiResultCard.hidden && aiResultText && aiResultText.textContent.trim() !== ''){
-      lines.push('[AI 분석 결과 (Kanana, 브라우저 내 로컬 AI)]');
+    var lastAssistantTurn = conversation.filter(function(t){ return t.role === 'assistant'; }).slice(-1)[0];
+    if(!hasBridge){
+      lines.push('대화 내용을 불러올 수 없습니다(내부 오류) — 다시 시도하거나 관리자에게 문의해 주세요.');
       lines.push('');
-      lines.push(aiResultText.textContent.trim());
+    } else if(lastAssistantTurn && lastAssistantTurn.text.trim() !== ''){
+      // TICKET-4: js/ai.js가 노출하는 window.__hututiEngine 브릿지(비-module
+      // 환경 대응, 00-overview.md §4.1)를 경유해 실제 사용 엔진과 선택된
+      // 모델(생각과정 없음/있음)을 저장 텍스트에 반영한다. 브릿지가 없거나
+      // (스크립트 로드 순서가 깨진 예외 상황) 함수가 없는 경우에도 예외를
+      // 던지지 않도록 매 단계 방어적으로 접근한다.
+      var engineLabel = '(엔진 확인 불가)';
+      if(window.__hututiEngine && typeof window.__hututiEngine.currentEngine === 'function'){
+        if(window.__hututiEngine.currentEngine() === 'ollama'){
+          var modelLabel = (typeof window.__hututiEngine.getSelectedModelLabel === 'function')
+            ? window.__hututiEngine.getSelectedModelLabel()
+            : null;
+          engineLabel = 'Ollama 로컬 엔진' + (modelLabel ? ' · ' + modelLabel : '');
+        } else {
+          engineLabel = 'Kanana, 브라우저 내 로컬 AI';
+        }
+      }
+      lines.push('[AI 최종 진단 결과 (' + engineLabel + ')]');
       lines.push('');
-      lines.push('----------------------------------------');
+      lines.push(lastAssistantTurn.text.trim());
       lines.push('');
-    }
-
-    lines.push('[가진단 후보 — 키워드 기반 임시 결과]');
-    lines.push('');
-
-    if(lastCandidates.length === 0){
-      lines.push('후보가 없습니다. 먼저 "가진단 받기"를 눌러 결과를 생성해 주세요.');
     } else {
-      lastCandidates.forEach(function(c, idx){
-        lines.push((idx+1) + '. [' + c.category + '] ' + c.name_kr + ' (' + c.name_en + ')');
-        c.evidences.forEach(function(e){
-          var kw = e.matched.length ? ('[' + e.matched.slice(0,3).join(', ') + '] ') : '';
-          lines.push('   - ' + kw + e.text);
-        });
-        lines.push('');
-      });
+      lines.push('AI 분석 결과가 없습니다. 먼저 대화를 진행해 결과를 생성해 주세요.');
+      lines.push('키워드 기반 가진단은 더 이상 제공하지 않습니다 — 정밀 체크리스트(checklist.html)에서 직접 확인해 주세요.');
+      lines.push('');
     }
 
     downloadText(lines.join('\n'), '후투티-가진단결과-' + now.toISOString().slice(0,10) + '.txt');
   }
 
   function initAssistPage(){
-    $notesInput = document.getElementById('notes-input');
-    $candidatesCard = document.getElementById('candidates-card');
-    $candidatesList = document.getElementById('candidates-list');
-
-    document.getElementById('analyze-btn').addEventListener('click', runDiagnosisAssist);
     document.getElementById('clear-notes-btn').addEventListener('click', clearNotes);
     document.getElementById('save-result-btn').addEventListener('click', saveResult);
-    document.getElementById('copy-candidates-btn').addEventListener('click', function(e){
-      copyToClipboard(formatCandidatesAsText(), e.currentTarget);
-    });
   }
 
   function initChecklistPage(){
@@ -517,13 +373,10 @@
       Array.prototype.forEach.call($root.querySelectorAll('.category'), function(c){ c.classList.remove('open'); });
     });
     $search.addEventListener('input', function(){ applySearch($search.value); });
-
-    var focusId = new URLSearchParams(window.location.search).get('focus');
-    if(focusId) flashDiagnosis(focusId);
   }
 
   document.addEventListener('DOMContentLoaded', function(){
-    if(document.getElementById('notes-input')) initAssistPage();
+    if(document.getElementById('chat-messages')) initAssistPage();
     if(document.getElementById('checklist-root')) initChecklistPage();
   });
 

@@ -9,9 +9,9 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT-Variable.css">
-<link rel="stylesheet" href="css/style.css?v=13">
+<link rel="stylesheet" href="css/style.css?v=29">
 </head>
-<body class="shell-page">
+<body>
 
 <header class="site-header">
   <div class="header-inner">
@@ -31,7 +31,7 @@
         </div>
       </a>
       <nav class="site-nav">
-        <a href="checklist.html">간이 체크리스트로 확인하기</a>
+        <a href="checklist.html">체크리스트로 확인하기</a>
         <a href="icd11.html">ICD-11 분류 지도</a>
         <a href="about.html">후투티란?</a>
       </nav>
@@ -45,8 +45,50 @@
   </div>
 </header>
 
-<section class="assist-layout">
-  <div class="assist-left">
+<section class="assist-layout chat-with-results">
+  <div class="chat-col">
+    <div class="chat-card">
+      <div class="chat-engine-badge-row">
+        <span class="candidates-badge" id="ai-mode-badge">브라우저 내 로컬 AI</span>
+      </div>
+
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-empty-hint" id="chat-empty-hint">
+          <p>관찰된 증상, 행동, 진술 등을 자유롭게 입력해 대화를 시작해 주세요.
+          키워드 기반으로 직접 확인하고 싶다면 <a href="checklist.html">체크리스트</a>를 이용해 주세요.</p>
+        </div>
+      </div>
+
+      <div class="ollama-failure-banner" id="ollama-failure-banner" hidden>
+        <p class="ollama-failure-message" id="ollama-failure-message"></p>
+        <button class="ollama-debug-toggle" id="ollama-debug-toggle" type="button" aria-expanded="false">자세히 보기 (개발자용)</button>
+        <div class="ollama-debug-detail" id="ollama-debug-detail" hidden>
+          <pre id="ollama-debug-raw"></pre>
+          <button class="btn btn-compact" id="ollama-debug-copy-btn" type="button">복사</button>
+        </div>
+      </div>
+      <div class="ai-status" id="ai-status" hidden></div>
+
+      <div class="chat-input-bar">
+        <textarea id="chat-input" class="chat-textarea" rows="1"
+          placeholder="증상, 행동, 진술 등을 입력하고 Enter(또는 전송)를 누르세요"></textarea>
+        <button class="btn btn-compact btn-primary chat-send-btn" id="chat-send-btn" type="button">
+          <span class="ai-btn-label">전송</span>
+          <span class="ai-btn-spinner" aria-hidden="true"></span>
+        </button>
+      </div>
+      <div class="chat-actions">
+        <button class="btn btn-compact" id="chat-sufficient-btn" type="button">충분함 — 진단 결과 보기</button>
+        <button class="btn btn-compact" id="clear-notes-btn">대화 초기화</button>
+        <button class="btn btn-compact" id="engine-select-btn" type="button" aria-haspopup="dialog" aria-disabled="false">
+          <span id="engine-select-label">AI 선택다운</span>
+        </button>
+      </div>
+      <p class="notes-hint">입력한 대화는 이 브라우저 화면에만 남고(같은 탭이 열려 있는 동안 유지) 저장·전송되지 않습니다.</p>
+    </div>
+  </div>
+
+  <aside class="results-col">
     <div class="disclaimer-box-small">
       <strong>사용 전 반드시 확인하십시오.</strong>
       이 결과는 <b>가진단(참고용 후보)</b>이며 실제 진단이 아닙니다. 자격을 갖춘 임상가가 면담·병력·감별진단을
@@ -56,114 +98,78 @@
       대조하여 정확성을 확인하시기 바랍니다.
     </div>
 
-    <div class="assist-card">
-      <h2>내담자 증상 소견</h2>
-      <p class="assist-desc">관찰된 증상, 행동, 진술 등을 자유롭게 서술해 주세요.</p>
-      <textarea id="notes-input" class="notes-textarea" rows="10" placeholder="예: 최근 2주간 잠을 잘 못 자고 식욕이 크게 줄었다고 함. 매사에 흥미가 없고, 죽고 싶다는 말을 자주 함. 집중이 안 되고 스스로를 자책하는 말을 많이 함..."></textarea>
-      <div class="notes-actions">
-        <button class="btn btn-compact btn-primary" id="analyze-btn">가진단 받기</button>
-        <button class="btn btn-compact" id="ai-analyze-btn">
-          <span class="ai-btn-label">AI 분석</span>
-          <span class="ai-btn-spinner" aria-hidden="true"></span>
-        </button>
-        <button class="btn btn-compact" id="clear-notes-btn">지우기</button>
-        <button class="btn btn-compact" id="save-result-btn">결과 저장</button>
-      </div>
-      <p class="notes-hint">입력한 소견은 이 브라우저 화면에만 남고 저장·전송되지 않습니다.</p>
-      <button class="ai-engine-link" id="ai-engine-info-btn" type="button">
-        <span id="ai-engine-info-label">지금 어떤 AI 엔진을 쓰고 있나요? / 더 빠르게 쓰는 법</span>
-      </button>
-      <div class="ai-status" id="ai-status" hidden></div>
-    </div>
-  </div>
-
-  <aside class="assist-results-panel">
-    <div class="candidates-card" id="ai-result-card" hidden>
+    <div class="chat-card">
       <div class="candidates-head">
-        <h2>AI 분석 결과 (Kanana)</h2>
+        <h2>유력한 진단</h2>
         <div class="candidates-head-right">
-          <span class="candidates-badge" id="ai-mode-badge">브라우저 내 로컬 AI</span>
-          <button class="copy-btn" id="copy-ai-result-btn" type="button">복사</button>
+          <button class="copy-btn" id="copy-final-result-btn" type="button">복사</button>
         </div>
       </div>
-      <div class="ai-result-text" id="ai-result-text"></div>
-      <div class="ai-followup-box" id="ai-followup-box" hidden>
-        <h3>AI가 추가로 확인하고 싶어하는 사항</h3>
-        <div class="ai-followup-questions" id="ai-followup-questions"></div>
-        <textarea id="ai-followup-answer" rows="3" placeholder="위 질문에 대한 답변을 입력하세요 (예: 2주 이상 지속됨, 이전 조증 삽화 없음 등)"></textarea>
-        <button class="btn btn-compact" id="ai-followup-submit-btn" type="button">답변 반영해서 다시 분석</button>
+      <div class="final-result-empty-hint chat-empty-hint" id="final-result-empty-hint">
+        <p>대화가 진행되면 여기에 현재까지 유력한 진단이 정리되어 나타납니다.</p>
       </div>
-    </div>
-
-    <div class="candidates-card" id="candidates-card" hidden>
-      <div class="candidates-head">
-        <h2>가진단 후보</h2>
-        <div class="candidates-head-right">
-          <span class="candidates-badge" id="candidates-mode-badge">키워드 기반 임시 결과</span>
-          <button class="copy-btn" id="copy-candidates-btn" type="button">복사</button>
-        </div>
-      </div>
-      <div class="candidates-list" id="candidates-list"></div>
-      <p class="result-note">
-        <strong>현재 상태:</strong> 이 결과는 <b>키워드 겹침 비교로 만든 임시 결과</b>입니다. AI가 아니며,
-        문맥·부정문·돌려 말하는 표현은 이해하지 못하니 참고만 하세요. 입력한 내용은 서버로 전송되지 않고
-        이 브라우저 화면에만 남으며 새로고침 시 사라집니다.
-      </p>
-    </div>
-
-    <div class="candidates-card assist-results-empty" id="results-empty-hint">
-      <p>왼쪽에서 소견을 입력하고 "가진단 받기" 또는 "AI 분석"을 누르면 결과가 여기에 나타납니다.</p>
+      <div class="final-result-text" id="final-result-text" hidden></div>
+      <button class="btn btn-compact btn-primary" id="save-result-btn">결과 저장</button>
     </div>
   </aside>
 </section>
 
-<div class="page-copyright">© 2026. An In-song. Distributed for free.<br>(2026. 안인성. 무료 배포)</div>
-
-<div class="ai-engine-modal-overlay" id="ai-engine-modal-overlay" hidden>
-  <div class="ai-engine-modal" role="dialog" aria-modal="true" aria-labelledby="ai-engine-modal-title">
-    <div class="ai-engine-modal-head">
-      <h3 id="ai-engine-modal-title">AI 엔진 안내</h3>
-      <button class="ai-engine-modal-close" id="ai-engine-modal-close" type="button" aria-label="닫기">✕</button>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-bottom">
+      <span>후투티 — 상담사를 위한 증상기반 가진단 도구</span>
+      <span class="footer-copyright">© 2026. An In-song. Distributed for free.<br>(2026. 안인성. 무료 배포)</span>
     </div>
-    <p class="ai-engine-current" id="ai-engine-current">현재 상태를 확인하는 중입니다...</p>
+  </div>
+</footer>
 
-    <div class="ai-engine-tier">
-      <h4>1단계 · 지금 바로 사용 (설치 불필요)</h4>
-      <p>
-        이 페이지에 접속하면 브라우저 안에서 바로 실행되는 경량 모델(Kanana)이 자동으로 준비됩니다.
-        아무것도 설치할 필요 없이 "AI 분석" 버튼만 누르면 됩니다. 다만 최초 1회 모델 파일(약 1.4GB)을
-        내려받고, 브라우저 안에서 도는 만큼 속도는 상대적으로 느릴 수 있습니다.
-      </p>
+<div class="download-confirm-overlay" id="engine-select-overlay" hidden>
+  <div class="download-confirm-dialog engine-select-dialog" role="dialog" aria-modal="true" aria-labelledby="engine-select-title">
+    <div class="engine-select-head">
+      <h3 id="engine-select-title">AI 엔진 선택</h3>
+      <button class="ai-engine-modal-close" id="engine-select-close" type="button" aria-label="닫기">✕</button>
     </div>
+    <div class="engine-select-body" id="engine-select-body"></div>
+  </div>
+</div>
 
-    <div class="ai-engine-tier">
-      <h4>2단계 · 더 빠르게 쓰고 싶다면</h4>
-      <p>
-        "후투티 전용 설치 프로그램"을 따로 만드는 대신, 누구나 쓰는 범용 로컬 AI 실행 프로그램인
-        <b>Ollama</b>와 경량 모델(qwen3:4b-instruct)만 받으면, 이후에는 지금 이 웹페이지를
-        그대로 사용하면서 자동으로 더 빠른 엔진이 사용됩니다(별도 설정 불필요 — 이 페이지가
-        Ollama가 켜져 있는지 자동으로 감지합니다).
-      </p>
-      <ol>
-        <li><a href="https://ollama.com/download" target="_blank" rel="noopener">ollama.com에서 Ollama 설치</a></li>
-        <li>설치 후 터미널(명령 프롬프트)에서 아래 명령어 실행:
-          <code>ollama pull qwen3:4b-instruct</code></li>
-        <li>내려받기가 끝나면 이 페이지를 새로고침하고 "AI 분석"을 다시 눌러보세요.</li>
-      </ol>
-      <p class="ai-engine-note">
-        소견 내용은 이 경우에도 사용자 PC의 localhost로만 전송되며, 외부 서버로 나가지 않습니다.
-      </p>
+<div class="download-confirm-overlay" id="download-confirm-overlay" hidden>
+  <div class="download-confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="download-confirm-text">
+    <p id="download-confirm-text"></p>
+    <div class="download-confirm-actions">
+      <button class="btn btn-compact" id="download-confirm-cancel" type="button">취소</button>
+      <button class="btn btn-compact btn-primary" id="download-confirm-ok" type="button">다운로드 시작</button>
     </div>
   </div>
 </div>
 
 <script src="js/data.js?v=2"></script>
-<script src="js/main.js?v=5"></script>
-<script type="module" src="js/ai-ui.js?v=19"></script>
+<script src="js/main.js?v=8"></script>
+<script type="module" src="js/ai-ui.js?v=30"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('header-diag-count').textContent = DIAGNOSES.length;
   });
+
+  // 채팅+결과 영역(.chat-with-results)이 "헤더를 뺀 나머지 화면 전체"를
+  // 딱 채우게 하려면 헤더의 실제 렌더링 높이를 알아야 한다. 헤더 높이는
+  // 폰트 로딩·줄바꿈에 따라 달라질 수 있어 CSS만으로 고정값을 넣을 수
+  // 없으므로, 실제 렌더링된 높이를 재서 CSS 변수로 흘려보낸다(--header-h).
+  // 이렇게 하면 대화 영역은 스크롤 없이 한 화면에 다 보이고, 그 아래
+  // 푸터(저작권 표시)만 스크롤을 내려야 보이게 된다.
+  (function () {
+    function syncHeaderHeight() {
+      var header = document.querySelector('.site-header');
+      if (!header) return;
+      document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
+    }
+    syncHeaderHeight();
+    window.addEventListener('load', syncHeaderHeight);
+    window.addEventListener('resize', syncHeaderHeight);
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(syncHeaderHeight).catch(function () {});
+    }
+  })();
 </script>
 </body>
 </html>

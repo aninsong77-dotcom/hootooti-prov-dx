@@ -58,7 +58,7 @@ a{color:var(--primary)}
   border-bottom:4px solid var(--silver);
 }
 .header-inner{
-  max-width:var(--maxw);
+  max-width:none;
   margin:0 auto;
   padding:20px 24px 16px;
   display:flex;
@@ -191,105 +191,177 @@ a{color:var(--primary)}
 }
 .disclaimer-box-small strong{ color:#463300; }
 
-/* ---------- Shell page (index.html) — 전체 페이지 스크롤 없이 한 화면 ---------- */
-body.shell-page{
-  height:100vh;
-  overflow:hidden;
-  display:flex;
-  flex-direction:column;
-}
-body.shell-page .site-header{ flex:0 0 auto; }
-
-/* ---------- Assist layout (소견 입력 좌 / 결과 우) ---------- */
-.assist-layout{
-  max-width:var(--maxw);
+/* ---------- Assist layout (증상 채팅 인터뷰 + 결과 패널, 좌우 분할) ---------- */
+/* 예전엔 body.shell-page(height:100vh, overflow:hidden)로 스크롤 없이 한
+   화면에 다 담았지만, 사전 경고문을 결과 패널 쪽으로 옮기고 대화창을 더
+   길게 쓸 수 있게 하면서 다른 페이지(about.html 등)와 같은 일반 스크롤
+   방식으로 바꿨다 — 푸터도 다른 페이지처럼 스크롤을 내려야 보이는 위치로
+   이동(#save-result-btn 근처 참고). */
+.assist-layout.chat-with-results{
+  /* 채팅 전용일 때는 중앙 정렬 단일 컬럼이었지만, 옆에 "유력한 진단" 패널을
+     추가하면서 checklist.html의 .container(1fr 29%)와 같은 방식의 좌우
+     그리드로 되돌아간다. 큰 모니터에서도 비율이 그대로 유지되도록 고정
+     px 대신 %를 쓰고 폭 상한은 두지 않는다(앞서 --maxw 관련 수정과 동일한
+     원칙). 채팅이 주 작업 영역이라 결과 패널보다 넓게(1fr : 34%) 잡는다. */
   margin:0 auto;
   padding:16px 24px;
   display:grid;
-  grid-template-columns:420px 1fr;
-  gap:22px;
-  align-items:stretch;
-  flex:1 1 auto;
-  min-height:0;
+  grid-template-columns:1fr 34%;
+  gap:16px;
   width:100%;
+  /* align-items 기본값(stretch)을 그대로 써서 두 칼럼의 높이를 서로
+     맞춘다 — 결과 패널의 카드가 채팅 카드와 같은 줄에서 끝나게 하려면
+     두 칼럼 자체가 같은 높이여야 하고(stretch), 각 칼럼 안의 카드가
+     flex:1 1 auto로 그 칼럼의 남는 높이를 끝까지 채워야 한다(.chat-card
+     참고). 결과 패널 쪽엔 위에 사전 경고문이 먼저 있어 카드 시작 위치는
+     서로 다르지만, 끝나는 줄(바닥)은 이 조합으로 맞춰진다. */
+  /* 대화 영역 전체가 헤더를 뺀 화면 나머지를 스크롤 없이 채우고, 그
+     아래 푸터(저작권)만 스크롤을 내려야 보이게 한다. --header-h는
+     index.html의 인라인 스크립트가 실제 헤더 높이를 재서 채워준다
+     (폭·폰트 로딩에 따라 헤더 높이가 달라질 수 있어 CSS만으로는 정확한
+     값을 고정할 수 없다). 스크립트 실행 전 순간을 위한 대략적 기본값만
+     폴백으로 둔다. */
+  min-height:calc(100vh - var(--header-h, 100px));
 }
-.assist-left{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  min-height:0;
-}
-.assist-results-panel{
-  min-height:0;
-  overflow-y:auto;
+.chat-col,
+.results-col{
   display:flex;
   flex-direction:column;
   gap:14px;
-  background:var(--gray-100);
-  border:1px solid var(--gray-200);
-  border-radius:var(--radius-lg);
-  padding:14px;
-}
-.assist-results-empty{
-  padding:32px 20px;
-  text-align:center;
-  font-size:13px;
-  color:var(--gray-500);
+  min-height:0;
 }
 @media (max-width: 960px){
-  body.shell-page{ height:auto; overflow:visible; }
-  .assist-layout{ grid-template-columns:1fr; height:auto; }
-  .assist-left{ height:auto; }
-  .assist-results-panel{ max-height:none; overflow-y:visible; }
+  .assist-layout.chat-with-results{ grid-template-columns:1fr; min-height:0; height:auto; }
 }
-.assist-card{
+.chat-card{
   background:var(--white);
   border:1px solid var(--gray-200);
   border-radius:var(--radius-lg);
   box-shadow:var(--shadow-md);
-  padding:18px 22px;
-  flex:1 1 auto;
-  min-height:0;
+  padding:16px 20px;
   display:flex;
   flex-direction:column;
+  gap:10px;
+  min-height:0;
+  flex:1 1 auto;
 }
-.assist-card h2{
-  margin:0 0 4px;
-  font-size:17px;
+.chat-engine-badge-row{ display:flex; justify-content:flex-end; }
+
+/* ---------- 결과 패널("유력한 진단") ---------- */
+.candidates-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.candidates-head h2{
+  margin:0;
+  font-size:15px;
   font-weight:700;
   color:var(--ink);
 }
-.assist-desc{
-  margin:0 0 10px;
-  font-size:13px;
-  color:var(--gray-500);
-}
-.notes-textarea{
-  width:100%;
+.candidates-head-right{ display:flex; align-items:center; gap:8px; flex:0 0 auto; }
+.final-result-text{
   flex:1 1 auto;
-  min-height:60px;
+  min-height:120px;
+  overflow-y:auto;
+  font-size:13px;
+  line-height:1.7;
+  color:var(--gray-700);
+  white-space:pre-wrap;
+}
+.final-result-empty-hint{ flex:1 1 auto; min-height:120px; }
+
+.chat-messages{
+  /* min-height를 큰 고정값(420px)으로 두면, 실제 화면이 그보다 작을 때
+     (브라우저 창이 작거나 작업표시줄 등으로 실제 보이는 영역이 줄어들 때)
+     이 최소 높이 때문에 .chat-with-results 전체가 화면 밖으로 밀려나
+     버튼까지 잘리는 문제가 있었다. min-height는 작게 두고 flex:1 1 auto로
+     "남는 공간만큼" 채우게 해서, 화면이 넉넉하면 넓게 쓰고 좁으면 그만큼
+     줄어들며 전체가 항상 한 화면 안에 들어오게 한다. */
+  flex:1 1 auto;
+  min-height:160px;
+  max-height:70vh;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding:4px 2px;
+}
+.chat-empty-hint{ padding:32px 12px; text-align:center; font-size:13px; color:var(--gray-500); }
+
+.chat-message{
+  max-width:78%;
+  padding:10px 14px;
+  border-radius:var(--radius);
+  font-size:13.5px;
+  line-height:1.65;
+  white-space:pre-wrap;
+}
+.chat-message.user{
+  align-self:flex-end;
+  background:var(--primary);
+  color:var(--white);
+  border-bottom-right-radius:4px;
+}
+.chat-message.assistant{
+  align-self:flex-start;
+  background:var(--gray-100);
+  color:var(--gray-700);
+  border-bottom-left-radius:4px;
+}
+.chat-message.final-diagnosis{
+  align-self:stretch;
+  max-width:100%;
+  background:var(--primary-50);
+  border:1px solid var(--primary-100);
+}
+
+.chat-input-bar{
+  display:flex;
+  align-items:flex-end;
+  gap:8px;
+}
+.chat-textarea{
+  flex:1 1 auto;
+  resize:none;
+  min-height:40px;
+  max-height:160px;
   border:1px solid var(--gray-300);
   border-radius:var(--radius-sm);
-  padding:14px 16px;
-  font-size:14.5px;
+  padding:9px 12px;
+  font-size:14px;
   font-family:inherit;
   color:var(--ink);
   background:var(--gray-100);
-  resize:vertical;
-  line-height:1.65;
+  line-height:1.5;
 }
-.notes-textarea:focus{
-  outline:none;
-  border-color:var(--primary);
-  background:var(--white);
+.chat-textarea:focus{
+  outline:none; border-color:var(--primary); background:var(--white);
   box-shadow:0 0 0 3px var(--primary-100);
+}
+.chat-send-btn{ flex:0 0 auto; }
+
+.chat-actions{
+  display:flex; align-items:center; gap:4px; flex-wrap:wrap;
+}
+
+@media (max-width: 960px){
+  .chat-messages{ max-height:none; }
+  .chat-message{ max-width:88%; }
 }
 .notes-actions{
   margin-top:10px;
   display:flex;
   align-items:center;
-  gap:6px;
+  gap:4px;
   flex-wrap:nowrap;
+  /* overflow-x:auto였던 안전장치를 제거했다 — CSS 스펙상 overflow-x만
+     auto로 주고 overflow-y를 그대로 두면 브라우저가 overflow-y도 자동으로
+     auto로 취급해, 버튼이 위아래로 잘려 보이는 스크롤이 생기는 부작용이
+     있었다. 버튼이 4개로 줄고 js/ai-ui.js의 fitNotesActionsRow()가 실제
+     렌더링 너비를 재서 한 줄에 맞추므로 이 안전장치 없이도 충분하다. */
+  position:relative;
 }
 .btn-compact{
   font-size:12px;
@@ -297,15 +369,182 @@ body.shell-page .site-header{ flex:0 0 auto; }
   flex:0 0 auto;
   white-space:nowrap;
 }
+.notes-actions .btn-compact{
+  /* .notes-actions 안에서만 적용되는 자동 맞춤 크기(JS 실행 전/실패 시엔
+     위 기본값으로 폴백). 실제 값은 js/ai-ui.js의 fitNotesActionsRow()가
+     렌더링된 너비를 재서 한 줄에 들어가도록 낮춘다. 다른 페이지(icd11.html
+     등)의 .btn-compact는 이 영향을 받지 않는다. */
+  font-size:var(--notes-actions-font, 12px);
+  padding:var(--notes-actions-pad, 7px 9px);
+}
+.btn-compact:disabled,
+.btn-compact[aria-disabled="true"]{
+  cursor:not-allowed;
+  opacity:.55;
+}
+#engine-select-btn.is-unavailable{
+  color:var(--gray-500);
+  background:var(--gray-100);
+  border-color:var(--gray-200);
+}
+#engine-select-btn.is-unavailable:hover{
+  background:var(--gray-100);
+}
+#engine-select-btn.is-checking{
+  color:var(--gray-500);
+  cursor:progress;
+  opacity:.75;
+}
+
+/* 예전엔 버튼에 매달린 위치계산 팝오버(position:fixed)였는데, 화면 크기에
+   따라 잘려 보이는 문제가 반복돼 중앙 모달(#engine-select-overlay,
+   .download-confirm-dialog 재사용)로 바꿨다. 이 클래스는 이제 모달
+   본문(#engine-select-body) 안에서 "2단계" 설명 밑에 선택 버튼 목록을
+   세로로 나열하는 용도로만 쓰인다 — 위치·크기 계산 없이 문서 흐름을
+   따른다. */
+.engine-option-popover{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  margin-top:8px;
+}
+
+.engine-option{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:4px;
+  background:none;
+  border:1px solid var(--gray-200);
+  border-radius:var(--radius-sm);
+  padding:10px 12px;
+  text-align:left;
+  cursor:pointer;
+  width:100%;
+}
+.engine-option:hover,
+.engine-option:focus-visible{
+  background:var(--gray-100);
+  outline:none;
+}
+.engine-option.is-selected{
+  background:var(--primary-50);
+  border-color:var(--primary-200);
+}
+.engine-option-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.engine-option-label{
+  flex:1 1 auto;
+  font-size:13px;
+  font-weight:600;
+  color:var(--gray-700);
+}
+.engine-option.is-selected .engine-option-label{ color:var(--primary-600); }
+.engine-option-installed{
+  font-size:10.5px;
+  font-weight:600;
+  color:var(--primary-600);
+  background:var(--primary-50);
+  border-radius:999px;
+  padding:2px 7px;
+  flex:0 0 auto;
+}
+/* 예전엔 호버해야만 보이는 말풍선 툴팁이었는데, 지금은 화면 중앙 모달이라
+   공간이 넉넉해서 설명을 항상 바로 보이게 바꿨다(호버 없이도 바로 읽힘). */
+.engine-option-desc{
+  margin:0;
+  font-size:12px;
+  line-height:1.55;
+  color:var(--gray-500);
+}
+.engine-option-desc:empty{ display:none; }
+
+.download-confirm-overlay{
+  position:fixed;
+  inset:0;
+  z-index:110;
+  background:rgba(16,24,40,.45);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+.download-confirm-overlay[hidden]{ display:none; }
+.download-confirm-dialog{
+  background:var(--white);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-md);
+  max-width:400px;
+  width:100%;
+  padding:20px 22px;
+}
+.download-confirm-dialog p{
+  margin:0 0 16px;
+  font-size:13px;
+  line-height:1.6;
+  color:var(--gray-700);
+}
+.download-confirm-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+}
+
+.engine-select-dialog{
+  max-width:420px;
+  max-height:80vh;
+  overflow-y:auto;
+}
+.engine-select-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:12px;
+}
+.engine-select-head h3{
+  margin:0;
+  font-size:16px;
+  color:var(--gray-700);
+}
+#engine-select-close{
+  background:none;
+  border:none;
+  cursor:pointer;
+  font-size:16px;
+  color:var(--gray-500);
+  padding:4px;
+}
+@media (max-width: 480px){
+  .engine-select-dialog{
+    max-width:100%;
+  }
+}
 .notes-hint{
   display:block;
   margin-top:8px;
   font-size:11.5px;
   color:var(--gray-500);
 }
-.ai-engine-link{
-  display:block;
-  margin-top:6px;
+.ollama-failure-banner{
+  margin-top:10px;
+  font-size:12.5px;
+  color:var(--warn);
+  background:var(--warn-bg);
+  border:1px solid #eddcae;
+  border-radius:var(--radius-sm);
+  padding:10px 12px;
+}
+.ollama-failure-message{
+  margin:0 0 6px;
+  font-weight:600;
+  line-height:1.6;
+}
+.ollama-debug-toggle{
+  display:inline-block;
   background:none;
   border:none;
   padding:0;
@@ -315,47 +554,24 @@ body.shell-page .site-header{ flex:0 0 auto; }
   cursor:pointer;
   text-align:left;
 }
-
-.ai-engine-modal-overlay{
-  position:fixed;
-  inset:0;
-  z-index:100;
-  background:rgba(16,24,40,.45);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
+.ollama-debug-detail{
+  margin-top:8px;
 }
-.ai-engine-modal-overlay[hidden]{ display:none; }
-.ai-engine-modal{
-  background:var(--white);
-  border-radius:var(--radius-lg);
-  box-shadow:var(--shadow-md);
-  max-width:520px;
-  width:100%;
-  max-height:85vh;
-  overflow-y:auto;
-  padding:20px 24px 24px;
-}
-.ai-engine-modal-head{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  margin-bottom:8px;
-}
-.ai-engine-modal-head h3{
-  margin:0;
-  font-size:16px;
+.ollama-debug-detail pre{
+  display:block;
+  background:var(--gray-100);
+  border:1px solid var(--gray-200);
+  border-radius:4px;
+  padding:8px 10px;
+  font-family:'SFMono-Regular', Consolas, monospace;
+  font-size:11.5px;
+  line-height:1.6;
   color:var(--gray-700);
+  overflow-x:auto;
+  white-space:pre;
+  margin:0 0 8px;
 }
-.ai-engine-modal-close{
-  background:none;
-  border:none;
-  cursor:pointer;
-  font-size:16px;
-  color:var(--gray-500);
-  padding:4px;
-}
+
 .ai-engine-current{
   font-size:13px;
   font-weight:600;
@@ -400,21 +616,6 @@ body.shell-page .site-header{ flex:0 0 auto; }
   font-size:11.5px;
   color:var(--gray-500);
 }
-.page-copyright{
-  position:fixed;
-  right:14px;
-  bottom:10px;
-  z-index:40;
-  font-size:11px;
-  font-weight:400;
-  line-height:1.4;
-  color:var(--gray-500);
-  text-align:right;
-  background:rgba(255,255,255,.85);
-  padding:4px 8px;
-  border-radius:var(--radius-sm);
-  pointer-events:none;
-}
 .ai-status{
   margin-top:10px;
   font-size:12.5px;
@@ -424,71 +625,6 @@ body.shell-page .site-header{ flex:0 0 auto; }
   border:1px solid var(--primary-100);
   border-radius:var(--radius-sm);
   padding:8px 12px;
-}
-.ai-result-text{
-  padding:4px 4px 18px;
-  font-size:13.5px;
-  line-height:1.75;
-  color:var(--gray-700);
-  white-space:pre-wrap;
-}
-
-.ai-followup-box{
-  margin:0 4px 18px;
-  padding:14px 16px;
-  background:var(--primary-50);
-  border:1px solid var(--primary-100);
-  border-radius:var(--radius-sm);
-}
-.ai-followup-box h3{
-  font-size:13px;
-  margin:0 0 8px;
-  color:var(--gray-700);
-}
-.ai-followup-questions{
-  font-size:13px;
-  line-height:1.7;
-  color:var(--gray-700);
-  white-space:pre-wrap;
-  margin-bottom:10px;
-}
-.ai-followup-box textarea{
-  width:100%;
-  box-sizing:border-box;
-  font-size:13px;
-  padding:8px 10px;
-  border:1px solid var(--gray-200);
-  border-radius:var(--radius-sm);
-  resize:vertical;
-  margin-bottom:10px;
-  font-family:inherit;
-}
-
-.candidates-card{
-  background:var(--white);
-  border:1px solid var(--gray-200);
-  border-radius:var(--radius-lg);
-  box-shadow:var(--shadow-md);
-  padding:22px 26px 10px;
-}
-.candidates-head{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  margin-bottom:14px;
-}
-.candidates-head h2{
-  margin:0;
-  font-size:17px;
-  font-weight:700;
-  color:var(--ink);
-}
-.candidates-head-right{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  flex-shrink:0;
 }
 .copy-btn{
   appearance:none;
@@ -516,92 +652,15 @@ body.shell-page .site-header{ flex:0 0 auto; }
   padding:3px 10px;
   white-space:nowrap;
 }
-.candidates-list{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  padding-bottom:14px;
-  max-height:70vh;
-  overflow-y:auto;
-}
-.result-note{
-  margin:0;
-  padding:10px 4px 14px;
-  font-size:11.5px;
-  line-height:1.6;
-  color:var(--gray-500);
-  border-top:1px solid var(--gray-200);
-}
-.candidates-empty{
-  padding:20px 4px 28px;
-  font-size:13px;
-  color:var(--gray-500);
-  text-align:center;
-}
-.candidate-item{
-  border:1px solid var(--gray-200);
-  border-left:4px solid var(--primary);
-  border-radius:var(--radius);
-  padding:14px 16px;
-  background:var(--gray-100);
-}
-.candidate-item-head{
-  display:flex;
-  align-items:baseline;
-  gap:8px;
-  flex-wrap:wrap;
-}
-.candidate-rank{
-  font-size:12px;
-  font-weight:700;
-  color:var(--primary);
-  background:var(--primary-100);
-  border-radius:5px;
-  padding:1px 7px;
-}
-.candidate-name{
-  font-size:15px;
-  font-weight:700;
-  color:var(--ink);
-}
-.candidate-cat{
-  font-size:12px;
-  color:var(--gray-500);
-}
-.candidate-evidence{
-  margin-top:8px;
-  font-size:13px;
-  color:var(--gray-700);
-  line-height:1.6;
-}
-.candidate-evidence b{ color:var(--primary-600); }
-.candidate-actions{
-  margin-top:10px;
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-}
-.candidate-actions .btn{
-  padding:6px 12px;
-  font-size:12.5px;
-}
-
-@keyframes diag-flash{
-  0%{ background:var(--primary-100); }
-  100%{ background:transparent; }
-}
-.diagnosis.flash{
-  animation:diag-flash 1.6s ease-out;
-  border-radius:var(--radius-sm);
-}
 
 /* ---------- Layout (정밀 체크리스트 영역) ---------- */
 .container{
-  max-width:var(--maxw);
+  /* .assist-layout과 동일한 이유로 폭 상한을 없애고 오른쪽 사이드바도
+     고정 340px 대신 비율(29%, 원래 폭 비율과 동일)로 바꿨다. */
   margin:0 auto;
   padding:20px 24px 60px;
   display:grid;
-  grid-template-columns:1fr 340px;
+  grid-template-columns:1fr 29%;
   gap:22px;
   align-items:start;
 }
@@ -672,6 +731,11 @@ body.shell-page .site-header{ flex:0 0 auto; }
   animation:ai-spin .7s linear infinite;
 }
 .btn.loading{ color:var(--primary); border-color:var(--primary); }
+/* "AI 분석" 버튼이 btn-primary(파란 배경)로 바뀌면서, 위 .btn.loading이
+   글자색을 파란색으로 바꾸는 규칙과 겹쳐 파란 배경 위에 파란 글씨가 되어
+   버튼 클릭(로딩 시작) 즉시 글씨가 안 보이던 문제가 있었다. primary
+   버튼은 로딩 중에도 흰 글씨를 유지하도록 되돌린다. */
+.btn-primary.loading{ color:var(--white); }
 .btn.loading .ai-btn-spinner{ display:inline-block; }
 .btn.loading .ai-btn-label{ opacity:.85; }
 @keyframes ai-spin{ to{ transform:rotate(360deg); } }
@@ -904,12 +968,30 @@ body.shell-page .site-header{ flex:0 0 auto; }
   max-width:var(--maxw-narrow);
   margin:0 auto;
   padding:28px 24px 60px;
+}
+.about-inner{
+  /* icd11.html의 .icd11-inner(gap:18px)와 동일한 간격 — 예전엔 이 감싸는
+     div에 아무 스타일도 없어서 카드끼리 간격 없이 붙어 보였다. */
   display:flex;
   flex-direction:column;
-  gap:16px;
+  gap:18px;
+}
+.about-page-title-row{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.about-page-title-row .brand-mark-sm{
+  width:34px;
+  height:34px;
+  border-radius:8px;
+}
+.about-page-title-row .brand-mark-sm .brand-fallback-icon{
+  width:20px;
+  height:20px;
 }
 .about-page-title{
-  margin:4px 0 0;
+  margin:0;
   font-size:20px;
   font-weight:700;
   line-height:1.4;
@@ -951,7 +1033,7 @@ body.shell-page .site-header{ flex:0 0 auto; }
   margin-top:40px;
 }
 .footer-inner{
-  max-width:var(--maxw);
+  max-width:none;
   margin:0 auto;
   padding:16px 24px 20px;
   font-size:12.5px;
@@ -988,9 +1070,6 @@ body.shell-page .site-header{ flex:0 0 auto; }
 }
 
 /* Scrollbar */
-.candidates-list::-webkit-scrollbar,
 .results-list::-webkit-scrollbar{ width:8px; }
-.candidates-list::-webkit-scrollbar-thumb,
 .results-list::-webkit-scrollbar-thumb{ background:var(--gray-300); border-radius:8px; }
-.candidates-list::-webkit-scrollbar-track,
 .results-list::-webkit-scrollbar-track{ background:transparent; }
