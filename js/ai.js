@@ -278,10 +278,19 @@ function buildSystemPrompt(dictionaryText, forceConclusion) {
 // 이 한 단계만" 짧게 받아야 한다. 대신 매 단계마다 사전+대화 맥락을 다시
 // 읽어야 해서 이 노트북(CPU 전용 Ollama)처럼 느린 환경에서는 전체 소요
 // 시간이 늘어날 수 있다는 트레이드오프가 있다(사용자에게 고지 완료).
+// needsDictionary: 이 섹션이 실제로 진단 기준 사전을 참고해야 하는지.
+// 예전엔 6단계 요청 모두에 매번 사전 전체를 다시 끼워 넣었는데, 정리된
+// 소견·핵심요약·추가확인질문은 지시문 자체에 "기준과 비교하라"는 내용이
+// 없어 사전이 있으나 없으나 결과가 달라질 이유가 없다 — 그런데도 매번
+// 같은 긴 사전 텍스트를 다시 보내 CPU가 그만큼 더 읽어야 했다(중복
+// 낭비, 대화 참고). 진단 판단이 실제로 걸린 3단계(유력가설·확인필요항목·
+// 최종후보)만 사전을 주고 나머지는 뺀다 — 후보 개수·상세도는 그대로라
+// 정확도에는 영향이 없어야 한다(대화에서 사용자와 합의한 방향).
 const SECTION_DEFS = {
   noteSummary: {
     marker: NOTE_SUMMARY_MARKER,
     tokenBudget: 500,
+    needsDictionary: false,
     instruction: [
       '지금까지 상담자가 입력한 내용(소견·의견 포함)을 빼거나 지어내지 않고 정리된',
       '형태로 정리하세요. 상담자가 이미 정리된 형태로 입력했다면 그 내용을 거의',
@@ -292,16 +301,19 @@ const SECTION_DEFS = {
   summary: {
     marker: SUMMARY_MARKER,
     tokenBudget: 400,
+    needsDictionary: false,
     instruction: ['지금까지의 대화에서 확인된 핵심 증상을 짧게 정리하세요.'],
   },
   hypotheses: {
     marker: HYPOTHESES_MARKER,
     tokenBudget: 600,
+    needsDictionary: true,
     instruction: ['사전 후보 중 가장 유력한 가설을 최대 5개까지만 선정하세요 (전체 나열 금지).'],
   },
   uncertain: {
     marker: UNCERTAIN_MARKER,
     tokenBudget: 500,
+    needsDictionary: true,
     instruction: [
       '앞서 선정한 각 가설마다, 사전 기준 항목 중 "지금까지의 대화만으로는 확인할 수',
       '없는 항목"(증상 지속기간, 배제기준, 심각도·기능손상 정도 등)이 있는지 짚어내세요.',
@@ -310,6 +322,7 @@ const SECTION_DEFS = {
   finalCandidates: {
     marker: FINAL_CANDIDATES_MARKER,
     tokenBudget: 1200,
+    needsDictionary: true,
     instruction: [
       '위 사고 과정을 반영한 현재 시점의 최종 후보를 정리하세요(확인할 항목이 남아',
       '있다면 잠정적 결론임을 밝히고, 남은 게 없다면 그 자체가 결론입니다).',
@@ -325,9 +338,11 @@ const SECTION_DEFS = {
   followUp: {
     marker: FOLLOWUP_MARKER,
     tokenBudget: 400,
+    needsDictionary: false,
     instruction: [
       '확인이 필요한 항목이 있다면, 상담자에게 되물을 구체적 질문을 "1. (질문)" 형식으로',
-      '만드세요. 확인할 필요가 없다고 판단되면 "' + FOLLOWUP_NONE_TEXT + '"라고만 쓰세요.',
+      '만드세요(바로 앞서 정리한 확인 필요 항목을 참고하세요). 확인할 필요가 없다고',
+      '판단되면 "' + FOLLOWUP_NONE_TEXT + '"라고만 쓰세요.',
       '상담자가 (이전 turn에서) "그만 물어봐도 돼요", "이 정도면 충분해요" 같은 자연어로',
       '대화 종료 의사를 표현했다면, 더 이상 묻지 말고 "' + FOLLOWUP_NONE_TEXT + '"만 쓰세요.',
     ],
@@ -341,14 +356,27 @@ function buildSectionSystemPrompt(dictionaryText, forceConclusion, sectionKey, p
   const def = SECTION_DEFS[sectionKey];
   const lines = [
     '당신은 정신건강 임상 스크리닝을 보조하는 한국어 도구입니다.',
-    '아래 "진단 기준 사전"은 DSM-5-TR의 개념을 참고하여 재서술한 체크리스트 데이터이며,',
-    '당신이 근거로 삼을 수 있는 것은 이 사전에 적힌 항목뿐입니다. 사전에 없는 진단명이나',
-    '기준을 만들어내지 마세요.',
-    '',
-    '=== 진단 기준 사전 (내담자 소견과 키워드가 겹치는 상위 후보) ===',
-    dictionaryText,
-    '=== 사전 끝 ===',
-    '',
+  ];
+
+  // 사전은 실제로 진단 판단이 걸린 단계(유력가설·확인필요항목·최종후보)에만
+  // 넣는다 — 정리된 소견·핵심요약·추가확인질문은 기준과 비교할 필요가
+  // 없는 단계라 매번 다시 안 보내도 결과가 달라지지 않는다(위 SECTION_DEFS
+  // 주석 참고, 대화에서 합의한 방향). 후보 개수·상세도는 그대로 유지해
+  // 정확도에는 영향이 없게 한다.
+  if (def.needsDictionary) {
+    lines.push(
+      '아래 "진단 기준 사전"은 DSM-5-TR의 개념을 참고하여 재서술한 체크리스트 데이터이며,',
+      '당신이 근거로 삼을 수 있는 것은 이 사전에 적힌 항목뿐입니다. 사전에 없는 진단명이나',
+      '기준을 만들어내지 마세요.',
+      '',
+      '=== 진단 기준 사전 (내담자 소견과 키워드가 겹치는 상위 후보) ===',
+      dictionaryText,
+      '=== 사전 끝 ===',
+      '',
+    );
+  }
+
+  lines.push(
     '이 대화는 상담자와 당신이 여러 차례 주고받는 채팅입니다. 이전 turn들의 소견·질문·답변이',
     '모두 대화 기록으로 이미 주어져 있으니, 그 전체 맥락을 반영해 분석하세요.',
     '',
@@ -360,7 +388,7 @@ function buildSectionSystemPrompt(dictionaryText, forceConclusion, sectionKey, p
     '실제 임상가처럼 가설연역적으로(단서 정리 → 유력 가설 → 확인 필요 항목 → 최종 후보)',
     '분석하되, 이 요청에서는 그 중 아래 한 단계만 작성하면 됩니다. 나머지 단계는 이후',
     '별도 요청에서 다룰 것이니 신경 쓰지 마세요.',
-  ];
+  );
 
   if (priorSectionsText) {
     lines.push(
