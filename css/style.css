@@ -220,8 +220,18 @@ a{color:var(--primary)}
      index.html의 인라인 스크립트가 실제 헤더 높이를 재서 채워준다
      (폭·폰트 로딩에 따라 헤더 높이가 달라질 수 있어 CSS만으로는 정확한
      값을 고정할 수 없다). 스크립트 실행 전 순간을 위한 대략적 기본값만
-     폴백으로 둔다. */
-  min-height:calc(100vh - var(--header-h, 100px));
+     폴백으로 둔다.
+     예전엔 min-height만 둬서 "화면보다 작으면 화면 크기, 크면 그만큼
+     늘어남"이었는데, 이러면 안의 배너·배지 등이 늘어 화면 높이를 넘을 때
+     이 블록 자체가 늘어나 페이지가 밀렸다(답변창 안 대화 목록은
+     max-height로 막아뒀어도, 그걸 둘러싼 카드 전체 높이는 안 막혀
+     있었던 것 — 실측으로 확인된 회귀). height를 상한으로도 고정하고
+     overflow:hidden을 둬서, 내부 콘텐츠가 아무리 늘어나도 이 블록 자체는
+     항상 화면 높이에 고정되고 각 스크롤 박스(.chat-messages,
+     .final-result-text) 안에서만 넘치도록 강제한다. */
+  height:calc(100vh - var(--header-h, 100px));
+  max-height:calc(100vh - var(--header-h, 100px));
+  overflow:hidden;
 }
 .chat-col,
 .results-col{
@@ -231,7 +241,11 @@ a{color:var(--primary)}
   min-height:0;
 }
 @media (max-width: 960px){
-  .assist-layout.chat-with-results{ grid-template-columns:1fr; min-height:0; height:auto; }
+  /* 모바일은 좌우 분할을 접어 세로로 쌓으므로(아래 grid-template-columns:1fr),
+     "화면 안에 다 담기" 대신 원래 있던 일반 페이지 스크롤 방식으로 되돌아간다
+     — height 상한·overflow:hidden도 함께 풀어야 카드들이 자연스럽게
+     쌓이며 늘어난다(안 풀면 좁은 화면에서 내용이 잘려 보임). */
+  .assist-layout.chat-with-results{ grid-template-columns:1fr; height:auto; max-height:none; overflow:visible; }
 }
 .chat-card{
   background:var(--white);
@@ -264,7 +278,15 @@ a{color:var(--primary)}
 .final-result-text{
   flex:1 1 auto;
   min-height:120px;
+  /* 고정 70vh 대신 조상(.assist-layout)의 height 상한(위 참고)에 맞춰
+     flex:1 1 auto로 "실제로 남는 공간만큼"만 채우고 그 안에서 스크롤한다.
+     70vh처럼 화면 크기 대비 대략치를 쓰면, 배너·배지 등 둘레 요소가
+     늘어날 때 그 몫을 못 빼줘 카드 전체가 화면보다 커지는 문제가 있었다
+     (실측으로 확인된 회귀 — 조상에서 막는 것으로 근본 해결). */
   overflow-y:auto;
+  /* .chat-messages와 동일한 이유 — 이 박스 끝에서 스크롤이 페이지 전체로
+     새어나가지 않게 막는다(대화 참고). */
+  overscroll-behavior:contain;
   font-size:13px;
   line-height:1.7;
   color:var(--gray-700);
@@ -279,10 +301,15 @@ a{color:var(--primary)}
      버튼까지 잘리는 문제가 있었다. min-height는 작게 두고 flex:1 1 auto로
      "남는 공간만큼" 채우게 해서, 화면이 넉넉하면 넓게 쓰고 좁으면 그만큼
      줄어들며 전체가 항상 한 화면 안에 들어오게 한다. */
+  /* 고정 70vh 대신 조상(.assist-layout)의 height 상한에 맞춰 실제로
+     남는 공간만큼만 채운다(.final-result-text와 동일한 근거 — 위 참고). */
   flex:1 1 auto;
   min-height:160px;
-  max-height:70vh;
   overflow-y:auto;
+  /* 마우스가 이 박스 위에 있을 때 스크롤이 끝까지 내려가도(휠을 계속 굴려도)
+     그 스크롤이 뒤에 있는 페이지 전체 스크롤로 "새어나가지" 않고 여기서
+     멈추게 한다(대화 참고 — 안 넣으면 대화창 끝에서 페이지가 같이 움직임). */
+  overscroll-behavior:contain;
   display:flex;
   flex-direction:column;
   gap:10px;
@@ -316,6 +343,30 @@ a{color:var(--primary)}
   background:var(--primary-50);
   border:1px solid var(--primary-100);
 }
+/* 스트리밍 단계별 표시(대화 참고) 전용 — 지금 실시간으로 채워지고 있는
+   말풍선임을 옅은 깜빡임으로 보여준다. 섹션이 확정되는 순간 이 클래스가
+   빠진다(js/ai-ui.js createStreamingRenderer() 참고). */
+.chat-message.chat-message-live{
+  border:1px dashed var(--gray-300);
+}
+@keyframes chat-live-pulse{ 0%,100%{opacity:1} 50%{opacity:.55} }
+.chat-message.chat-message-live::after{
+  content:'▍';
+  display:inline-block;
+  margin-left:2px;
+  animation:chat-live-pulse 1s ease-in-out infinite;
+}
+/* "다음 내용을 정리해서 보여드리겠습니다..." 같은 전환 문구 — 실제 분석
+   내용이 아니므로 눈에 덜 띄게 작고 옅게, 배경도 없이 표시한다. */
+.chat-message.chat-message-filler{
+  align-self:flex-start;
+  background:none;
+  border:none;
+  padding:2px 4px;
+  font-size:12px;
+  font-style:italic;
+  color:var(--gray-500);
+}
 
 .chat-input-bar{
   display:flex;
@@ -347,7 +398,6 @@ a{color:var(--primary)}
 }
 
 @media (max-width: 960px){
-  .chat-messages{ max-height:none; }
   .chat-message{ max-width:88%; }
 }
 .notes-actions{
@@ -524,10 +574,17 @@ a{color:var(--primary)}
   }
 }
 .notes-hint{
-  display:block;
-  margin-top:8px;
+  /* 예전엔 버튼 줄 아래 별도 줄이었지만, 그 한 줄을 아끼려고 버튼들과
+     같은 .chat-actions 행 안으로 옮겼다(대화 참고 — 대화창을 조금이라도
+     더 넓게 쓰기 위함). flex:1 1 auto로 남는 공간을 채우고, 버튼들과
+     같은 줄에 안 들어갈 만큼 좁으면 flex-wrap:wrap 덕에 자연스럽게
+     다음 줄로 내려간다. */
+  flex:1 1 auto;
+  min-width:180px;
+  margin:0;
   font-size:11.5px;
   color:var(--gray-500);
+  white-space:normal;
 }
 .ollama-failure-banner{
   margin-top:10px;
@@ -570,6 +627,28 @@ a{color:var(--primary)}
   overflow-x:auto;
   white-space:pre;
   margin:0 0 8px;
+}
+/* Ollama가 연결은 됐지만 GPU를 못 써 CPU로만 도는 경우의 안내 배너.
+   ollama-failure-banner(연결 자체 실패, 경고색)와 구분되도록 primary 톤을
+   써서 "오류가 아니라 선택지 제안"이라는 성격을 시각적으로 다르게 준다. */
+.ollama-cpu-banner{
+  margin-top:10px;
+  font-size:12.5px;
+  color:var(--primary-700);
+  background:var(--primary-50);
+  border:1px solid var(--primary-100);
+  border-radius:var(--radius-sm);
+  padding:10px 12px;
+}
+.ollama-cpu-message{
+  margin:0 0 8px;
+  font-weight:600;
+  line-height:1.6;
+}
+.ollama-cpu-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
 }
 
 .ai-engine-current{

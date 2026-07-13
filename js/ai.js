@@ -125,6 +125,47 @@ const FOLLOWUP_NONE_TEXT = '(추가 질문 없음)';
 // "이 마커부터 FOLLOWUP_MARKER(있다면) 전까지"로 일관되게 잘라낼 수 있다.
 const FINAL_CANDIDATES_MARKER = '### 최종 후보';
 
+// 아래 4개는 스트리밍 단계별 표시(대화 참고 — "핵심요약 → 유력가설 →
+// 확인필요항목 순으로 하나씩 채팅창에 보여달라") 기능을 위해 새로 추가한
+// 마커다. 예전엔 1)~3) 단계가 마커 없는 평문이라 "지금 어디까지 썼는지"를
+// 스트림 도중에 구분할 방법이 없었다 — 이제 각 단계 출력 앞에 고정 마커를
+// 붙여, ai-ui.js가 스트림을 받는 도중 마커 등장 시점마다 그 구간을 완성된
+// 말풍선으로 잘라 보여줄 수 있게 한다.
+const NOTE_SUMMARY_MARKER = '### 정리된 소견';
+const SUMMARY_MARKER = '### 핵심 요약';
+const HYPOTHESES_MARKER = '### 유력 가설';
+const UNCERTAIN_MARKER = '### 확인 필요 항목';
+
+// ai-ui.js가 마커 문자열을 하드코딩하지 않고 이 함수로만 참조하게 해서,
+// 마커 값이 여기(단일 출처)와 어긋날 위험을 없앤다. noteSummary는 결과
+// 패널 전용(채팅에는 안 보여줌)이라 별도 표시해둔다.
+export function getSectionMarkers() {
+  return {
+    noteSummary: NOTE_SUMMARY_MARKER,
+    summary: SUMMARY_MARKER,
+    hypotheses: HYPOTHESES_MARKER,
+    uncertain: UNCERTAIN_MARKER,
+    finalCandidates: FINAL_CANDIDATES_MARKER,
+    followUp: FOLLOWUP_MARKER,
+    followUpNoneText: FOLLOWUP_NONE_TEXT,
+  };
+}
+
+// 결과 패널의 "[내담자 소견]"이 상담자가 입력한 원문을 그대로 이어붙이는
+// 대신, AI가 정리한 버전을 쓸 수 있도록 최근 assistant 턴에서 이 섹션만
+// 뽑아준다(NOTE_SUMMARY_MARKER부터 SUMMARY_MARKER 직전까지). extractFinalCandidates()와
+// 동일한 패턴 — 마커가 없으면(모델이 형식을 안 지킨 경우) null을 반환해
+// 호출부(ai-ui.js)가 원문 그대로 쓰는 기존 방식으로 자연스럽게 폴백하게 한다.
+export function extractNoteSummary(answerText) {
+  const startIdx = answerText.indexOf(NOTE_SUMMARY_MARKER);
+  if (startIdx === -1) return null;
+  const contentStart = startIdx + NOTE_SUMMARY_MARKER.length;
+  const nextIdx = answerText.indexOf(SUMMARY_MARKER, contentStart);
+  const contentEnd = nextIdx === -1 ? answerText.length : nextIdx;
+  const text = answerText.slice(contentStart, contentEnd).trim();
+  return text || null;
+}
+
 // 실제 임상가의 가설연역적 추론(hypothetico-deductive reasoning) 단계를 그대로
 // 프롬프트 구조로 반영: 단서 정리 → 소수의 유력 가설 생성 → 확인 불가능한 항목
 // 식별(지속기간·배제기준 등, 정적 체크리스트로는 못 채우는 부분) → 후속 질문 →
@@ -146,17 +187,44 @@ function buildSystemPrompt(dictionaryText, forceConclusion) {
     '이 대화는 상담자와 당신이 여러 차례 주고받는 채팅입니다. 이전 turn들의 소견·질문·답변이',
     '모두 대화 기록으로 이미 주어져 있으니, 그 전체 맥락을 반영해 분석하세요.',
     '',
+    '상담자가 자신의 진단 의견이나 가설(예: "이건 OO장애 같다", "OO는 아닌 것 같다")을 직접',
+    '제시하면, 그 의견을 그냥 지나치지 말고 사전 기준에 비춰 명시적으로 판단하세요 — 동의한다면',
+    '그 근거를, 이견이 있다면 정확히 어느 지점에서 사전 기준과 안 맞는지, 그리고 그 의견을',
+    '뒷받침하거나 반박하려면 어떤 추가 정보가 필요한지 밝히세요. 상담자가 추가 자료나 근거를',
+    '이어서 제시하면, 그것도 지금까지의 소견과 함께 판단에 반영해 가설을 다시 조정하세요.',
+    '',
     '실제 임상가처럼 다음 사고 과정을 거쳐 분석하세요. 사전 항목을 단순히 소견과',
-    '겹치는 대로 전부 나열하지 말고, 아래 단계를 거쳐 소수로 압축하세요.',
+    '겹치는 대로 전부 나열하지 말고, 아래 단계를 거쳐 소수로 압축하세요. 각 단계는',
+    '반드시 지정된 마커로 시작하는 별도 섹션으로 나눠 쓰세요(마커 문자열을 그대로',
+    '포함해야 합니다 — 화면에 각 단계가 하나씩 순서대로 나타나는 데 이 마커가 쓰입니다).',
+    '',
+    '0) 지금까지 상담자가 입력한 내용(소견·의견 포함)을 빼거나 지어내지 않고 정리된',
+    '   형태로 정리하세요. 상담자가 이미 정리된 형태로 입력했다면 그 내용을 거의',
+    '   그대로 옮기면 되고, 대화체로 두서없이 적었다면 시간순·항목별로 다듬어',
+    '   읽기 쉽게 정리하세요. 상담자의 진단 의견이나 가설이 있었다면 함께 포함하세요.',
+    '',
+    NOTE_SUMMARY_MARKER,
+    '(정리된 소견)',
     '',
     '1) 지금까지의 대화에서 확인된 핵심 증상을 짧게 정리하세요.',
+    '',
+    SUMMARY_MARKER,
+    '(핵심 요약)',
+    '',
     '2) 사전 후보 중 가장 유력한 가설을 최대 5개까지만 선정하세요 (전체 나열 금지).',
+    '',
+    HYPOTHESES_MARKER,
+    '(유력 가설)',
   ];
 
   if (!forceConclusion) {
     lines.push(
+      '',
       '3) 각 가설마다, 사전 기준 항목 중 "지금까지의 대화만으로는 확인할 수 없는 항목"',
       '   (증상 지속기간, 배제기준, 심각도·기능손상 정도 등)이 있는지 짚어내세요.',
+      '',
+      UNCERTAIN_MARKER,
+      '(확인 필요 항목)',
     );
   }
 
@@ -221,8 +289,18 @@ const OLLAMA_MODELS = {
     label: '생각과정 없음 (현재 기본)',
     thinking: false,
     tooltip: '',
-    // 기존 하드코딩값(1800)을 그대로 보존 — 회귀 없음 보장.
-    numPredict: 1800,
+    // 1800에서 2400으로 상향(대화 참고 — 소견 요약·핵심요약·유력가설·확인필요
+    // 항목까지 마커 섹션이 늘어 기존 1800으로는 최종 후보 직전에 잘리는 사례가
+    // 실측됨). numPredict만 올려도 num_ctx가 작으면 프롬프트(사전+대화)가
+    // 이미 문맥 창 대부분을 차지해 여전히 잘릴 수 있어, 아래 numCtx도 함께
+    // 올린다(실측 원인 — 대화 참고).
+    numPredict: 2400,
+    // 기본(미지정 시 Ollama가 씀) 4096으로는 사전+대화 길이만으로 문맥 창
+    // 대부분이 차 버려 응답이 중간에 끊기는 게 실측됐다. 8192로 올려 응답
+    // 쓸 공간을 확보한다 — 대신 메모리 사용량이 늘고(대략 2배), 이 값으로
+    // 처음 요청할 때 Ollama가 모델을 그 크기로 다시 띄우느라 한 번 더
+    // 지연될 수 있다(대화 참고, 사용자에게 고지 완료).
+    numCtx: 8192,
     // ollama.com/library/qwen3:4b-instruct 공식 페이지 확인(2.5GB).
     approxSizeGB: 2.5,
   },
@@ -238,6 +316,10 @@ const OLLAMA_MODELS = {
     // 요청을 실행할 수 있는 환경에서 값을 확정해야 한다(00-overview.md §5
     // 위험#7).
     numPredict: 5000,
+    // instruct 모델과 동일한 이유로 numCtx를 명시(위 주석 참고). 이 모델은
+    // <think> 블록까지 써야 해서 문맥 압박이 더 클 수 있어 최소한 같은
+    // 크기는 필요하다고 판단했다(실측 미검증 — 위 TODO와 동일 한계).
+    numCtx: 8192,
     // ollama.com/library/qwen3:4b-thinking 공식 페이지 확인(2.5GB).
     approxSizeGB: 2.5,
   },
@@ -382,24 +464,83 @@ function finalizeModelOutput(rawText) {
 // messages: 이미 조립된 { role, content }[] 전체(대화 배열 재설계, TICKET-1).
 // system 프롬프트 조립·대화 히스토리 concat은 모두 호출부(analyzeWithAI)의
 // 책임이며, 이 함수는 그것을 그대로 Ollama에 전달만 한다.
-async function analyzeWithOllama(messages) {
+//
+// onDelta(선택): 넘기면 stream:true로 요청해 토큰이 오는 대로 그 조각
+// 텍스트를 콜백으로 즉시 넘긴다(채팅창에 "핵심요약 → 유력가설 → ..."
+// 순서로 하나씩 나타나게 하는 기능의 기반 — 대화 참고). 함수의 반환값은
+// 스트리밍 여부와 무관하게 항상 완성된 전체 텍스트다 — 호출부(analyzeWithAI)가
+// 마무리 처리(finalizeModelOutput 등)를 스트리밍 여부와 상관없이 동일하게
+// 할 수 있도록.
+// abortSignal(선택): "대화 초기화"를 누르는 순간에도 이미 보낸 요청이 백그라운드에서
+// 계속 돌아 전송 버튼이 로딩 상태로 남아있던 버그(대화 참고)를 고치기 위해
+// 추가 — fetch에 그대로 넘겨 사용자가 초기화를 누르면 요청 자체가 즉시 중단된다.
+async function analyzeWithOllama(messages, onDelta, abortSignal) {
   const modelConf = OLLAMA_MODELS[selectedOllamaModelId];
+  const useStream = typeof onDelta === 'function';
+  const options = { temperature: 0.3, num_predict: modelConf.numPredict, num_ctx: modelConf.numCtx };
+
+  if (!useStream) {
+    const res = await fetch(OLLAMA_URL + '/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: modelConf.id, messages: messages, stream: false, options: options }),
+      signal: abortSignal,
+    });
+    if (!res.ok) throw new Error('Ollama 응답 오류 (HTTP ' + res.status + ')');
+    const data = await res.json();
+    return data.message.content;
+  }
+
+  // Ollama /api/chat 스트리밍 응답 형식: 줄바꿈으로 구분된 JSON 객체들이
+  // 순차로 오고, 각 객체가 { message: { content }, done }이다(공식 문서
+  // 형식 — pullOllamaModel()의 /api/pull NDJSON 파싱과 같은 패턴 재사용).
   const res = await fetch(OLLAMA_URL + '/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: modelConf.id,
-      messages: messages,
-      stream: false,
-      // 가설 생성→확인불가 항목 식별→후속질문 단계가 늘어난 만큼 여유를 둔다.
-      // 1200에서도 최종 결론 직전에 잘리는 경우가 실측되어 1800으로 상향
-      // (qwen3:4b-instruct 기준값). 모델별 한도는 이제 레지스트리에서 온다.
-      options: { temperature: 0.3, num_predict: modelConf.numPredict },
-    }),
+    body: JSON.stringify({ model: modelConf.id, messages: messages, stream: true, options: options }),
+    signal: abortSignal,
   });
   if (!res.ok) throw new Error('Ollama 응답 오류 (HTTP ' + res.status + ')');
-  const data = await res.json();
-  return data.message.content;
+  if (!res.body || !res.body.getReader) {
+    // 스트리밍 body를 못 받는 환경 — 통짜 응답으로 폴백(진행 표시 없이).
+    const data = await res.json();
+    const full = data.message.content;
+    onDelta(full);
+    return full;
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let fullText = '';
+  const processLine = function (line) {
+    if (!line.trim()) return;
+    let evt;
+    try {
+      evt = JSON.parse(line);
+    } catch (parseErr) {
+      return; // 파싱 실패한 줄은 건너뜀(pullOllamaModel()과 동일한 방어)
+    }
+    const delta = evt.message && evt.message.content;
+    if (delta) {
+      fullText += delta;
+      onDelta(delta);
+    }
+  };
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop();
+    for (const line of lines) processLine(line);
+  }
+  // 실측으로 확인된 버그(대화 참고): 마지막 청크가 개행으로 안 끝나면 그
+  // 줄이 계속 buffer에만 남아 있다가 위 while(true) 루프가 done으로 끝나며
+  // 통째로 유실됐다 — 응답의 마지막 한 줄(흔히 추가확인질문 내용)이 통째로
+  // 사라지는 회귀였다. 루프 종료 후 남은 buffer도 반드시 한 번 더 처리한다.
+  processLine(buffer);
+  return fullText;
 }
 
 // TICKET-6이 소비할 수 있도록 다운로드 실패 사유도 detectOllama()와 동일한
@@ -465,6 +606,19 @@ export async function pullOllamaModel(modelId, onProgress) {
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
+    const processLine = function (line) {
+      if (!line.trim()) return;
+      let evt;
+      try {
+        evt = JSON.parse(line);
+      } catch (parseErr) {
+        // 실측 안 된 가정(NDJSON)이 실제와 다를 가능성 대비 — 이 줄
+        // 하나 때문에 전체 다운로드를 실패 처리하지 않는다.
+        if (onProgress) onProgress({ status: '다운로드 중...' });
+        return;
+      }
+      if (onProgress) onProgress(evt);
+    };
     try {
       while (true) {
         const { done, value } = await reader.read();
@@ -472,20 +626,13 @@ export async function pullOllamaModel(modelId, onProgress) {
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
         buffer = lines.pop();
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          let evt;
-          try {
-            evt = JSON.parse(line);
-          } catch (parseErr) {
-            // 실측 안 된 가정(NDJSON)이 실제와 다를 가능성 대비 — 이 줄
-            // 하나 때문에 전체 다운로드를 실패 처리하지 않는다.
-            if (onProgress) onProgress({ status: '다운로드 중...' });
-            continue;
-          }
-          if (onProgress) onProgress(evt);
-        }
+        for (const line of lines) processLine(line);
       }
+      // analyzeWithOllama()의 스트리밍 리더에서 실측으로 확인된 것과 같은
+      // 버그(대화 참고) — 마지막 줄이 개행으로 안 끝나면 유실된다. 다운로드는
+      // 보통 마지막 줄이 "완료(100%)" 이벤트라 이게 유실되면 진행률 표시가
+      // 100% 못 채운 채 멈춘 것처럼 보일 수 있어 여기도 동일하게 고친다.
+      processLine(buffer);
     } catch (e) {
       throw makeOllamaPullError('stream', (e && e.message) || '다운로드 스트림 오류', String(e));
     }
@@ -552,11 +699,73 @@ export function isModelReady() {
   return modelLoaded;
 }
 
+// 사용자가 "카나나로 전환" 버튼을 눌러 명시적으로 선택했을 때만 켜지는
+// 플래그. Ollama가 연결·설치돼 있어도 이게 true면 analyzeWithAI()가 Ollama
+// 경로를 건너뛴다. 속도 비교를 자동 판단해 몰래 전환하지 않고, 항상 사용자가
+// 눈으로 안내를 보고 직접 선택한 경우에만 켠다(자동 전환은 다운로드 유발 등
+// 부작용이 있어 채택하지 않음 — 대화 참고).
+//
+// sessionStorage에 저장하는 이유: 처음엔 메모리 변수(let)로만 뒀는데, 실사용
+// 중 "카나나로 전환했다가 다운로드 오류로 새로고침 → Ollama로 도로 바뀌어
+// 있고 다시 전환할 버튼도 안 보임"이 실측됐다(대화 참고). 새로고침에도
+// 선택이 유지되도록 세션 스토리지에 함께 저장한다.
+const FORCE_BROWSER_ENGINE_KEY = 'houtoti-force-browser-engine';
+
+function readForceBrowserEngine() {
+  try {
+    return sessionStorage.getItem(FORCE_BROWSER_ENGINE_KEY) === '1';
+  } catch (e) {
+    return false; // sessionStorage 접근 불가(프라이빗 모드 등) — 메모리 전용으로 폴백
+  }
+}
+
+let forceBrowserEngine = readForceBrowserEngine();
+
+export function setForceBrowserEngine(value) {
+  forceBrowserEngine = !!value;
+  try {
+    sessionStorage.setItem(FORCE_BROWSER_ENGINE_KEY, forceBrowserEngine ? '1' : '0');
+  } catch (e) {
+    /* 저장 실패는 무시 — 이번 세션(새로고침 전까지)엔 메모리 값으로 정상 동작 */
+  }
+}
+
+export function getForceBrowserEngine() {
+  return forceBrowserEngine;
+}
+
 // 현재 어떤 엔진이 쓰이는지 UI에서 표시할 수 있도록 노출.
 // 외부 계약('ollama'/'browser' 두 값)은 TICKET-4·5·6이 그대로 소비하므로
 // 바꾸지 않는다(00-overview.md §4.4) — 내부 판단 기준만 새 상태로 교체.
 export function currentEngine() {
+  if (forceBrowserEngine) return 'browser';
   return ollamaConnectionState === 'connected' && isModelInstalled(selectedOllamaModelId) ? 'ollama' : 'browser';
+}
+
+// ---------- Ollama GPU/CPU 처리 상태 확인 ----------
+// Ollama는 연결·모델설치 여부만으로는 "빠른지"를 알 수 없다 — GPU를 못 써서
+// CPU로만 도는 경우 응답이 수 분씩 걸릴 수 있는데(실측 사례 있음), 배지에는
+// 그냥 "Ollama 사용 중"으로만 뜨니 사용자가 원인을 알 방법이 없었다.
+// /api/ps는 로드된 모델의 size_vram(GPU에 올라간 바이트 수)을 알려주므로,
+// size_vram이 0이면 완전 CPU 처리로 판단한다(ollama CLI의 `ollama ps`
+// PROCESSOR 열과 같은 계산 방식). 모델이 아직 로드되지 않은 시점(첫 요청
+// 전)에는 /api/ps에 항목이 없을 수 있어 그 경우 null을 반환한다 — 호출부는
+// "판단 불가"로 취급하고 안내를 띄우지 않는다.
+export async function getOllamaProcessorInfo() {
+  try {
+    const res = await fetch(OLLAMA_URL + '/api/ps', { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const modelConf = OLLAMA_MODELS[selectedOllamaModelId];
+    const entry = (data.models || []).find((m) => m.name === modelConf.id || m.name.indexOf(modelConf.id) === 0);
+    if (!entry) return null;
+    const size = entry.size || 0;
+    const sizeVram = entry.size_vram || 0;
+    const gpuRatio = size > 0 ? sizeVram / size : 0;
+    return { isCpuOnly: gpuRatio === 0, gpuPercent: Math.round(gpuRatio * 100) };
+  } catch (e) {
+    return null; // 확인 실패는 조용히 무시 — 안내 문구를 못 띄울 뿐 분석 자체엔 영향 없음
+  }
 }
 
 // TICKET-4: js/main.js는 <script src="js/main.js">(비-module)로 로드되어
@@ -621,7 +830,21 @@ export function extractFinalCandidates(answerText) {
 // 있어 채택했다. 판정 자체(즉 splitFollowUpSection() 호출)는 이 함수의
 // 책임이 아니라 TICKET-3(js/ai-ui.js)의 책임이다 — 이 함수는 원문 텍스트만
 // 반환한다.
-export async function analyzeWithAI(conversation, onProgress, forceConclusion) {
+// onDelta(선택, 신규): 넘기면 토큰이 생성되는 대로 그 조각 텍스트를 실시간
+// 콜백으로 받는다(핵심요약 → 유력가설 → ... 순서로 채팅창에 하나씩 보여주는
+// 기능의 기반 — 대화 참고). Ollama·wllama 둘 다 지원한다. 스트리밍 중
+// onDelta로 넘어가는 텍스트는 원문 그대로(정리 전)라 극히 드물게 제어
+// 토큰(<think> 등)이 잠깐 섞여 보일 수 있지만, 최종 저장되는 conversation
+// 텍스트는 지금처럼 finalizeModelOutput()으로 정리된 버전이다 — 실시간
+// 표시 중의 사소한 미정리보다 스트리밍 자체의 체감 이득이 크다고 판단해
+// 받아들인 트레이드오프다.
+// abortSignal(선택, 신규): "대화 초기화"를 누르면 진행 중인 요청을 즉시
+// 취소할 수 있도록 호출부(ai-ui.js)가 AbortController.signal을 넘긴다.
+// 취소되면 이 함수는 AbortError를 그대로 던진다(호출부가 "오류 발생"
+// 문구를 안 띄우고 조용히 정리하도록) — Ollama 실패 시의 wllama 폴백
+// 로직과 섞이지 않도록 아래에서 AbortError는 즉시 재던지고 폴백을 타지
+// 않는다(취소된 요청을 취소 안 된 척 다른 엔진으로 재시도하면 안 됨).
+export async function analyzeWithAI(conversation, onProgress, forceConclusion, onDelta, abortSignal) {
   const combinedUserText = conversation
     .filter(function (t) { return t.role === 'user'; })
     .map(function (t) { return t.text; })
@@ -646,10 +869,13 @@ export async function analyzeWithAI(conversation, onProgress, forceConclusion) {
   // 방식 A는 정상 경로엔 지연을 추가하지 않으면서도, "세션 초반엔 감지됐지만
   // 이후 Ollama가 꺼진" 흔한 시나리오에서 fetch 실패를 계기로 캐시를 무효화해
   // 최신 상태를 다시 확인한다.
-  if (await detectOllama()) {
+  // forceBrowserEngine: 사용자가 "카나나로 전환" 배너 버튼을 눌렀으면 Ollama가
+  // 연결돼 있어도 이 경로 자체를 건너뛴다(위 setForceBrowserEngine() 참고).
+  if (!forceBrowserEngine && await detectOllama()) {
     try {
-      return finalizeModelOutput(await analyzeWithOllama(messages));
+      return finalizeModelOutput(await analyzeWithOllama(messages, onDelta, abortSignal));
     } catch (e) {
+      if (e && e.name === 'AbortError') throw e; // 취소는 폴백하지 않고 그대로 전파(위 주석 참고)
       // Ollama가 세션 중 꺼졌거나 대상 모델이 삭제됐을 가능성 — 캐시된 값을
       // 더 이상 신뢰하지 않고 강제 재검사로 상태를 갱신한 뒤, 그 결과와
       // 무관하게 아래 wllama 경로로 폴백한다(재검사 결과가 다시 true여도
@@ -657,6 +883,10 @@ export async function analyzeWithAI(conversation, onProgress, forceConclusion) {
       // 재시도로 인한 지연·중복 요청을 피하기 위함).
       await detectOllama(true);
     }
+  }
+
+  if (abortSignal && abortSignal.aborted) {
+    throw new DOMException('사용자가 취소함', 'AbortError');
   }
 
   await ensureModelLoaded(onProgress);
@@ -668,11 +898,34 @@ export async function analyzeWithAI(conversation, onProgress, forceConclusion) {
   // 누적 대화를 그대로 전달하므로, 대화가 매우 길어지면 한도 초과로 요청
   // 자체가 실패할 수 있다. 이 함수는 그 경우 예외를 그대로 던지며(조용히
   // 삼키지 않음), 호출부(TICKET-3)가 사용자에게 안내할 수 있게 한다.
-  const result = await wllama.createChatCompletion({
+  if (typeof onDelta !== 'function') {
+    const result = await wllama.createChatCompletion({
+      messages: messages,
+      max_tokens: 1800,
+      temperature: 0.3,
+      abortSignal: abortSignal,
+    });
+    return finalizeModelOutput(result.choices[0].message.content);
+  }
+
+  // wllama 스트리밍: stream:true + onData 콜백 조합(@wllama/wllama 3.5.1
+  // 확인된 API — 청크가 OpenAI 호환 형식이라 delta.content로 조각 텍스트가
+  // 온다). onData가 있으면 함수가 void를 반환하므로 fullText를 직접 누적한다.
+  let fullText = '';
+  await wllama.createChatCompletion({
     messages: messages,
     max_tokens: 1800,
     temperature: 0.3,
+    abortSignal: abortSignal,
+    stream: true,
+    onData: function (chunk) {
+      const delta = chunk && chunk.choices && chunk.choices[0] && chunk.choices[0].delta && chunk.choices[0].delta.content;
+      if (delta) {
+        fullText += delta;
+        onDelta(delta);
+      }
+    },
   });
 
-  return finalizeModelOutput(result.choices[0].message.content);
+  return finalizeModelOutput(fullText);
 }

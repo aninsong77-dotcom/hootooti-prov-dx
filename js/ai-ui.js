@@ -2,8 +2,18 @@ import {
   analyzeWithAI, isModelReady, currentEngine, splitFollowUpSection, detectOllama,
   listOllamaModels, getSelectedModelId, setSelectedModelId, getOllamaConnectionState,
   isModelInstalled, pullOllamaModel, getLastPullError, getLastOllamaError,
-  extractFinalCandidates,
-} from './ai.js?v=17';
+  extractFinalCandidates, getOllamaProcessorInfo, setForceBrowserEngine, getForceBrowserEngine,
+  getSectionMarkers, extractNoteSummary,
+} from './ai.js?v=23';
+
+// 섹션 사이 전환 문구 — "다음으로는 유력가설을..." 처럼 다음 섹션 이름을
+// 예고하는 문구는 forceConclusion 여부에 따라 어떤 섹션이 다음에 올지
+// 달라져서(예: 확인 필요 항목은 마지막 턴엔 아예 안 나옴) 미리 맞히기
+// 어렵다 — 그래서 이름을 특정하지 않는 범용 문구로 둔다(대화 참고).
+var SECTION_FILLER_TEXT = '다음 내용을 정리해서 보여드리겠습니다...';
+// 후속질문이 없거나(FOLLOWUP_NONE_TEXT) 상담자가 "충분함"으로 강제 종결한
+// 턴처럼 더 나올 섹션이 없을 때 채팅 마지막에 보여주는 마무리 문구(대화 참고).
+var CLOSING_MESSAGE_TEXT = '이제 더 정리할 내용이 없습니다. 추가로 확인하고 싶은 점이나 의견이 있으시면 말씀해 주세요.';
 
 function formatBytes(n) {
   return (n / (1024 * 1024 * 1024)).toFixed(2) + 'GB';
@@ -95,14 +105,35 @@ document.addEventListener('DOMContentLoaded', function () {
   var ollamaDebugDetail = document.getElementById('ollama-debug-detail');
   var ollamaDebugRaw = document.getElementById('ollama-debug-raw');
   var ollamaDebugCopyBtn = document.getElementById('ollama-debug-copy-btn');
+  var ollamaCpuBanner = document.getElementById('ollama-cpu-banner');
+  var ollamaCpuSwitchBtn = document.getElementById('ollama-cpu-switch-btn');
+  var ollamaCpuDismissBtn = document.getElementById('ollama-cpu-dismiss-btn');
   if (!chatSendBtn || !chatInputEl || !chatMessagesEl) return;
+
+  // Ollama가 CPU로만 도는 걸 확인해도 매 턴마다 배너를 다시 띄우면 성가시므로,
+  // 이번 세션에서 이미 한 번 보여줬으면(전환했든 "그대로 사용"을 눌렀든)
+  // 다시 띄우지 않는다. 새로고침하면 다시 판단한다.
+  var cpuBannerDecided = false;
+
+  if (ollamaCpuSwitchBtn && ollamaCpuDismissBtn && ollamaCpuBanner) {
+    ollamaCpuSwitchBtn.addEventListener('click', function () {
+      setForceBrowserEngine(true);
+      cpuBannerDecided = true;
+      ollamaCpuBanner.hidden = true;
+      updateEngineDisplay();
+    });
+    ollamaCpuDismissBtn.addEventListener('click', function () {
+      cpuBannerDecided = true;
+      ollamaCpuBanner.hidden = true;
+    });
+  }
 
   // 채팅 입력창의 전송 가능 여부 갱신(구 updateAnalyzeBtnEnabled() 대체) —
   // §4 sendTurn()/전송 트리거와 함께 동작해야 하므로 별도 함수로 아래
   // updateChatInputAvailability()에 통합한다(TICKET-3 §1).
 
   // Ollama 실패 안내 배너 — "왜 지금 Ollama가 아니라 Kanana로 동작하는지"에만
-  // 집중한다("어떻게 설치하는지"는 "AI 선택다운" 팝오버의 설치 안내가 담당,
+  // 집중한다("어떻게 설치하는지"는 "AI 선택" 팝오버의 설치 안내가 담당,
   // 중복 방지를 위해 이 배너에는 설치 안내를 다시 쓰지 않는다).
   // 최소 2종을 구분한다(요구사항 §3.7):
   //  1) 연결 자체 실패 — getOllamaConnectionState() === 'unreachable'
@@ -122,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (state === 'connected' && !isModelInstalled(getSelectedModelId())) {
-      ollamaFailureMessage.textContent = '선택한 모델이 아직 설치되어 있지 않아 브라우저 내 Kanana로 대신 동작합니다. "AI 선택다운" 버튼에서 다운로드해 주세요.';
+      ollamaFailureMessage.textContent = '선택한 모델이 아직 설치되어 있지 않아 브라우저 내 Kanana로 대신 동작합니다. "AI 선택" 버튼에서 다운로드해 주세요.';
       ollamaFailureBanner.hidden = false;
       return;
     }
@@ -164,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // "AI 선택다운" 버튼 — 클릭 한 번으로 모든 엔진 관련 안내·조작이 열리는
+  // "AI 선택" 버튼 — 클릭 한 번으로 모든 엔진 관련 안내·조작이 열리는
   // 단일 진입점이다. Ollama가 연결돼 있으면 모델(생각과정 없음/있음) 선택
   // 목록을, 연결돼 있지 않으면 같은 자리에 설치 안내를 보여준다(예전에
   // 있던 별도 "AI 엔진 안내" 모달과 이 버튼이 하던 안내를 하나로 합침 —
@@ -179,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function () {
       engineSelectOverlay.hidden = true;
     }
 
-    // 버튼 라벨은 이제 "AI 선택다운"으로 고정이다(엔진 상태 요약은 팝오버
+    // 버튼 라벨은 이제 "AI 선택"으로 고정이다(엔진 상태 요약은 팝오버
     // 안에서 보여준다). 페이지 로드 직후(§4.0 최초 감지 완료 전)에도, 이후
     // 감지 결과가 갱신될 때도 이 함수 하나로 버튼의 시각적 상태만 맞춘다 —
     // 더 이상 비활성화(aria-disabled)하지 않는다, Ollama 미감지 상태에서도
@@ -188,7 +219,7 @@ document.addEventListener('DOMContentLoaded', function () {
       var state = getOllamaConnectionState(); // null(확인 전) | 'connected' | 'unreachable'
       engineSelectBtn.classList.remove('is-checking', 'is-unavailable');
       engineSelectBtn.setAttribute('aria-disabled', 'false');
-      engineSelectLabel.textContent = 'AI 선택다운';
+      engineSelectLabel.textContent = 'AI 선택';
 
       if (state === 'unreachable') {
         engineSelectBtn.classList.add('is-unavailable');
@@ -199,6 +230,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function statusLine(state) {
+      // forceBrowserEngine이 켜져 있으면 Ollama 연결 상태와 무관하게 항상
+      // 브라우저 내장을 쓰는 중이므로, 그 사실을 최우선으로 보여준다(연결
+      // 상태 문구와 섞이면 "Ollama가 감지됐는데 왜 카나나?"로 오해할 수 있음).
+      if (getForceBrowserEngine()) {
+        return '현재 상태: 브라우저 내장 Kanana를 사용 중입니다 (직접 선택해 Ollama 대신 사용 중).';
+      }
       if (state === 'connected') {
         var selected = listOllamaModels().filter(function (m) { return m.id === getSelectedModelId(); })[0];
         var modelText = selected ? (selected.thinking ? '생각과정 있음' : '생각과정 없음') : '';
@@ -263,11 +300,24 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderPopoverContent() {
       var state = getOllamaConnectionState();
 
+      // forceBrowserEngine 토글 버튼 — 예전엔 "Ollama가 CPU라 느립니다" 배너
+      // 안에서만 카나나로 전환할 수 있었는데, 그 배너는 세션당 한 번만
+      // 뜨고 새로고침되면 선택도 초기화돼 "다시 바꾸고 싶은데 버튼이 안
+      // 보인다"는 문제가 실측됐다(대화 참고). 여기 1단계 안에 상시 눌러볼
+      // 수 있는 버튼을 둬서, Ollama 연결 상태나 배너 노출 여부와 무관하게
+      // 언제든 직접 전환·복귀할 수 있게 한다.
+      var forcedBrowser = getForceBrowserEngine();
+      var tier1ToggleHtml = forcedBrowser
+        ? '<p class="ai-engine-forced-note">지금 이 카나나를 직접 선택해 사용 중입니다(Ollama가 감지돼도 쓰지 않음).</p>' +
+          '<button class="btn btn-compact" id="force-browser-toggle-btn" type="button">Ollama 자동 감지로 되돌리기</button>'
+        : '<button class="btn btn-compact" id="force-browser-toggle-btn" type="button">지금 카나나로 전환</button>';
+
       engineOptionPopover.innerHTML =
         '<p class="ai-engine-current">' + statusLine(state) + '</p>' +
         '<div class="ai-engine-tier">' +
           '<h4>1단계 · 지금 바로 사용 (설치 불필요)</h4>' +
           '<p>브라우저 안에서 바로 실행되는 경량 모델(Kanana)이 자동으로 준비됩니다. 아무것도 설치할 필요 없이 "AI 분석" 버튼만 누르면 됩니다. 다만 브라우저 안에서 도는 만큼 속도는 상대적으로 느릴 수 있습니다.</p>' +
+          tier1ToggleHtml +
         '</div>' +
         '<div class="ai-engine-tier" id="engine-tier-2">' +
           '<h4>2단계 · 더 빠르게, 원하는 방식으로</h4>' +
@@ -277,6 +327,17 @@ document.addEventListener('DOMContentLoaded', function () {
               '<p><a href="https://ollama.com/download" target="_blank" rel="noopener">ollama.com에서 Ollama 설치 프로그램을 내려받아 실행</a>(운영체제 설치 절차라 이 페이지가 대신 할 수 없는 유일한 단계입니다). 설치가 끝나면 이 페이지로 돌아와 새로고침 후 이 버튼을 다시 눌러주세요 — 터미널에 따로 입력할 것 없이, 원하는 모델을 클릭하면 자동으로 내려받습니다.</p>') +
         '</div>' +
         '<p class="ai-engine-note">소견 내용은 이 경우에도 사용자 PC의 localhost로만 전송되며, 외부 서버로 나가지 않습니다.</p>';
+
+      var forceBrowserToggleBtn = document.getElementById('force-browser-toggle-btn');
+      if (forceBrowserToggleBtn) {
+        forceBrowserToggleBtn.addEventListener('click', function () {
+          setForceBrowserEngine(!forcedBrowser);
+          cpuBannerDecided = true; // 방금 직접 선택했으니 CPU 배너가 또 끼어들 필요 없음
+          if (ollamaCpuBanner) ollamaCpuBanner.hidden = true;
+          updateEngineDisplay();
+          renderPopoverContent();
+        });
+      }
 
       if (state === 'connected') {
         var tier2 = document.getElementById('engine-tier-2');
@@ -389,6 +450,11 @@ document.addEventListener('DOMContentLoaded', function () {
     detectOllama().then(function () {
       updateEngineSelectButtonState();
       renderOllamaFailure();
+      // 최초 진입 시 이 콜백이 #ai-mode-badge(updateEngineDisplay())를 갱신하지
+      // 않아, Ollama가 실제로 감지돼도 첫 채팅 응답 전까지는 배지가 계속
+      // "브라우저 내 로컬 AI(Kanana)"로 남아 있던 버그를 수정 — 감지가
+      // 끝나는 즉시 배지도 함께 최신 상태로 맞춘다.
+      updateEngineDisplay();
     });
   }
 
@@ -401,6 +467,11 @@ document.addEventListener('DOMContentLoaded', function () {
   var conversation = [];
   var isConversationFinalized = false; // "충분함" 버튼 또는 AI 자체 판단으로 종료된 상태
   var STORAGE_KEY = 'houtoti-chat-conversation-v1';
+  // 지금 진행 중인 AI 요청의 취소 컨트롤러 — "대화 초기화"를 눌러도 이미
+  // 보낸 요청이 백그라운드에서 계속 돌아 전송 버튼이 로딩 상태로 남아있던
+  // 버그(대화 참고)를 고치기 위해 추가. sendTurn() 시작 시 새로 만들어
+  // 여기 저장하고, resetConversation()이 있으면 이걸 abort()한다.
+  var currentAbortController = null;
 
   function escapeHtml(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -420,21 +491,44 @@ document.addEventListener('DOMContentLoaded', function () {
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   }
 
-  // 대화창 옆 "유력한 진단" 패널 — 가장 최근 assistant 턴에서
-  // extractFinalCandidates()로 최종 후보 섹션만 뽑아 보여준다. 모델이 형식을
-  // 안 지켜 특정 턴에 마커가 없으면(null) 그 턴은 건너뛰고 그 이전 턴에서
-  // 마지막으로 뽑혔던 내용을 그대로 유지한다 — 패널이 느닷없이 빈 값으로
-  // 덮어써지지 않게 하기 위함.
+  // 상담자가 입력한 소견(대화 중 모든 user 턴)을 원문 그대로 이어붙인다 —
+  // 요약·재구성이 아니라 원문 그대로 모아서, 이 패널만 보고도 어떤 소견을
+  // 근거로 나온 결과인지 알 수 있고 상담자가 그대로 복사해 편집해 쓸 수
+  // 있게 한다(대화 참고).
+  function buildNoteSummaryText() {
+    var userTurns = conversation.filter(function (t) { return t.role === 'user' && t.text.trim() !== ''; });
+    if (userTurns.length === 0) return null;
+    return userTurns.map(function (t) { return t.text.trim(); }).join('\n\n');
+  }
+
+  // 대화창 옆 "유력한 진단" 패널 — 맨 위에 내담자 소견, 그 아래 AI 답변을
+  // 순서대로 보여준다. 소견은 이제 AI가 정리한 버전(extractNoteSummary(),
+  // "정리된 소견" 마커 섹션 — 대화 참고: 상담자가 이미 정리해서 올렸으면
+  // 그대로, 대화체로 적었으면 항목별로 다듬어서)을 우선 쓰고, 모델이 형식을
+  // 안 지켜 그 섹션이 없는 극히 드문 경우에만 원문 그대로 이어붙이는
+  // buildNoteSummaryText()로 폴백한다. AI 답변은 가장 최근 assistant 턴에서
+  // extractFinalCandidates()로 최종 후보 섹션(및 그 뒤 이어지는 추가질문)을
+  // 뽑아 쓴다. 모델이 형식을 안 지켜 특정 턴에 마커가 없으면(null) 그 턴은
+  // 건너뛰고 그 이전 턴에서 마지막으로 뽑혔던 내용을 그대로 유지한다 —
+  // 패널이 느닷없이 빈 값으로 덮어써지지 않게 하기 위함.
   function renderFinalCandidatesPanel() {
     if (!finalResultTextEl) return;
-    var text = null;
+    var noteSummary = null;
+    var aiText = null;
     for (var i = conversation.length - 1; i >= 0; i--) {
       if (conversation[i].role !== 'assistant') continue;
-      text = extractFinalCandidates(conversation[i].text);
-      if (text) break;
+      if (noteSummary === null) noteSummary = extractNoteSummary(conversation[i].text);
+      if (aiText === null) aiText = extractFinalCandidates(conversation[i].text);
+      if (noteSummary && aiText) break;
     }
-    if (text) {
-      finalResultTextEl.textContent = text;
+    if (!noteSummary) noteSummary = buildNoteSummaryText();
+
+    var parts = [];
+    if (noteSummary) parts.push('[내담자 소견]\n' + noteSummary);
+    if (aiText) parts.push('[AI 분석 결과]\n' + aiText);
+
+    if (parts.length > 0) {
+      finalResultTextEl.textContent = parts.join('\n\n----------------------------------------\n\n');
       finalResultTextEl.hidden = false;
       if (finalResultEmptyHintEl) finalResultEmptyHintEl.hidden = true;
     } else {
@@ -477,6 +571,122 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  // ---------- 스트리밍 단계별 표시 (대화 참고) ----------
+  // AI 응답을 다 기다렸다가 통짜로 보여주지 않고, 토큰이 오는 대로 마커
+  // 경계(getSectionMarkers())를 넘을 때마다 그 구간을 "완성된 말풍선"으로
+  // 확정하고, 다음 구간은 새 말풍선에 실시간으로 이어 쓴다 — "핵심요약이
+  // 먼저 나오고, 다음 항목을 정리 중이라는 문구가 뜨고, 이어서 유력가설이
+  // 나오는" 식의 단계별 진행을 사용자가 직접 눈으로 보게 하기 위함(방식 B,
+  // 여러 번 나눠 요청하는 방식 A 대신 채택 — 재요청마다 프롬프트를 처음부터
+  // 다시 읽어야 해서 이 CPU 환경에서는 A가 훨씬 느려짐, 대화 참고).
+  //
+  // "정리된 소견" 섹션은 상담자 본인이 방금 입력한 내용을 되풀이해 보여주는
+  // 것뿐이라 채팅에는 안 띄우고(결과 패널 전용, renderFinalCandidatesPanel()),
+  // 최종 후보·추가질문 섹션은 그 자체가 "마지막 단계"라 뒤에 SECTION_FILLER_TEXT를
+  // 붙이지 않는다 — 대신 스트림이 끝났는데 실질적 후속 질문이 없다면
+  // CLOSING_MESSAGE_TEXT로 마무리한다.
+  function createStreamingRenderer() {
+    var markers = getSectionMarkers();
+    var order = [
+      { key: 'noteSummary', text: markers.noteSummary, visible: false, filler: false },
+      { key: 'summary', text: markers.summary, visible: true, filler: true },
+      { key: 'hypotheses', text: markers.hypotheses, visible: true, filler: true },
+      { key: 'uncertain', text: markers.uncertain, visible: true, filler: true },
+      { key: 'finalCandidates', text: markers.finalCandidates, visible: true, filler: false },
+      { key: 'followUp', text: markers.followUp, visible: true, filler: false },
+    ];
+
+    var buffer = '';
+    var scanPos = 0;
+    var sectionStart = 0;
+    var current = null; // order[]의 현재 열려 있는 섹션 항목
+    var liveBubbleEl = null;
+    var noteSummaryText = null;
+    var hasFollowUp = false;
+
+    function makeBubble(text, extraClass) {
+      var el = document.createElement('div');
+      el.className = 'chat-message assistant' + (extraClass ? ' ' + extraClass : '');
+      el.textContent = text;
+      if (chatEmptyHintEl && chatEmptyHintEl.parentNode === chatMessagesEl) chatMessagesEl.removeChild(chatEmptyHintEl);
+      chatMessagesEl.appendChild(el);
+      chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+      return el;
+    }
+
+    function closeSection(content) {
+      if (!current) return;
+      if (current.key === 'noteSummary') {
+        noteSummaryText = content;
+        return; // 채팅엔 표시하지 않음(위 함수 설명 참고)
+      }
+      if (current.key === 'followUp') {
+        var hasReal = content !== '' && content.indexOf(markers.followUpNoneText) === -1;
+        if (hasReal) {
+          if (liveBubbleEl) {
+            liveBubbleEl.textContent = content;
+            liveBubbleEl.classList.remove('chat-message-live');
+          }
+          hasFollowUp = true;
+        } else {
+          if (liveBubbleEl) liveBubbleEl.remove();
+          makeBubble(CLOSING_MESSAGE_TEXT, 'final-diagnosis');
+          hasFollowUp = false;
+        }
+        liveBubbleEl = null;
+        return;
+      }
+      // summary / hypotheses / uncertain / finalCandidates
+      if (liveBubbleEl) {
+        liveBubbleEl.textContent = content;
+        liveBubbleEl.classList.remove('chat-message-live');
+        liveBubbleEl = null;
+      }
+      if (current.filler) makeBubble(SECTION_FILLER_TEXT, 'chat-message-filler');
+    }
+
+    return {
+      push: function (deltaText) {
+        buffer += deltaText;
+        while (true) {
+          var found = null;
+          for (var i = 0; i < order.length; i++) {
+            var idx = buffer.indexOf(order[i].text, scanPos);
+            if (idx !== -1 && (found === null || idx < found.idx)) found = { idx: idx, entry: order[i] };
+          }
+          if (!found) break;
+          if (current) closeSection(buffer.slice(sectionStart, found.idx).trim());
+          current = found.entry;
+          sectionStart = found.idx + found.entry.text.length;
+          scanPos = sectionStart;
+          if (current.visible) liveBubbleEl = makeBubble('', 'chat-message-live');
+        }
+        if (current && current.visible && liveBubbleEl) {
+          liveBubbleEl.textContent = buffer.slice(sectionStart);
+          chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+        }
+      },
+      // 스트림이 끝난 뒤 호출 — 열려 있던 마지막 섹션을 확정하고, 그게
+      // finalCandidates에서 그대로 끝나버렸다면(강제종결 턴이거나 모델이
+      // followUp 마커까지 못 갔거나) 마무리 문구를 붙인다.
+      finish: function () {
+        if (current) {
+          closeSection(buffer.slice(sectionStart).trim());
+          if (current.key === 'finalCandidates') {
+            makeBubble(CLOSING_MESSAGE_TEXT, 'final-diagnosis');
+            hasFollowUp = false;
+          }
+        } else if (buffer.trim()) {
+          // 마커를 하나도 못 찾은 극단적 경우(모델이 형식을 완전히 무시) —
+          // 방어적으로 원문 전체를 그대로 한 버블에 보여준다.
+          makeBubble(buffer.trim(), '');
+        }
+      },
+      didRenderAnything: function () { return current !== null; },
+      getHasFollowUp: function () { return hasFollowUp; },
+    };
+  }
+
   // ---------- 채팅 전송 이벤트 루프 (TICKET-3 §4) ----------
   async function sendTurn(userText, forceConclusion) {
     if (!forceConclusion) {
@@ -488,10 +698,18 @@ document.addEventListener('DOMContentLoaded', function () {
     chatSendBtn.disabled = true;
     chatSendBtn.classList.add('loading');
     chatSufficientBtn.disabled = true;
-    statusEl.hidden = true;
+    // 응답을 기다리는 동안 아무 표시도 없으면(특히 Ollama 경로는 아래
+    // onProgress 콜백이 아예 호출되지 않음) 몇 분씩 걸리는 로컬 모델
+    // 응답 중에 "멈췄다"고 오해하기 쉽다. 브라우저 모델 다운로드 진행률
+    // 콜백이 오면 아래에서 바로 이 문구를 덮어쓴다.
+    statusEl.hidden = false;
+    statusEl.textContent = '답변을 생성하는 중입니다. 로컬 AI 모델 속도에 따라 다소 시간이 걸릴 수 있습니다...';
 
     var sawRealDownload = false;
     var downloadStartedAt = 0;
+    var streamer = createStreamingRenderer();
+    var abortController = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    currentAbortController = abortController;
 
     try {
       var answer = await analyzeWithAI(conversation, function (loaded, total) {
@@ -515,12 +733,23 @@ document.addEventListener('DOMContentLoaded', function () {
         statusEl.textContent =
           '모델 다운로드 중 (최초 1회, 약 1.4GB)... ' + formatBytes(loaded) + ' / ' + formatBytes(total) +
           (isFinite(remainingSec) ? formatRemaining(remainingSec) : ' · 예상 남은 시간 계산 중...');
-      }, forceConclusion);
+      }, forceConclusion, function (delta) {
+        // 토큰이 도착하는 대로 단계별 말풍선으로 즉시 반영(대화 참고).
+        // 첫 조각이 오는 순간부터는 "생성 중..." 상태 문구보다 실제 말풍선이
+        // 훨씬 정보량이 많으므로 상태 문구는 치운다.
+        statusEl.hidden = true;
+        streamer.push(delta);
+      }, abortController ? abortController.signal : undefined);
+
+      streamer.finish();
 
       var split = splitFollowUpSection(answer);
       var hasFollowUp = !!split.followUpQuestionsText;
       // 후속질문이 있으면 본문+질문을 하나의 말풍선(통짜 텍스트)으로 합쳐 보여준다
-      // (structure.md §2.3 "통짜 텍스트" 확정 사항).
+      // (structure.md §2.3 "통짜 텍스트" 확정 사항). 이 값은 여전히 sessionStorage에
+      // 저장되는 대화 기록·저장(결과 저장)·새로고침 복원용 "완성된 한 덩어리"
+      // 텍스트로 남는다 — 화면에 실시간으로 보여준 단계별 말풍선은 이 턴 한정
+      // 표시 방식일 뿐, 데이터 모델 자체는 예전과 동일하게 유지한다(회귀 최소화).
       var displayText = hasFollowUp
         ? split.mainText + '\n\n[추가로 확인하고 싶은 사항]\n' + split.followUpQuestionsText
         : split.mainText;
@@ -537,18 +766,42 @@ document.addEventListener('DOMContentLoaded', function () {
       // 용도로만 쓰고, 입력 가능 여부와는 분리한다.
       if (!hasFollowUp) isConversationFinalized = true;
       statusEl.hidden = true;
-      renderConversation();
+      // 스트리밍으로 이미 단계별 말풍선을 실시간으로 그려뒀다면 다시
+      // renderConversation()을 부르지 않는다 — 부르면 방금 그린 여러 말풍선이
+      // conversation 배열의 통짜 텍스트 하나로 다시 뭉쳐져 애써 보여준 단계별
+      // 진행이 눈앞에서 사라져 버린다. 스트리밍이 전혀 안 된 경우(onDelta가
+      // 한 번도 안 불림 — 구형 브라우저 등)에만 예전처럼 통짜로 렌더링한다.
+      if (!streamer.didRenderAnything()) renderConversation();
       renderFinalCandidatesPanel();
       saveConversationToStorage();
       updateEngineDisplay();
       updateChatInputAvailability();
       playDing();
+
+      // 방금 이 턴이 Ollama로 처리됐다면, 모델이 GPU 없이 CPU로만 돌고
+      // 있는지 확인해 느린 이유를 정확히 안내한다(배지에는 "Ollama 사용
+      // 중"으로만 보여 CPU 병목을 사용자가 알 방법이 없었음 — 대화 참고).
+      // 세션당 한 번만 판단하고, 판단 실패(getOllamaProcessorInfo()가
+      // null)면 조용히 넘어간다.
+      if (!cpuBannerDecided && ollamaCpuBanner && currentEngine() === 'ollama') {
+        getOllamaProcessorInfo().then(function (info) {
+          if (cpuBannerDecided || !info || !info.isCpuOnly) return;
+          ollamaCpuBanner.hidden = false;
+        });
+      }
     } catch (err) {
-      statusEl.hidden = false;
-      statusEl.textContent = '이번 턴에서 오류가 발생했습니다: ' + (err && err.message ? err.message : String(err));
-      // structure.md §2.1 "오류 상태" 요건 — 실패한 이 턴만 재시도 가능해야 하므로
-      // 방금 push한 user 턴은 conversation에 유지한 채 재시도 버튼/재전송을 허용한다.
+      if (err && err.name === 'AbortError') {
+        // "대화 초기화"로 사용자가 직접 취소한 경우 — 대화 자체가 이미
+        // 비워졌으므로 "오류 발생" 문구를 띄우지 않고 조용히 정리만 한다.
+        statusEl.hidden = true;
+      } else {
+        statusEl.hidden = false;
+        statusEl.textContent = '이번 턴에서 오류가 발생했습니다: ' + (err && err.message ? err.message : String(err));
+        // structure.md §2.1 "오류 상태" 요건 — 실패한 이 턴만 재시도 가능해야 하므로
+        // 방금 push한 user 턴은 conversation에 유지한 채 재시도 버튼/재전송을 허용한다.
+      }
     } finally {
+      if (currentAbortController === abortController) currentAbortController = null;
       chatSendBtn.disabled = chatInputEl.value.trim() === '';
       chatSendBtn.classList.remove('loading');
       chatSufficientBtn.disabled = false;
@@ -591,12 +844,26 @@ document.addEventListener('DOMContentLoaded', function () {
       getConversation: function () { return conversation.slice(); },
       isFinalized: function () { return isConversationFinalized; },
       resetConversation: function () {
+        // 진행 중인 AI 요청이 있으면 즉시 취소한다 — 안 그러면 대화는
+        // 비워졌는데 이미 보낸 요청이 백그라운드에서 계속 돌아 전송
+        // 버튼이 로딩 상태로 남아있던 버그가 있었다(대화 참고). sendTurn()의
+        // catch(AbortError)·finally가 마무리 처리를 이어받으므로 여기서는
+        // 취소 신호만 보내고 버튼 상태는 즉시 시각적으로도 풀어준다(요청이
+        // 실제로 정리되기까지의 짧은 지연 동안 사용자가 "아직도 도네" 하고
+        // 오해하지 않도록).
+        if (currentAbortController) {
+          currentAbortController.abort();
+          currentAbortController = null;
+        }
         conversation = [];
         isConversationFinalized = false;
         try { sessionStorage.removeItem(STORAGE_KEY); } catch (e) { /* 무시 */ }
         renderConversation();
         renderFinalCandidatesPanel();
         updateChatInputAvailability();
+        chatSendBtn.classList.remove('loading');
+        chatSufficientBtn.disabled = false;
+        statusEl.hidden = true;
       },
     };
   }

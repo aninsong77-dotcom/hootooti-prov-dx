@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>후투티 | 상담사를 위한 증상기반 가진단 도구</title>
-<meta name="description" content="후투티 — 상담사를 위한 증상기반 가진단 도구. 내담자 소견을 입력하면 가능한 진단 후보와 근거를 정리해 보여주는 참고용 보조 도구">
+<title>후투티 | 상담사를 위한 가진단 도구</title>
+<meta name="description" content="후투티 — 상담사를 위한 가진단 도구. 내담자 소견을 입력하면 가능한 진단 후보와 근거를 정리해 보여주는 참고용 보조 도구">
 <link rel="icon" type="image/png" href="assets/favicon-tile.png?v=2">
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT-Variable.css">
-<link rel="stylesheet" href="css/style.css?v=29">
+<link rel="stylesheet" href="css/style.css?v=35">
 </head>
 <body>
 
@@ -27,7 +27,7 @@
           </svg>
         </div>
         <div>
-          <h1 class="site-title">후투티<span class="site-title-sub">상담사를 위한 증상기반 가진단 도구</span></h1>
+          <h1 class="site-title">후투티<span class="site-title-sub">상담사를 위한 가진단 도구</span></h1>
         </div>
       </a>
       <nav class="site-nav">
@@ -55,6 +55,8 @@
       <div class="chat-messages" id="chat-messages">
         <div class="chat-empty-hint" id="chat-empty-hint">
           <p>관찰된 증상, 행동, 진술 등을 자유롭게 입력해 대화를 시작해 주세요.
+          상담자 본인의 진단 의견이나 가설을 밝히면 AI가 그에 동의·이견을 판단해 답합니다 —
+          이후 추가 자료를 이어서 입력하며 의견을 조율해갈 수 있습니다.<br>
           키워드 기반으로 직접 확인하고 싶다면 <a href="checklist.html">체크리스트</a>를 이용해 주세요.</p>
         </div>
       </div>
@@ -67,11 +69,18 @@
           <button class="btn btn-compact" id="ollama-debug-copy-btn" type="button">복사</button>
         </div>
       </div>
+      <div class="ollama-cpu-banner" id="ollama-cpu-banner" hidden>
+        <p class="ollama-cpu-message">지금 Ollama가 GPU를 쓰지 못하고 CPU로만 동작하고 있어 응답이 느립니다. 대신 브라우저 내장 AI(카나나)로 전환하시겠습니까?</p>
+        <div class="ollama-cpu-actions">
+          <button class="btn btn-compact btn-primary" id="ollama-cpu-switch-btn" type="button">카나나로 전환</button>
+          <button class="btn btn-compact" id="ollama-cpu-dismiss-btn" type="button">그대로 Ollama 사용</button>
+        </div>
+      </div>
       <div class="ai-status" id="ai-status" hidden></div>
 
       <div class="chat-input-bar">
         <textarea id="chat-input" class="chat-textarea" rows="1"
-          placeholder="증상, 행동, 진술 등을 입력하고 Enter(또는 전송)를 누르세요"></textarea>
+          placeholder="증상, 행동, 진술이나 상담자 본인의 의견을 입력하고 Enter(또는 전송)를 누르세요"></textarea>
         <button class="btn btn-compact btn-primary chat-send-btn" id="chat-send-btn" type="button">
           <span class="ai-btn-label">전송</span>
           <span class="ai-btn-spinner" aria-hidden="true"></span>
@@ -81,10 +90,10 @@
         <button class="btn btn-compact" id="chat-sufficient-btn" type="button">충분함 — 진단 결과 보기</button>
         <button class="btn btn-compact" id="clear-notes-btn">대화 초기화</button>
         <button class="btn btn-compact" id="engine-select-btn" type="button" aria-haspopup="dialog" aria-disabled="false">
-          <span id="engine-select-label">AI 선택다운</span>
+          <span id="engine-select-label">AI 선택</span>
         </button>
+        <p class="notes-hint">입력한 대화는 이 브라우저 화면에만 남고(같은 탭이 열려 있는 동안 유지) 저장·전송되지 않습니다.</p>
       </div>
-      <p class="notes-hint">입력한 대화는 이 브라우저 화면에만 남고(같은 탭이 열려 있는 동안 유지) 저장·전송되지 않습니다.</p>
     </div>
   </div>
 
@@ -106,7 +115,7 @@
         </div>
       </div>
       <div class="final-result-empty-hint chat-empty-hint" id="final-result-empty-hint">
-        <p>대화가 진행되면 여기에 현재까지 유력한 진단이 정리되어 나타납니다.</p>
+        <p>대화가 진행되면 여기에 현재까지 유력한 진단이<br>정리되어 나타납니다.</p>
       </div>
       <div class="final-result-text" id="final-result-text" hidden></div>
       <button class="btn btn-compact btn-primary" id="save-result-btn">결과 저장</button>
@@ -117,7 +126,7 @@
 <footer class="site-footer">
   <div class="footer-inner">
     <div class="footer-bottom">
-      <span>후투티 — 상담사를 위한 증상기반 가진단 도구</span>
+      <span>후투티 — 상담사를 위한 가진단 도구</span>
       <span class="footer-copyright">© 2026. An In-song. Distributed for free.<br>(2026. 안인성. 무료 배포)</span>
     </div>
   </div>
@@ -145,7 +154,7 @@
 
 <script src="js/data.js?v=2"></script>
 <script src="js/main.js?v=8"></script>
-<script type="module" src="js/ai-ui.js?v=30"></script>
+<script type="module" src="js/ai-ui.js?v=40"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('header-diag-count').textContent = DIAGNOSES.length;
