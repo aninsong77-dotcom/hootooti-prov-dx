@@ -315,7 +315,7 @@ a{color:var(--primary)}
   gap:10px;
   padding:4px 2px;
 }
-.chat-empty-hint{ padding:32px 12px; text-align:center; font-size:13px; color:var(--gray-500); }
+.chat-empty-hint{ padding:32px 12px; text-align:left; font-size:13px; color:var(--gray-500); }
 
 .chat-message{
   max-width:78%;
@@ -394,7 +394,14 @@ a{color:var(--primary)}
 .chat-send-btn{ flex:0 0 auto; }
 
 .chat-actions{
-  display:flex; align-items:center; gap:4px; flex-wrap:wrap;
+  display:flex; align-items:center; gap:4px;
+  /* wrap이면 좁은 화면에서 내용이 넘치는 순간 그냥 다음 줄로 내려가버려서,
+     아래 fitNotesActionsRow()의 "넘치면 글자를 줄인다" 로직이 넘침 자체를
+     감지 못하는 문제가 있었다(실측 확인 — 대화 참고: wrap이 먼저 흡수해
+     scrollWidth가 clientWidth를 넘지 않게 됨). nowrap으로 바꿔 넘침이
+     실제로 감지되게 하고, 축소로 최대한 한 줄을 유지한다. */
+  flex-wrap:nowrap;
+  min-width:0;
 }
 
 @media (max-width: 960px){
@@ -576,15 +583,21 @@ a{color:var(--primary)}
 .notes-hint{
   /* 예전엔 버튼 줄 아래 별도 줄이었지만, 그 한 줄을 아끼려고 버튼들과
      같은 .chat-actions 행 안으로 옮겼다(대화 참고 — 대화창을 조금이라도
-     더 넓게 쓰기 위함). flex:1 1 auto로 남는 공간을 채우고, 버튼들과
-     같은 줄에 안 들어갈 만큼 좁으면 flex-wrap:wrap 덕에 자연스럽게
-     다음 줄로 내려간다. */
+     더 넓게 쓰기 위함). min-width:180px + flex-wrap:wrap 조합은 좁은
+     화면에서 오히려 항상 두 줄이 되는 회귀였다(실측 확인 — 대화 참고,
+     wrap이 fitNotesActionsRow()의 넘침 감지 자체를 막아버림). 이제 부모가
+     nowrap이므로, 이 요소는 min-width:0으로 필요한 만큼 줄어들다가 정말
+     자리가 없으면(버튼은 최소 폰트까지 이미 줄어든 상태) 말줄임표로
+     끝을 자연스럽게 잘라 한 줄을 지킨다 — 버튼 가독성이 이 안내문구
+     전체 노출보다 우선이라는 판단. */
   flex:1 1 auto;
-  min-width:180px;
+  min-width:0;
   margin:0;
   font-size:11.5px;
   color:var(--gray-500);
-  white-space:normal;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 .ollama-failure-banner{
   margin-top:10px;
