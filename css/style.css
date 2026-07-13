@@ -344,7 +344,21 @@ a{color:var(--primary)}
   gap:10px;
   padding:4px 2px;
 }
-.chat-empty-hint{ padding:32px 12px; text-align:left; font-size:13px; color:var(--gray-500); }
+.chat-empty-hint{
+  padding:16px 4px;
+  text-align:left;
+  font-size:13px;
+  color:var(--gray-500);
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+/* 대화창에 아무것도 없을 때 AI가 먼저 인사·질문을 건네는 것처럼 보이도록,
+   진짜 assistant 말풍선과 같은 스타일(.chat-message.assistant)을 그대로
+   쓴다(대화 참고 — "AI가 먼저 물어야 하는데 왜 안 보이지"라는 피드백을
+   반영). 실제 AI 호출 없이 정적 문구지만, 시각적으로는 첫 메시지처럼
+   보이게 하는 것이 목적. */
+.chat-empty-subtext{ margin:0; padding:0 10px; }
 
 .chat-message{
   max-width:78%;
