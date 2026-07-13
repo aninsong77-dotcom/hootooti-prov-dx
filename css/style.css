@@ -376,15 +376,23 @@ a{color:var(--primary)}
 }
 .chat-message.assistant{
   align-self:flex-start;
-  background:var(--gray-100);
-  color:var(--gray-700);
+  /* 예전엔 회색이라 사용자 말풍선(진한 파랑)과 대비가 약했다. --primary-100은
+     너무 옅어 흰 배경과 거의 구별이 안 됐다(실측 확인) — 사용자 말풍선의
+     진한 파랑과는 확실히 구별되면서도 눈에 띄게, 조금 더 진한 파랑을
+     직접 지정한다(대화 참고 — "구별만 되면 좀 더 진해도 된다"). */
+  background:#cddcf2;
+  color:var(--primary-700);
   border-bottom-left-radius:4px;
 }
 .chat-message.final-diagnosis{
   align-self:stretch;
   max-width:100%;
-  background:var(--primary-50);
-  border:1px solid var(--primary-100);
+  /* 최종 결론 말풍선이라 일반 assistant 말풍선(#cddcf2)보다 더 진하게 둬서
+     "여기가 결론이다"가 한눈에 보이게 한다(위 assistant 색을 진하게
+     바꾸면서 이 카드가 상대적으로 옅어 보이던 것을 다시 맞춤). */
+  background:#b7cceb;
+  color:var(--primary-700);
+  border:1px solid #9cb8e0;
 }
 /* 스트리밍 단계별 표시(대화 참고) 전용 — 지금 실시간으로 채워지고 있는
    말풍선임을 옅은 깜빡임으로 보여준다. 섹션이 확정되는 순간 이 클래스가
