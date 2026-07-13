@@ -1158,3 +1158,87 @@ export async function analyzeWithAISequential(conversation, onProgress, forceCon
 
   return finalizeModelOutput(fullRawText);
 }
+
+// ---------- 방식 A-2: 사용자 클릭으로 한 단계씩 진행 ----------
+// 방식 A(위)는 6개 요청을 자동으로 연달아 쏘는데, 카나나(브라우저 WASM)에서
+// 이게 GPU에 부담을 줘 실제로 크래시가 실측됐다(대화 참고 — "(ABORT)" 오류).
+// 근본 해결로, 각 단계 사이에 사용자가 "다음 내용 보기"를 눌러야만 다음
+// 요청이 나가게 한다 — 요청 사이에 자연스러운 시간 간격이 생겨 크래시
+// 위험이 줄고, 그 사이 상담자가 의견·추가 정보를 넣으면 다음 단계 판단에
+// 반영되어 대화가 더 풍성해진다(사용자 의도). forceConclusion(="충분함"
+// 버튼) 턴은 "지금 바로 결론만 빨리" 취지라 이 페이싱 없이 기존
+// analyzeWithAISequential()을 그대로 쓴다 — 이 아래 함수들은 forceConclusion
+// =false 대화형 턴 전용이다.
+//
+// beginSequentialTurn(): 새 턴을 시작할 때 한 번만 호출한다. 엔진·모델·
+// 사전 텍스트를 이 턴 전체에서 쓸 "시퀀스 컨텍스트" 객체로 고정해 반환한다
+// (analyzeWithAISequential()의 엔진/모델 고정 로직과 동일한 이유).
+export async function beginSequentialTurn(conversation, onProgress, abortSignal) {
+  const combinedUserText = conversation
+    .filter(function (t) { return t.role === 'user'; })
+    .map(function (t) { return t.text; })
+    .join('\n');
+  const relevant = pickRelevantDiagnoses(combinedUserText, MAX_DICT_DIAGNOSES);
+  const dictionaryText = formatDiagnosisDictionary(relevant);
+
+  let useOllama = !forceBrowserEngine && (await detectOllama());
+  const lockedOllamaModelId = selectedOllamaModelId;
+  if (!useOllama) {
+    if (abortSignal && abortSignal.aborted) throw new DOMException('사용자가 취소함', 'AbortError');
+    await ensureModelLoaded(onProgress);
+  }
+
+  return {
+    dictionaryText: dictionaryText,
+    sectionOrder: ['noteSummary', 'summary', 'hypotheses', 'uncertain', 'finalCandidates', 'followUp'],
+    index: 0,
+    priorSectionsText: '',
+    fullRawText: '',
+    useOllama: useOllama,
+    lockedOllamaModelId: lockedOllamaModelId,
+  };
+}
+
+// stepSequentialTurn(): 시퀀스의 다음 섹션 하나만 요청한다. conversation은
+// 매번 그 시점의 최신 배열을 넘긴다 — 이전 단계 이후 상담자가 의견을
+// 추가로 입력했다면(위 설명) 그 새 턴이 이 안에 이미 포함돼 있어야
+// 다음 판단에 반영된다. 반환값의 isDone이 true면 이 턴이 끝난 것이고
+// fullRawText에 finalizeModelOutput()까지 적용된 완성 텍스트가 담긴다.
+export async function stepSequentialTurn(conversation, seq, abortSignal) {
+  if (seq.index >= seq.sectionOrder.length) {
+    return { sectionKey: null, content: '', isDone: true, fullRawText: finalizeModelOutput(seq.fullRawText) };
+  }
+
+  const sectionKey = seq.sectionOrder[seq.index];
+  const def = SECTION_DEFS[sectionKey];
+  const conversationMessages = conversation.map(function (t) { return { role: t.role, content: t.text }; });
+  const systemPrompt = buildSectionSystemPrompt(seq.dictionaryText, false, sectionKey, seq.priorSectionsText);
+  const messages = [{ role: 'system', content: systemPrompt }].concat(conversationMessages);
+
+  let raw;
+  if (seq.useOllama) {
+    raw = await analyzeWithOllama(messages, undefined, abortSignal, def.tokenBudget, seq.lockedOllamaModelId);
+  } else {
+    const result = await wllama.createChatCompletion({
+      messages: messages,
+      max_tokens: def.tokenBudget,
+      temperature: 0.3,
+      abortSignal: abortSignal,
+    });
+    raw = result.choices[0].message.content;
+  }
+
+  const cleaned = cleanModelOutput(raw).trim();
+  const withMarker = cleaned.indexOf(def.marker) === 0 ? cleaned : (def.marker + '\n' + cleaned);
+  seq.fullRawText += (seq.fullRawText ? '\n\n' : '') + withMarker;
+  seq.priorSectionsText += (seq.priorSectionsText ? '\n\n' : '') + withMarker;
+  seq.index += 1;
+
+  const isDone = seq.index >= seq.sectionOrder.length;
+  return {
+    sectionKey: sectionKey,
+    content: withMarker.slice(def.marker.length).trim(),
+    isDone: isDone,
+    fullRawText: isDone ? finalizeModelOutput(seq.fullRawText) : null,
+  };
+}

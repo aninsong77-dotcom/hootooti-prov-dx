@@ -1,16 +1,20 @@
 import {
-  analyzeWithAISequential, isModelReady, currentEngine, splitFollowUpSection, detectOllama,
+  analyzeWithAISequential, beginSequentialTurn, stepSequentialTurn,
+  isModelReady, currentEngine, splitFollowUpSection, detectOllama,
   listOllamaModels, getSelectedModelId, setSelectedModelId, getOllamaConnectionState,
   isModelInstalled, pullOllamaModel, getLastPullError, getLastOllamaError,
   extractFinalCandidates, getOllamaProcessorInfo, setForceBrowserEngine, getForceBrowserEngine,
   getSectionMarkers, extractNoteSummary,
-} from './ai.js?v=25';
+} from './ai.js?v=26';
 
-// 섹션 사이 전환 문구 — "다음으로는 유력가설을..." 처럼 다음 섹션 이름을
-// 예고하는 문구는 forceConclusion 여부에 따라 어떤 섹션이 다음에 올지
-// 달라져서(예: 확인 필요 항목은 마지막 턴엔 아예 안 나옴) 미리 맞히기
-// 어렵다 — 그래서 이름을 특정하지 않는 범용 문구로 둔다(대화 참고).
+// "충분함"(forceConclusion) 턴 전용 — 전체 섹션을 자동으로 연달아 받아오므로
+// 사이사이 멈추지 않는다는 뜻에서 "이어서 정리한다"는 문구를 쓴다.
 var SECTION_FILLER_TEXT = '다음 내용을 정리해서 보여드리겠습니다...';
+// 일반 대화형 턴(방식 A-2, 대화 참고) 전용 — 한 섹션이 끝나면 다음 요청을
+// 자동으로 쏘지 않고 사용자가 "다음 내용 보기"를 눌러야 이어진다. 카나나
+// (브라우저 WASM)에게 요청을 연달아 몰아치면 GPU 부담으로 크래시가 실측된
+// 것을 막고, 그 사이 상담자가 의견을 더할 수 있게 하기 위함(사용자 의도).
+var SECTION_PAUSE_TEXT = '다음 순서를 보려면 아래 "다음 내용 보기"를 눌러주세요. 추가로 궁금한 점이나 의견이 있다면 먼저 입력해 주셔도 됩니다.';
 // 후속질문이 없거나(FOLLOWUP_NONE_TEXT) 상담자가 "충분함"으로 강제 종결한
 // 턴처럼 더 나올 섹션이 없을 때 채팅 마지막에 보여주는 마무리 문구(대화 참고).
 var CLOSING_MESSAGE_TEXT = '이제 더 정리할 내용이 없습니다. 추가로 확인하고 싶은 점이나 의견이 있으시면 말씀해 주세요.';
@@ -85,6 +89,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var chatInputEl = document.getElementById('chat-input');
   var chatSendBtn = document.getElementById('chat-send-btn');
   var chatSufficientBtn = document.getElementById('chat-sufficient-btn');
+  var chatContinueBtn = document.getElementById('chat-continue-btn');
   var finalResultTextEl = document.getElementById('final-result-text');
   var finalResultEmptyHintEl = document.getElementById('final-result-empty-hint');
   var copyFinalResultBtn = document.getElementById('copy-final-result-btn');
@@ -113,15 +118,16 @@ document.addEventListener('DOMContentLoaded', function () {
   var engineLockToast = document.getElementById('engine-lock-toast');
   if (!chatSendBtn || !chatInputEl || !chatMessagesEl) return;
 
-  // 답변을 생성하는 도중(currentAbortController가 있는 동안)엔 AI 전환
-  // 자체를 막는다 — 예전엔 조용히 무시(다음 턴부터만 반영)했는데, 그건
-  // "눌렀는데 왜 안 바뀌지" 하고 혼란스러울 수 있어 명확히 안내하기로
-  // 했다(대화 참고). currentAbortController는 아래(§연결) sendTurn()에서
-  // 선언되지만 var 호이스팅으로 이 함수들이 실제 클릭 시점(항상 선언 이후)에
-  // 실행되므로 문제없다.
+  // 답변을 생성하는 도중(currentAbortController가 있는 동안) 또는 한 턴이
+  // 잠시 멈춰 사용자의 "다음 내용 보기" 클릭을 기다리는 동안(pendingTurnSequence가
+  // 있는 동안)엔 AI 전환 자체를 막는다 — 예전엔 조용히 무시(다음 턴부터만
+  // 반영)했는데, 그건 "눌렀는데 왜 안 바뀌지" 하고 혼란스러울 수 있어 명확히
+  // 안내하기로 했다(대화 참고). currentAbortController·pendingTurnSequence는
+  // 아래(§연결)에서 선언되지만 var 호이스팅으로 이 함수들이 실제 클릭
+  // 시점(항상 선언 이후)에 실행되므로 문제없다.
   var engineLockToastTimer = null;
   function isTurnInProgress() {
-    return !!currentAbortController;
+    return !!currentAbortController || !!pendingTurnSequence;
   }
   function showEngineLockToast() {
     if (!engineLockToast) return;
@@ -586,6 +592,11 @@ document.addEventListener('DOMContentLoaded', function () {
   // 버그(대화 참고)를 고치기 위해 추가. sendTurn() 시작 시 새로 만들어
   // 여기 저장하고, resetConversation()이 있으면 이걸 abort()한다.
   var currentAbortController = null;
+  // 일반 대화형 턴(방식 A-2)이 한 섹션을 보여준 뒤 "다음 내용 보기" 클릭을
+  // 기다리며 멈춰 있는 상태를 담는다 — { seq, sequencer } | null. seq는
+  // ai.js의 beginSequentialTurn()이 반환한, 이 턴 전체에서 고정해 쓰는
+  // 엔진·모델·사전 텍스트 컨텍스트다(대화 참고).
+  var pendingTurnSequence = null;
 
   function escapeHtml(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -602,6 +613,21 @@ document.addEventListener('DOMContentLoaded', function () {
       if (turn.role === 'assistant' && !turn.hasFollowUp) cls += ' final-diagnosis';
       return '<div class="' + cls + '">' + escapeHtml(turn.text) + '</div>';
     }).join('');
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  }
+
+  // 일시정지 중(다음 내용 보기를 기다리는 동안) 사용자가 의견을 입력해
+  // 전송하면, renderConversation()으로 전체를 다시 그리면 안 된다 — 그건
+  // conversation 배열(아직 assistant 통짜 텍스트가 안 들어간 상태)만 보고
+  // 다시 그려서, 그 사이 화면에 실시간으로 쌓아둔 섹션 말풍선들이 전부
+  // 사라져 버린다(실측 확인 — 대화 참고). 대신 사용자 말풍선 하나만
+  // 지금 쌓여있는 말풍선 목록 맨 끝에 그대로 추가한다.
+  function appendUserBubble(text) {
+    var el = document.createElement('div');
+    el.className = 'chat-message user';
+    el.textContent = text;
+    if (chatEmptyHintEl && chatEmptyHintEl.parentNode === chatMessagesEl) chatMessagesEl.removeChild(chatEmptyHintEl);
+    chatMessagesEl.appendChild(el);
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   }
 
@@ -692,7 +718,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // 매 섹션을 진짜 별도 요청으로 짧게 받아오므로, 여기서는 그 결과를 받는
   // 대로(onSectionComplete 콜백) 바로 말풍선 하나씩 그리기만 하면 된다 —
   // 마커 스캐닝이 필요 없어져 훨씬 단순해졌다.
-  function createSequentialRenderer() {
+  function createSequentialRenderer(fillerText) {
     var markers = getSectionMarkers();
     var hasFollowUp = false;
 
@@ -725,11 +751,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         makeBubble(content, '');
         if (sectionKey === 'summary' || sectionKey === 'hypotheses' || sectionKey === 'uncertain') {
-          makeBubble(SECTION_FILLER_TEXT, 'chat-message-filler');
+          makeBubble(fillerText, 'chat-message-filler');
         }
       },
       // forceConclusion 턴처럼 finalCandidates에서 그대로 끝나(followUp
-      // 섹션 자체가 없어) 마무리 문구가 아직 안 붙었을 때 sendTurn()이 호출.
+      // 섹션 자체가 없어) 마무리 문구가 아직 안 붙었을 때 sendForceConclusionTurn()이 호출.
       finishWithoutFollowUp: function () {
         makeBubble(CLOSING_MESSAGE_TEXT, 'final-diagnosis');
         hasFollowUp = false;
@@ -739,15 +765,20 @@ document.addEventListener('DOMContentLoaded', function () {
     };
   }
 
-  // ---------- 채팅 전송 이벤트 루프 (TICKET-3 §4) ----------
-  async function sendTurn(userText, forceConclusion) {
-    if (!forceConclusion) {
-      conversation.push({ role: 'user', text: userText });
-      renderConversation();
-    }
+  // ---------- "충분함" 전용 일괄 요청 (forceConclusion) ----------
+  // 상담자가 "충분함 — 진단 결과 보기"를 누르면 더 묻지 않고 지금 바로
+  // 결론까지 쭉 받고 싶다는 뜻이므로, 아래 §paced 흐름처럼 사용자 클릭을
+  // 기다리지 않고 예전처럼 6단계를 자동으로 연달아 받아온다(analyzeWithAISequential).
+  async function sendForceConclusionTurn() {
+    // 일반 대화형(paced) 시퀀스가 멈춰 대기 중이었다면 여기서 포기한다 —
+    // "충분함"은 지금까지의 전체 대화를 바탕으로 처음부터 다시 결론을
+    // 내는 것이라 남은 일시정지 상태와 섞이면 안 된다.
+    pendingTurnSequence = null;
+    updateContinueButtonVisibility();
     saveConversationToStorage();
 
     chatSendBtn.disabled = true;
+    chatContinueBtn.disabled = true;
     chatSendBtn.classList.add('loading');
     chatSufficientBtn.disabled = true;
     // 응답을 기다리는 동안 아무 표시도 없으면(특히 Ollama 경로는 아래
@@ -759,7 +790,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var sawRealDownload = false;
     var downloadStartedAt = 0;
-    var sequencer = createSequentialRenderer();
+    var sequencer = createSequentialRenderer(SECTION_FILLER_TEXT);
     var sectionsSeen = 0;
     var abortController = (typeof AbortController !== 'undefined') ? new AbortController() : null;
     currentAbortController = abortController;
@@ -786,7 +817,7 @@ document.addEventListener('DOMContentLoaded', function () {
         statusEl.textContent =
           '모델 다운로드 중 (최초 1회, 약 1.4GB)... ' + formatBytes(loaded) + ' / ' + formatBytes(total) +
           (isFinite(remainingSec) ? formatRemaining(remainingSec) : ' · 예상 남은 시간 계산 중...');
-      }, forceConclusion, function (sectionKey, content) {
+      }, true, function (sectionKey, content) {
         // 섹션 하나가 완성되는 대로(analyzeWithAISequential이 독립 요청을
         // 하나씩 보내며 호출) 즉시 말풍선으로 반영한다(대화 참고).
         sectionsSeen++;
@@ -797,7 +828,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // forceConclusion 턴은 followUp 섹션 자체가 없어(sectionOrder가
       // finalCandidates에서 끝남) 위 onSection 콜백만으로는 마무리 문구가
       // 안 붙는다 — 여기서 명시적으로 붙여준다.
-      if (forceConclusion) sequencer.finishWithoutFollowUp();
+      sequencer.finishWithoutFollowUp();
 
       var split = splitFollowUpSection(answer);
       var hasFollowUp = !!split.followUpQuestionsText;
@@ -861,11 +892,147 @@ document.addEventListener('DOMContentLoaded', function () {
       chatSendBtn.disabled = chatInputEl.value.trim() === '';
       chatSendBtn.classList.remove('loading');
       chatSufficientBtn.disabled = false;
+      if (chatContinueBtn) chatContinueBtn.disabled = false;
     }
   }
 
+  function updateContinueButtonVisibility() {
+    if (chatContinueBtn) chatContinueBtn.hidden = !pendingTurnSequence;
+  }
+
+  // ---------- 일반 대화형 턴 — 사용자 클릭으로 한 단계씩 진행 (방식 A-2) ----------
+  // 새 메시지를 보내면 새 시퀀스를 시작하고(beginTurnSequence), 첫 눈에 보이는
+  // 섹션(핵심요약)까지만 받아온 뒤 멈춘다. 이후 "다음 내용 보기"를 누르거나
+  // 텍스트를 입력해 전송하면 continueTurnSequence()가 다음 섹션 하나만 더
+  // 받아온다 — 카나나(브라우저 WASM)에게 요청을 몰아쳐 GPU 크래시가 나던
+  // 문제를, 사람이 클릭할 때만 다음 요청이 나가게 해서 근본적으로 없앤다
+  // (실측된 "(ABORT)" 크래시 — 대화 참고).
+  async function runTurnSequenceLoop(isNewSequence) {
+    chatSendBtn.disabled = true;
+    chatSendBtn.classList.add('loading');
+    chatSufficientBtn.disabled = true;
+    if (chatContinueBtn) chatContinueBtn.disabled = true;
+    statusEl.hidden = false;
+    statusEl.textContent = '답변을 생성하는 중입니다. 로컬 AI 모델 속도에 따라 다소 시간이 걸릴 수 있습니다...';
+
+    var sawRealDownload = false;
+    var downloadStartedAt = 0;
+    var abortController = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    currentAbortController = abortController;
+
+    function onDownloadProgress(loaded, total) {
+      if (isModelReady() || !total) return;
+      if (loaded >= total) {
+        if (sawRealDownload) {
+          statusEl.hidden = false;
+          statusEl.textContent = '다운로드 완료 — 모델을 준비하고 분석 중입니다 (수 분 걸릴 수 있습니다)...';
+        }
+        return;
+      }
+      if (!sawRealDownload) {
+        sawRealDownload = true;
+        downloadStartedAt = Date.now();
+      }
+      var elapsedSec = (Date.now() - downloadStartedAt) / 1000;
+      var speed = elapsedSec > 0.3 ? loaded / elapsedSec : 0;
+      var remainingSec = speed > 0 ? (total - loaded) / speed : NaN;
+      statusEl.hidden = false;
+      statusEl.textContent =
+        '모델 다운로드 중 (최초 1회, 약 1.4GB)... ' + formatBytes(loaded) + ' / ' + formatBytes(total) +
+        (isFinite(remainingSec) ? formatRemaining(remainingSec) : ' · 예상 남은 시간 계산 중...');
+    }
+
+    try {
+      if (isNewSequence) {
+        var seq = await beginSequentialTurn(conversation, onDownloadProgress, abortController ? abortController.signal : undefined);
+        pendingTurnSequence = { seq: seq, sequencer: createSequentialRenderer(SECTION_PAUSE_TEXT) };
+      }
+      statusEl.hidden = true;
+
+      var finalRawText = null;
+      // noteSummary(숨김 섹션)는 화면에 보여줄 게 없으니 사용자를 기다리게
+      // 하지 않고 곧바로 다음 섹션까지 이어서 받아온다 — 눈에 보이는 섹션이
+      // 하나라도 나오면(또는 시퀀스가 끝나면) 거기서 멈춘다.
+      while (true) {
+        var result = await stepSequentialTurn(conversation, pendingTurnSequence.seq, abortController ? abortController.signal : undefined);
+        if (result.sectionKey) pendingTurnSequence.sequencer.onSection(result.sectionKey, result.content);
+        if (result.isDone) {
+          finalRawText = result.fullRawText;
+          pendingTurnSequence = null;
+          break;
+        }
+        if (result.sectionKey !== 'noteSummary') break; // 눈에 보이는 섹션 하나 그렸으니 멈춤
+      }
+      updateContinueButtonVisibility();
+
+      if (finalRawText !== null) {
+        var split = splitFollowUpSection(finalRawText);
+        var hasFollowUp = !!split.followUpQuestionsText;
+        // 후속질문이 있으면 본문+질문을 하나의 말풍선(통짜 텍스트)으로 합쳐 보여준다
+        // (structure.md §2.3 "통짜 텍스트" 확정 사항). 이 값은 여전히 sessionStorage에
+        // 저장되는 대화 기록·저장(결과 저장)·새로고침 복원용 "완성된 한 덩어리"
+        // 텍스트로 남는다 — 화면에 실시간으로 보여준 단계별 말풍선은 이 턴 한정
+        // 표시 방식일 뿐, 데이터 모델 자체는 예전과 동일하게 유지한다(회귀 최소화).
+        var displayText = hasFollowUp
+          ? split.mainText + '\n\n[추가로 확인하고 싶은 사항]\n' + split.followUpQuestionsText
+          : split.mainText;
+
+        conversation.push({ role: 'assistant', text: displayText, hasFollowUp: hasFollowUp });
+        if (!hasFollowUp) isConversationFinalized = true;
+        playDing();
+
+        // 방금 이 턴이 Ollama로 처리됐다면, 모델이 GPU 없이 CPU로만 돌고
+        // 있는지 확인해 느린 이유를 정확히 안내한다(위 sendForceConclusionTurn()과 동일 로직).
+        if (!cpuBannerDecided && ollamaCpuBanner && currentEngine() === 'ollama') {
+          getOllamaProcessorInfo().then(function (info) {
+            if (cpuBannerDecided || !info || !info.isCpuOnly) return;
+            ollamaCpuBanner.hidden = false;
+          });
+        }
+      }
+      renderFinalCandidatesPanel();
+      saveConversationToStorage();
+      updateEngineDisplay();
+    } catch (err) {
+      pendingTurnSequence = null;
+      updateContinueButtonVisibility();
+      if (err && err.name === 'AbortError') {
+        statusEl.hidden = true;
+      } else {
+        statusEl.hidden = false;
+        statusEl.textContent = '이번 턴에서 오류가 발생했습니다: ' + (err && err.message ? err.message : String(err));
+      }
+    } finally {
+      if (currentAbortController === abortController) currentAbortController = null;
+      chatSendBtn.disabled = chatInputEl.value.trim() === '';
+      chatSendBtn.classList.remove('loading');
+      chatSufficientBtn.disabled = false;
+      if (chatContinueBtn) chatContinueBtn.disabled = false;
+    }
+  }
+
+  // 새 메시지 전송 — 항상 새 시퀀스를 시작한다.
+  function startNewTurnSequence(userText) {
+    conversation.push({ role: 'user', text: userText });
+    renderConversation();
+    saveConversationToStorage();
+    return runTurnSequenceLoop(true);
+  }
+
+  // "다음 내용 보기" 클릭, 또는 일시정지 중에 사용자가 의견/추가 정보를
+  // 입력해 전송한 경우 — optionalUserText가 있으면 먼저 대화에 추가해
+  // 다음 섹션 판단에 반영되게 한다(사용자 의도 — "대화가 더 풍성해지길").
+  function continueTurnSequence(optionalUserText) {
+    if (optionalUserText) {
+      conversation.push({ role: 'user', text: optionalUserText });
+      appendUserBubble(optionalUserText);
+      saveConversationToStorage();
+    }
+    return runTurnSequenceLoop(false);
+  }
+
   function updateChatInputAvailability() {
-    // 대화 종료 여부와 무관하게 입력은 항상 가능하다 — 위 sendTurn() 주석 참고.
+    // 대화 종료 여부와 무관하게 입력은 항상 가능하다 — 위 주석 참고.
     chatSendBtn.disabled = chatInputEl.value.trim() === '';
   }
 
@@ -873,7 +1040,14 @@ document.addEventListener('DOMContentLoaded', function () {
     var text = chatInputEl.value.trim();
     if (!text) return;
     chatInputEl.value = '';
-    sendTurn(text, false);
+    // 일시정지 중(다음 내용 보기를 기다리는 중)이면 새 턴을 시작하는 게
+    // 아니라, 이 입력을 의견/추가 정보로 얹어서 지금 시퀀스를 이어간다
+    // (사용자 의도 — "추가 질문이 있어도 하라고 해서 대화가 풍성해지길").
+    if (pendingTurnSequence) {
+      continueTurnSequence(text);
+    } else {
+      startNewTurnSequence(text);
+    }
   });
 
   chatInputEl.addEventListener('keydown', function (e) {
@@ -888,7 +1062,14 @@ document.addEventListener('DOMContentLoaded', function () {
   if (chatSufficientBtn) {
     chatSufficientBtn.addEventListener('click', function () {
       if (conversation.length === 0) return;
-      sendTurn(null, true); // forceConclusion — 사용자 발화 추가 없이 즉시 최종 결론 요청
+      sendForceConclusionTurn(); // 사용자 발화 추가 없이 즉시 최종 결론 요청(일시정지 상태였다면 포기하고 처음부터 재정리)
+    });
+  }
+
+  if (chatContinueBtn) {
+    chatContinueBtn.addEventListener('click', function () {
+      if (!pendingTurnSequence) return;
+      continueTurnSequence(null); // 텍스트 추가 없이 다음 섹션만 이어서 요청
     });
   }
 
@@ -902,7 +1083,7 @@ document.addEventListener('DOMContentLoaded', function () {
       resetConversation: function () {
         // 진행 중인 AI 요청이 있으면 즉시 취소한다 — 안 그러면 대화는
         // 비워졌는데 이미 보낸 요청이 백그라운드에서 계속 돌아 전송
-        // 버튼이 로딩 상태로 남아있던 버그가 있었다(대화 참고). sendTurn()의
+        // 버튼이 로딩 상태로 남아있던 버그가 있었다(대화 참고). runTurnSequenceLoop()의
         // catch(AbortError)·finally가 마무리 처리를 이어받으므로 여기서는
         // 취소 신호만 보내고 버튼 상태는 즉시 시각적으로도 풀어준다(요청이
         // 실제로 정리되기까지의 짧은 지연 동안 사용자가 "아직도 도네" 하고
@@ -911,6 +1092,11 @@ document.addEventListener('DOMContentLoaded', function () {
           currentAbortController.abort();
           currentAbortController = null;
         }
+        // 한 섹션까지 보여주고 "다음 내용 보기"를 기다리며 멈춰 있던
+        // 상태도 함께 버린다 — 진행 중인 네트워크 요청은 없으므로 abort()
+        // 없이 상태만 지우면 된다.
+        pendingTurnSequence = null;
+        updateContinueButtonVisibility();
         conversation = [];
         isConversationFinalized = false;
         try { sessionStorage.removeItem(STORAGE_KEY); } catch (e) { /* 무시 */ }

@@ -91,6 +91,7 @@
         </button>
       </div>
       <div class="chat-actions">
+        <button class="btn btn-compact btn-primary" id="chat-continue-btn" type="button" hidden title="다음 순서의 내용을 이어서 봅니다">다음 내용 보기 →</button>
         <button class="btn btn-compact" id="chat-sufficient-btn" type="button" title="더 묻지 않고 지금까지 대화만으로 최종 진단 후보를 정리해 달라고 요청합니다">충분함 — 진단 결과 보기</button>
         <button class="btn btn-compact" id="clear-notes-btn" title="지금까지의 대화 내용을 모두 지우고 처음부터 다시 시작합니다">대화 초기화</button>
         <button class="btn btn-compact" id="engine-select-btn" type="button" aria-haspopup="dialog" aria-disabled="false" title="사용할 AI 모델을 선택하거나 새로 설치합니다">
@@ -158,7 +159,7 @@
 
 <script src="js/data.js?v=2"></script>
 <script src="js/main.js?v=8"></script>
-<script type="module" src="js/ai-ui.js?v=43"></script>
+<script type="module" src="js/ai-ui.js?v=45"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('header-diag-count').textContent = DIAGNOSES.length;
