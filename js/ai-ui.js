@@ -1,10 +1,10 @@
 import {
-  analyzeWithAI, isModelReady, currentEngine, splitFollowUpSection, detectOllama,
+  analyzeWithAISequential, isModelReady, currentEngine, splitFollowUpSection, detectOllama,
   listOllamaModels, getSelectedModelId, setSelectedModelId, getOllamaConnectionState,
   isModelInstalled, pullOllamaModel, getLastPullError, getLastOllamaError,
   extractFinalCandidates, getOllamaProcessorInfo, setForceBrowserEngine, getForceBrowserEngine,
   getSectionMarkers, extractNoteSummary,
-} from './ai.js?v=23';
+} from './ai.js?v=25';
 
 // 섹션 사이 전환 문구 — "다음으로는 유력가설을..." 처럼 다음 섹션 이름을
 // 예고하는 문구는 forceConclusion 여부에 따라 어떤 섹션이 다음에 올지
@@ -108,7 +108,29 @@ document.addEventListener('DOMContentLoaded', function () {
   var ollamaCpuBanner = document.getElementById('ollama-cpu-banner');
   var ollamaCpuSwitchBtn = document.getElementById('ollama-cpu-switch-btn');
   var ollamaCpuDismissBtn = document.getElementById('ollama-cpu-dismiss-btn');
+  var engineBadgeBtn = document.getElementById('ai-mode-badge');
+  var engineBadgeDropdown = document.getElementById('engine-badge-dropdown');
+  var engineLockToast = document.getElementById('engine-lock-toast');
   if (!chatSendBtn || !chatInputEl || !chatMessagesEl) return;
+
+  // 답변을 생성하는 도중(currentAbortController가 있는 동안)엔 AI 전환
+  // 자체를 막는다 — 예전엔 조용히 무시(다음 턴부터만 반영)했는데, 그건
+  // "눌렀는데 왜 안 바뀌지" 하고 혼란스러울 수 있어 명확히 안내하기로
+  // 했다(대화 참고). currentAbortController는 아래(§연결) sendTurn()에서
+  // 선언되지만 var 호이스팅으로 이 함수들이 실제 클릭 시점(항상 선언 이후)에
+  // 실행되므로 문제없다.
+  var engineLockToastTimer = null;
+  function isTurnInProgress() {
+    return !!currentAbortController;
+  }
+  function showEngineLockToast() {
+    if (!engineLockToast) return;
+    engineLockToast.hidden = false;
+    clearTimeout(engineLockToastTimer);
+    engineLockToastTimer = setTimeout(function () {
+      engineLockToast.hidden = true;
+    }, 2600);
+  }
 
   // Ollama가 CPU로만 도는 걸 확인해도 매 턴마다 배너를 다시 띄우면 성가시므로,
   // 이번 세션에서 이미 한 번 보여줬으면(전환했든 "그대로 사용"을 눌렀든)
@@ -117,6 +139,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (ollamaCpuSwitchBtn && ollamaCpuDismissBtn && ollamaCpuBanner) {
     ollamaCpuSwitchBtn.addEventListener('click', function () {
+      if (isTurnInProgress()) { showEngineLockToast(); return; }
       setForceBrowserEngine(true);
       cpuBannerDecided = true;
       ollamaCpuBanner.hidden = true;
@@ -331,6 +354,7 @@ document.addEventListener('DOMContentLoaded', function () {
       var forceBrowserToggleBtn = document.getElementById('force-browser-toggle-btn');
       if (forceBrowserToggleBtn) {
         forceBrowserToggleBtn.addEventListener('click', function () {
+          if (isTurnInProgress()) { showEngineLockToast(); return; }
           setForceBrowserEngine(!forcedBrowser);
           cpuBannerDecided = true; // 방금 직접 선택했으니 CPU 배너가 또 끼어들 필요 없음
           if (ollamaCpuBanner) ollamaCpuBanner.hidden = true;
@@ -360,6 +384,7 @@ document.addEventListener('DOMContentLoaded', function () {
       closeEnginePopover();
 
       if (installed) {
+        if (isTurnInProgress()) { showEngineLockToast(); return; }
         setSelectedModelId(model.id);
         updateEngineSelectButtonState();
         updateEngineDisplay();
@@ -455,6 +480,95 @@ document.addEventListener('DOMContentLoaded', function () {
       // "브라우저 내 로컬 AI(Kanana)"로 남아 있던 버그를 수정 — 감지가
       // 끝나는 즉시 배지도 함께 최신 상태로 맞춘다.
       updateEngineDisplay();
+    });
+  }
+
+  // ---------- 우측 상단 엔진 배지 → 빠른 전환 드롭다운 (대화 참고) ----------
+  // "AI 선택"(하단, 설치 안내·다운로드 확인까지 포함하는 큰 모달)과 역할을
+  // 나눈다 — 이 드롭다운은 이미 설치·사용 가능한 것 중에서 빠르게 고르는
+  // 용도로만 쓰고, 아직 설치 안 된 모델을 눌렀을 땐 여기서 새로 다운로드
+  // 흐름을 만들지 않고 기존 큰 모달을 그대로 열어 안내한다(로직 중복 방지 —
+  // 사용자 승인 반영).
+  if (engineBadgeBtn && engineBadgeDropdown) {
+    function closeEngineBadgeDropdown() {
+      engineBadgeDropdown.hidden = true;
+      engineBadgeBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    function renderEngineBadgeDropdown() {
+      var isOllamaEngine = currentEngine() === 'ollama';
+      var selectedId = getSelectedModelId();
+      var items = [{
+        key: 'browser',
+        label: '브라우저 내장 카나나',
+        checked: !isOllamaEngine,
+        installed: true,
+      }];
+
+      listOllamaModels().forEach(function (model) {
+        items.push({
+          key: model.id,
+          label: 'Ollama · ' + (model.thinking ? '생각과정 있음' : '생각과정 없음'),
+          checked: isOllamaEngine && selectedId === model.id,
+          installed: isModelInstalled(model.id),
+        });
+      });
+
+      engineBadgeDropdown.innerHTML = items.map(function (item) {
+        var cls = 'engine-badge-option' + (item.installed ? '' : ' is-disabled');
+        var statusHtml = item.installed ? '' : '<span class="engine-badge-status">설치 필요 →</span>';
+        return '<button class="' + cls + '" type="button" data-key="' + item.key + '" data-installed="' + item.installed + '">' +
+          '<span class="engine-badge-check" aria-hidden="true">' + (item.checked ? '✓' : '') + '</span>' +
+          '<span class="engine-badge-label">' + item.label + '</span>' +
+          statusHtml +
+          '</button>';
+      }).join('');
+
+      Array.prototype.forEach.call(engineBadgeDropdown.querySelectorAll('.engine-badge-option'), function (btn) {
+        btn.addEventListener('click', function () {
+          var key = btn.dataset.key;
+          var installed = btn.dataset.installed === 'true';
+          closeEngineBadgeDropdown();
+
+          if (!installed) {
+            // 아직 설치 안 된 Ollama 모델 — 다운로드 흐름은 기존 "AI 선택"
+            // 큰 모달이 담당하므로 그걸 그대로 연다.
+            if (engineSelectBtn) engineSelectBtn.click();
+            return;
+          }
+
+          if (isTurnInProgress()) { showEngineLockToast(); return; }
+
+          if (key === 'browser') {
+            setForceBrowserEngine(true);
+          } else {
+            setForceBrowserEngine(false);
+            setSelectedModelId(key);
+          }
+          updateEngineDisplay();
+          renderOllamaFailure();
+        });
+      });
+    }
+
+    engineBadgeBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (engineBadgeDropdown.hidden) {
+        renderEngineBadgeDropdown();
+        engineBadgeDropdown.hidden = false;
+        engineBadgeBtn.setAttribute('aria-expanded', 'true');
+      } else {
+        closeEngineBadgeDropdown();
+      }
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!engineBadgeDropdown.hidden && !engineBadgeDropdown.contains(e.target) && e.target !== engineBadgeBtn) {
+        closeEngineBadgeDropdown();
+      }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !engineBadgeDropdown.hidden) closeEngineBadgeDropdown();
     });
   }
 
@@ -571,37 +685,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // ---------- 스트리밍 단계별 표시 (대화 참고) ----------
-  // AI 응답을 다 기다렸다가 통짜로 보여주지 않고, 토큰이 오는 대로 마커
-  // 경계(getSectionMarkers())를 넘을 때마다 그 구간을 "완성된 말풍선"으로
-  // 확정하고, 다음 구간은 새 말풍선에 실시간으로 이어 쓴다 — "핵심요약이
-  // 먼저 나오고, 다음 항목을 정리 중이라는 문구가 뜨고, 이어서 유력가설이
-  // 나오는" 식의 단계별 진행을 사용자가 직접 눈으로 보게 하기 위함(방식 B,
-  // 여러 번 나눠 요청하는 방식 A 대신 채택 — 재요청마다 프롬프트를 처음부터
-  // 다시 읽어야 해서 이 CPU 환경에서는 A가 훨씬 느려짐, 대화 참고).
-  //
-  // "정리된 소견" 섹션은 상담자 본인이 방금 입력한 내용을 되풀이해 보여주는
-  // 것뿐이라 채팅에는 안 띄우고(결과 패널 전용, renderFinalCandidatesPanel()),
-  // 최종 후보·추가질문 섹션은 그 자체가 "마지막 단계"라 뒤에 SECTION_FILLER_TEXT를
-  // 붙이지 않는다 — 대신 스트림이 끝났는데 실질적 후속 질문이 없다면
-  // CLOSING_MESSAGE_TEXT로 마무리한다.
-  function createStreamingRenderer() {
+  // ---------- 섹션별 개별 요청 결과 표시 (방식 A, 대화 참고) ----------
+  // 예전엔 한 번의 스트리밍 응답을 마커 경계로 잘라 보여주는 방식(방식 B)을
+  // 썼는데, 그건 "잘리지 않는 것"을 보장하지 못했다(여전히 하나의 응답 안에
+  // 6단계를 다 담아야 했음, 실측 확인). 이제 ai.js의 analyzeWithAISequential()가
+  // 매 섹션을 진짜 별도 요청으로 짧게 받아오므로, 여기서는 그 결과를 받는
+  // 대로(onSectionComplete 콜백) 바로 말풍선 하나씩 그리기만 하면 된다 —
+  // 마커 스캐닝이 필요 없어져 훨씬 단순해졌다.
+  function createSequentialRenderer() {
     var markers = getSectionMarkers();
-    var order = [
-      { key: 'noteSummary', text: markers.noteSummary, visible: false, filler: false },
-      { key: 'summary', text: markers.summary, visible: true, filler: true },
-      { key: 'hypotheses', text: markers.hypotheses, visible: true, filler: true },
-      { key: 'uncertain', text: markers.uncertain, visible: true, filler: true },
-      { key: 'finalCandidates', text: markers.finalCandidates, visible: true, filler: false },
-      { key: 'followUp', text: markers.followUp, visible: true, filler: false },
-    ];
-
-    var buffer = '';
-    var scanPos = 0;
-    var sectionStart = 0;
-    var current = null; // order[]의 현재 열려 있는 섹션 항목
-    var liveBubbleEl = null;
-    var noteSummaryText = null;
     var hasFollowUp = false;
 
     function makeBubble(text, extraClass) {
@@ -614,75 +706,35 @@ document.addEventListener('DOMContentLoaded', function () {
       return el;
     }
 
-    function closeSection(content) {
-      if (!current) return;
-      if (current.key === 'noteSummary') {
-        noteSummaryText = content;
-        return; // 채팅엔 표시하지 않음(위 함수 설명 참고)
-      }
-      if (current.key === 'followUp') {
-        var hasReal = content !== '' && content.indexOf(markers.followUpNoneText) === -1;
-        if (hasReal) {
-          if (liveBubbleEl) {
-            liveBubbleEl.textContent = content;
-            liveBubbleEl.classList.remove('chat-message-live');
-          }
-          hasFollowUp = true;
-        } else {
-          if (liveBubbleEl) liveBubbleEl.remove();
-          makeBubble(CLOSING_MESSAGE_TEXT, 'final-diagnosis');
-          hasFollowUp = false;
-        }
-        liveBubbleEl = null;
-        return;
-      }
-      // summary / hypotheses / uncertain / finalCandidates
-      if (liveBubbleEl) {
-        liveBubbleEl.textContent = content;
-        liveBubbleEl.classList.remove('chat-message-live');
-        liveBubbleEl = null;
-      }
-      if (current.filler) makeBubble(SECTION_FILLER_TEXT, 'chat-message-filler');
-    }
-
     return {
-      push: function (deltaText) {
-        buffer += deltaText;
-        while (true) {
-          var found = null;
-          for (var i = 0; i < order.length; i++) {
-            var idx = buffer.indexOf(order[i].text, scanPos);
-            if (idx !== -1 && (found === null || idx < found.idx)) found = { idx: idx, entry: order[i] };
-          }
-          if (!found) break;
-          if (current) closeSection(buffer.slice(sectionStart, found.idx).trim());
-          current = found.entry;
-          sectionStart = found.idx + found.entry.text.length;
-          scanPos = sectionStart;
-          if (current.visible) liveBubbleEl = makeBubble('', 'chat-message-live');
+      // sectionKey 하나가 완성될 때마다 analyzeWithAISequential()이 호출.
+      onSection: function (sectionKey, content) {
+        if (sectionKey === 'noteSummary') {
+          return; // 결과 패널 전용(renderFinalCandidatesPanel()) — 채팅엔 안 띄움
         }
-        if (current && current.visible && liveBubbleEl) {
-          liveBubbleEl.textContent = buffer.slice(sectionStart);
-          chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-        }
-      },
-      // 스트림이 끝난 뒤 호출 — 열려 있던 마지막 섹션을 확정하고, 그게
-      // finalCandidates에서 그대로 끝나버렸다면(강제종결 턴이거나 모델이
-      // followUp 마커까지 못 갔거나) 마무리 문구를 붙인다.
-      finish: function () {
-        if (current) {
-          closeSection(buffer.slice(sectionStart).trim());
-          if (current.key === 'finalCandidates') {
+        if (sectionKey === 'followUp') {
+          var hasReal = content !== '' && content.indexOf(markers.followUpNoneText) === -1;
+          if (hasReal) {
+            makeBubble(content, '');
+            hasFollowUp = true;
+          } else {
             makeBubble(CLOSING_MESSAGE_TEXT, 'final-diagnosis');
             hasFollowUp = false;
           }
-        } else if (buffer.trim()) {
-          // 마커를 하나도 못 찾은 극단적 경우(모델이 형식을 완전히 무시) —
-          // 방어적으로 원문 전체를 그대로 한 버블에 보여준다.
-          makeBubble(buffer.trim(), '');
+          return;
+        }
+        makeBubble(content, '');
+        if (sectionKey === 'summary' || sectionKey === 'hypotheses' || sectionKey === 'uncertain') {
+          makeBubble(SECTION_FILLER_TEXT, 'chat-message-filler');
         }
       },
-      didRenderAnything: function () { return current !== null; },
+      // forceConclusion 턴처럼 finalCandidates에서 그대로 끝나(followUp
+      // 섹션 자체가 없어) 마무리 문구가 아직 안 붙었을 때 sendTurn()이 호출.
+      finishWithoutFollowUp: function () {
+        makeBubble(CLOSING_MESSAGE_TEXT, 'final-diagnosis');
+        hasFollowUp = false;
+      },
+      didRenderAnything: function () { return true; },
       getHasFollowUp: function () { return hasFollowUp; },
     };
   }
@@ -707,12 +759,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var sawRealDownload = false;
     var downloadStartedAt = 0;
-    var streamer = createStreamingRenderer();
+    var sequencer = createSequentialRenderer();
+    var sectionsSeen = 0;
     var abortController = (typeof AbortController !== 'undefined') ? new AbortController() : null;
     currentAbortController = abortController;
 
     try {
-      var answer = await analyzeWithAI(conversation, function (loaded, total) {
+      var answer = await analyzeWithAISequential(conversation, function (loaded, total) {
         // 기존 다운로드 진행률 표시 로직(구 :454-476)을 그대로 재사용.
         if (isModelReady() || !total) return;
         if (loaded >= total) {
@@ -733,15 +786,18 @@ document.addEventListener('DOMContentLoaded', function () {
         statusEl.textContent =
           '모델 다운로드 중 (최초 1회, 약 1.4GB)... ' + formatBytes(loaded) + ' / ' + formatBytes(total) +
           (isFinite(remainingSec) ? formatRemaining(remainingSec) : ' · 예상 남은 시간 계산 중...');
-      }, forceConclusion, function (delta) {
-        // 토큰이 도착하는 대로 단계별 말풍선으로 즉시 반영(대화 참고).
-        // 첫 조각이 오는 순간부터는 "생성 중..." 상태 문구보다 실제 말풍선이
-        // 훨씬 정보량이 많으므로 상태 문구는 치운다.
+      }, forceConclusion, function (sectionKey, content) {
+        // 섹션 하나가 완성되는 대로(analyzeWithAISequential이 독립 요청을
+        // 하나씩 보내며 호출) 즉시 말풍선으로 반영한다(대화 참고).
+        sectionsSeen++;
         statusEl.hidden = true;
-        streamer.push(delta);
+        sequencer.onSection(sectionKey, content);
       }, abortController ? abortController.signal : undefined);
 
-      streamer.finish();
+      // forceConclusion 턴은 followUp 섹션 자체가 없어(sectionOrder가
+      // finalCandidates에서 끝남) 위 onSection 콜백만으로는 마무리 문구가
+      // 안 붙는다 — 여기서 명시적으로 붙여준다.
+      if (forceConclusion) sequencer.finishWithoutFollowUp();
 
       var split = splitFollowUpSection(answer);
       var hasFollowUp = !!split.followUpQuestionsText;
@@ -766,12 +822,12 @@ document.addEventListener('DOMContentLoaded', function () {
       // 용도로만 쓰고, 입력 가능 여부와는 분리한다.
       if (!hasFollowUp) isConversationFinalized = true;
       statusEl.hidden = true;
-      // 스트리밍으로 이미 단계별 말풍선을 실시간으로 그려뒀다면 다시
-      // renderConversation()을 부르지 않는다 — 부르면 방금 그린 여러 말풍선이
-      // conversation 배열의 통짜 텍스트 하나로 다시 뭉쳐져 애써 보여준 단계별
-      // 진행이 눈앞에서 사라져 버린다. 스트리밍이 전혀 안 된 경우(onDelta가
-      // 한 번도 안 불림 — 구형 브라우저 등)에만 예전처럼 통짜로 렌더링한다.
-      if (!streamer.didRenderAnything()) renderConversation();
+      // 섹션별 요청으로 이미 말풍선을 하나씩 그려뒀으므로 renderConversation()을
+      // 다시 부르지 않는다 — 부르면 방금 그린 여러 말풍선이 conversation
+      // 배열의 통짜 텍스트 하나로 다시 뭉쳐져 애써 보여준 단계별 진행이
+      // 눈앞에서 사라져 버린다. 섹션이 하나도 안 왔다면(극단적 실패 등)만
+      // 예전처럼 통짜로 렌더링한다.
+      if (sectionsSeen === 0) renderConversation();
       renderFinalCandidatesPanel();
       saveConversationToStorage();
       updateEngineDisplay();

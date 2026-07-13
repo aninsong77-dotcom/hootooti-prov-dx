@@ -271,6 +271,129 @@ function buildSystemPrompt(dictionaryText, forceConclusion) {
   return lines.join('\n');
 }
 
+// ---------- 섹션별 개별 요청(방식 A) ----------
+// buildSystemPrompt()는 6단계를 한 번의 요청·응답에 다 담아야 해서, num_ctx·
+// num_predict를 아무리 올려도 여전히 잘릴 수 있다(실측 확인 — 대화 참고).
+// 진짜로 잘림을 없애려면 각 단계를 정말로 별도 요청으로 나눠, 매번 "이번엔
+// 이 한 단계만" 짧게 받아야 한다. 대신 매 단계마다 사전+대화 맥락을 다시
+// 읽어야 해서 이 노트북(CPU 전용 Ollama)처럼 느린 환경에서는 전체 소요
+// 시간이 늘어날 수 있다는 트레이드오프가 있다(사용자에게 고지 완료).
+const SECTION_DEFS = {
+  noteSummary: {
+    marker: NOTE_SUMMARY_MARKER,
+    tokenBudget: 500,
+    instruction: [
+      '지금까지 상담자가 입력한 내용(소견·의견 포함)을 빼거나 지어내지 않고 정리된',
+      '형태로 정리하세요. 상담자가 이미 정리된 형태로 입력했다면 그 내용을 거의',
+      '그대로 옮기면 되고, 대화체로 두서없이 적었다면 시간순·항목별로 다듬어',
+      '읽기 쉽게 정리하세요. 상담자의 진단 의견이나 가설이 있었다면 함께 포함하세요.',
+    ],
+  },
+  summary: {
+    marker: SUMMARY_MARKER,
+    tokenBudget: 400,
+    instruction: ['지금까지의 대화에서 확인된 핵심 증상을 짧게 정리하세요.'],
+  },
+  hypotheses: {
+    marker: HYPOTHESES_MARKER,
+    tokenBudget: 600,
+    instruction: ['사전 후보 중 가장 유력한 가설을 최대 5개까지만 선정하세요 (전체 나열 금지).'],
+  },
+  uncertain: {
+    marker: UNCERTAIN_MARKER,
+    tokenBudget: 500,
+    instruction: [
+      '앞서 선정한 각 가설마다, 사전 기준 항목 중 "지금까지의 대화만으로는 확인할 수',
+      '없는 항목"(증상 지속기간, 배제기준, 심각도·기능손상 정도 등)이 있는지 짚어내세요.',
+    ],
+  },
+  finalCandidates: {
+    marker: FINAL_CANDIDATES_MARKER,
+    tokenBudget: 1200,
+    instruction: [
+      '위 사고 과정을 반영한 현재 시점의 최종 후보를 정리하세요(확인할 항목이 남아',
+      '있다면 잠정적 결론임을 밝히고, 남은 게 없다면 그 자체가 결론입니다).',
+      '각 후보마다 사전의 어떤 기준 항목과 소견(및 추가 답변)의 어떤 표현이 근거가',
+      '되었는지, 그리고 왜 다른 후보는 배제했는지 설명하세요.',
+      '사전 항목들과 뚜렷이 겹치는 근거가 없다면 "뚜렷이 부합하는 후보 없음"이라고 답하세요.',
+      '반드시 "가능성이 있는 후보"로만 표현하고 확정적으로 단정하지 마세요.',
+      '소견에 위기 징후(자살사고, 자해, 급성 정신병적 증상 등)가 보이면 가장 먼저 강조하세요.',
+      '마지막 줄에 반드시 다음 문장을 그대로 포함하세요:',
+      '"이는 참고용 스크리닝 결과이며 실제 진단이 아닙니다. 자격을 갖춘 임상가의 평가가 반드시 필요합니다."',
+    ],
+  },
+  followUp: {
+    marker: FOLLOWUP_MARKER,
+    tokenBudget: 400,
+    instruction: [
+      '확인이 필요한 항목이 있다면, 상담자에게 되물을 구체적 질문을 "1. (질문)" 형식으로',
+      '만드세요. 확인할 필요가 없다고 판단되면 "' + FOLLOWUP_NONE_TEXT + '"라고만 쓰세요.',
+      '상담자가 (이전 turn에서) "그만 물어봐도 돼요", "이 정도면 충분해요" 같은 자연어로',
+      '대화 종료 의사를 표현했다면, 더 이상 묻지 말고 "' + FOLLOWUP_NONE_TEXT + '"만 쓰세요.',
+    ],
+  },
+};
+
+// priorSectionsText: 이번 턴에서 이미 완성된 이전 섹션들(마커 포함 원문)을
+// 이어붙인 것 — 모델이 이전 단계에서 뭐라고 썼는지 참고해 일관되게 이어가되,
+// 그대로 반복해 다시 쓰지 않도록 컨텍스트로만 준다.
+function buildSectionSystemPrompt(dictionaryText, forceConclusion, sectionKey, priorSectionsText) {
+  const def = SECTION_DEFS[sectionKey];
+  const lines = [
+    '당신은 정신건강 임상 스크리닝을 보조하는 한국어 도구입니다.',
+    '아래 "진단 기준 사전"은 DSM-5-TR의 개념을 참고하여 재서술한 체크리스트 데이터이며,',
+    '당신이 근거로 삼을 수 있는 것은 이 사전에 적힌 항목뿐입니다. 사전에 없는 진단명이나',
+    '기준을 만들어내지 마세요.',
+    '',
+    '=== 진단 기준 사전 (내담자 소견과 키워드가 겹치는 상위 후보) ===',
+    dictionaryText,
+    '=== 사전 끝 ===',
+    '',
+    '이 대화는 상담자와 당신이 여러 차례 주고받는 채팅입니다. 이전 turn들의 소견·질문·답변이',
+    '모두 대화 기록으로 이미 주어져 있으니, 그 전체 맥락을 반영해 분석하세요.',
+    '',
+    '상담자가 자신의 진단 의견이나 가설(예: "이건 OO장애 같다", "OO는 아닌 것 같다")을 직접',
+    '제시하면, 그 의견을 그냥 지나치지 말고 사전 기준에 비춰 명시적으로 판단하세요 — 동의한다면',
+    '그 근거를, 이견이 있다면 정확히 어느 지점에서 사전 기준과 안 맞는지, 그리고 그 의견을',
+    '뒷받침하거나 반박하려면 어떤 추가 정보가 필요한지 밝히세요.',
+    '',
+    '실제 임상가처럼 가설연역적으로(단서 정리 → 유력 가설 → 확인 필요 항목 → 최종 후보)',
+    '분석하되, 이 요청에서는 그 중 아래 한 단계만 작성하면 됩니다. 나머지 단계는 이후',
+    '별도 요청에서 다룰 것이니 신경 쓰지 마세요.',
+  ];
+
+  if (priorSectionsText) {
+    lines.push(
+      '',
+      '이번 턴에서 지금까지 당신이 이미 작성한 내용입니다(참고만 하고 절대 반복해서',
+      '다시 쓰지 마세요):',
+      '--- 지금까지 작성한 내용 시작 ---',
+      priorSectionsText,
+      '--- 지금까지 작성한 내용 끝 ---',
+    );
+  }
+
+  lines.push('', '=== 지금 작성할 단계 ===');
+  lines.push.apply(lines, def.instruction);
+  lines.push(
+    '',
+    '반드시 아래 마커로 시작하고, 그 마커와 이번 단계 내용만 출력하세요 — 다른',
+    '단계는 절대 쓰지 마세요:',
+    '',
+    def.marker,
+  );
+
+  if (forceConclusion && sectionKey === 'finalCandidates') {
+    lines.push(
+      '',
+      '(참고: 상담자가 "이제 충분히 확인됐다"고 판단해 대화를 종료했습니다. 지금까지의',
+      '전체 대화 내용을 반영해 최종 후보를 갱신·확정하세요.)',
+    );
+  }
+
+  return lines.join('\n');
+}
+
 // ---------- Ollama (설치형 로컬 엔진) 연동 ----------
 // PC에 Ollama가 설치·실행 중이면 브라우저 내 모델 대신 그쪽을 쓴다.
 // 훨씬 빠르고(네이티브 실행) 더 큰 모델을 쓸 수 있다. 소견은 localhost로만
@@ -474,10 +597,19 @@ function finalizeModelOutput(rawText) {
 // abortSignal(선택): "대화 초기화"를 누르는 순간에도 이미 보낸 요청이 백그라운드에서
 // 계속 돌아 전송 버튼이 로딩 상태로 남아있던 버그(대화 참고)를 고치기 위해
 // 추가 — fetch에 그대로 넘겨 사용자가 초기화를 누르면 요청 자체가 즉시 중단된다.
-async function analyzeWithOllama(messages, onDelta, abortSignal) {
-  const modelConf = OLLAMA_MODELS[selectedOllamaModelId];
+// numPredictOverride(선택): 섹션별 개별 요청(analyzeWithAISequential)이
+// 모델 레지스트리의 큰 기본값 대신 그 섹션에 맞는 작은 예산을 쓰기 위해 넘긴다.
+// modelIdOverride(선택): 넘기지 않으면 이 함수는 매번 호출 시점의 전역
+// selectedOllamaModelId를 읽는다 — 섹션별 개별 요청 중간에 사용자가 모델을
+// 바꾸면 같은 턴 안에서 앞부분/뒷부분이 다른 모델로 섞여 나오는 버그가
+// 실측됐다(대화 참고). analyzeWithAISequential()은 턴 시작 시점의 모델
+// id를 이걸로 고정해 넘겨, 그 턴이 끝날 때까지는 중간에 모델을 바꿔도
+// 반영되지 않게 한다(카나나/Ollama 엔진 전환이 이미 턴 단위로 고정된 것과
+// 동일한 원칙 — "한 턴 안에서는 모델이 바뀌면 안 된다").
+async function analyzeWithOllama(messages, onDelta, abortSignal, numPredictOverride, modelIdOverride) {
+  const modelConf = OLLAMA_MODELS[modelIdOverride || selectedOllamaModelId];
   const useStream = typeof onDelta === 'function';
-  const options = { temperature: 0.3, num_predict: modelConf.numPredict, num_ctx: modelConf.numCtx };
+  const options = { temperature: 0.3, num_predict: numPredictOverride || modelConf.numPredict, num_ctx: modelConf.numCtx };
 
   if (!useStream) {
     const res = await fetch(OLLAMA_URL + '/api/chat', {
@@ -928,4 +1060,101 @@ export async function analyzeWithAI(conversation, onProgress, forceConclusion, o
   });
 
   return finalizeModelOutput(fullText);
+}
+
+// ---------- 방식 A: 섹션별 개별 요청 ----------
+// analyzeWithAI()(위)는 한 번의 요청·응답 안에서 스트리밍으로 단계별 표시만
+// 흉내 냈을 뿐, 실제로는 여전히 6단계를 전부 담아야 하는 하나의 응답이라
+// num_ctx·num_predict를 올려도 잘릴 수 있었다(실측 확인). 이 함수는 진짜로
+// 단계마다 독립된 요청을 보내 각 응답을 짧게(SECTION_DEFS의 tokenBudget)
+// 만들어 잘림 자체를 구조적으로 없앤다. 대신 매 단계 사전+대화 맥락을
+// 다시 읽어야 해서, 이 노트북처럼 느린 CPU 전용 환경에서는 전체 소요
+// 시간이 늘어날 수 있다(사용자에게 고지 완료 — 실사용 테스트로 실제
+// 체감 지연을 확인하는 중).
+//
+// onSectionComplete(sectionKey, contentText): 섹션 하나가 완성될 때마다
+// 호출된다 — ai-ui.js가 이걸로 그 즉시 말풍선을 그린다(스트리밍 조각이
+// 아니라 완성된 한 섹션 전체가 한 번에 온다는 점이 analyzeWithAI()의
+// onDelta와 다름).
+export async function analyzeWithAISequential(conversation, onProgress, forceConclusion, onSectionComplete, abortSignal) {
+  const combinedUserText = conversation
+    .filter(function (t) { return t.role === 'user'; })
+    .map(function (t) { return t.text; })
+    .join('\n');
+  const relevant = pickRelevantDiagnoses(combinedUserText, MAX_DICT_DIAGNOSES);
+  const dictionaryText = formatDiagnosisDictionary(relevant);
+
+  const conversationMessages = conversation.map(function (t) { return { role: t.role, content: t.text }; });
+
+  const sectionOrder = forceConclusion
+    ? ['noteSummary', 'summary', 'hypotheses', 'finalCandidates']
+    : ['noteSummary', 'summary', 'hypotheses', 'uncertain', 'finalCandidates', 'followUp'];
+
+  // 엔진과 모델은 이 턴 전체에서 한 번만 정하고 고정한다 — 섹션마다 다른
+  // 엔진·모델로 튀면 앞뒤 문체·판단이 어긋날 수 있다. 엔진(Ollama/카나나)
+  // 전환은 원래 턴 단위로 고정돼 있었지만, Ollama 내부 모델(생각과정
+  // 없음/있음) 선택은 매 섹션 요청마다 전역 selectedOllamaModelId를 새로
+  // 읽어와 turn 중간에 바뀌면 섞이는 버그가 실측됐다(대화 참고) — 여기서
+  // lockedOllamaModelId로 한 번 고정해 analyzeWithOllama()에 매번 넘긴다.
+  let useOllama = !forceBrowserEngine && (await detectOllama());
+  const lockedOllamaModelId = selectedOllamaModelId;
+  if (!useOllama) {
+    if (abortSignal && abortSignal.aborted) throw new DOMException('사용자가 취소함', 'AbortError');
+    await ensureModelLoaded(onProgress);
+  }
+
+  async function requestSection(sectionKey, priorSectionsText) {
+    const def = SECTION_DEFS[sectionKey];
+    const systemPrompt = buildSectionSystemPrompt(dictionaryText, forceConclusion, sectionKey, priorSectionsText);
+    const messages = [{ role: 'system', content: systemPrompt }].concat(conversationMessages);
+
+    if (useOllama) {
+      return await analyzeWithOllama(messages, undefined, abortSignal, def.tokenBudget, lockedOllamaModelId);
+    }
+    const result = await wllama.createChatCompletion({
+      messages: messages,
+      max_tokens: def.tokenBudget,
+      temperature: 0.3,
+      abortSignal: abortSignal,
+    });
+    return result.choices[0].message.content;
+  }
+
+  async function runOnce() {
+    let fullRawText = '';
+    let priorSectionsText = '';
+    for (const sectionKey of sectionOrder) {
+      const raw = await requestSection(sectionKey, priorSectionsText);
+      const cleaned = cleanModelOutput(raw).trim();
+      const marker = SECTION_DEFS[sectionKey].marker;
+      // 모델이 지시대로 마커를 포함했으면 그대로, 안 지켰으면(작은 로컬
+      // 모델에서 드물게 발생) 우리가 붙여준다 — 다운스트림 파서
+      // (extractFinalCandidates 등)가 항상 마커 존재를 전제하기 때문.
+      const withMarker = cleaned.indexOf(marker) === 0 ? cleaned : (marker + '\n' + cleaned);
+
+      fullRawText += (fullRawText ? '\n\n' : '') + withMarker;
+      priorSectionsText += (priorSectionsText ? '\n\n' : '') + withMarker;
+
+      if (onSectionComplete) {
+        onSectionComplete(sectionKey, withMarker.slice(marker.length).trim());
+      }
+    }
+    return fullRawText;
+  }
+
+  let fullRawText;
+  try {
+    fullRawText = await runOnce();
+  } catch (e) {
+    if (e && e.name === 'AbortError') throw e;
+    if (!useOllama) throw e; // 이미 wllama였다면 더 폴백할 곳이 없음
+    // Ollama가 중간에 실패 — 캐시를 무효화하고 이 턴 전체를 wllama로 처음부터
+    // 다시 시작한다(일부 섹션만 다른 엔진으로 섞이지 않도록 처음부터 재실행).
+    await detectOllama(true);
+    useOllama = false;
+    await ensureModelLoaded(onProgress);
+    fullRawText = await runOnce();
+  }
+
+  return finalizeModelOutput(fullRawText);
 }

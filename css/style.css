@@ -276,6 +276,20 @@ a{color:var(--primary)}
 }
 .chat-engine-badge-row{ display:flex; justify-content:flex-end; }
 
+/* 답변 생성 중 AI 전환을 시도했을 때 보여주는 짧은 안내(대화 참고) —
+   한 턴 안에서 모델이 섞이는 걸 막기 위해 전환 자체를 거부하면서, 왜
+   안 되는지 조용히 알려준다. */
+.engine-lock-toast{
+  align-self:flex-end;
+  margin-top:6px;
+  font-size:11.5px;
+  color:var(--warn);
+  background:var(--warn-bg);
+  border:1px solid #eddcae;
+  border-radius:var(--radius-sm);
+  padding:6px 10px;
+}
+
 /* ---------- 결과 패널("유력한 진단") ---------- */
 .candidates-head{
   display:flex;
@@ -598,21 +612,17 @@ a{color:var(--primary)}
 .notes-hint{
   /* 예전엔 버튼 줄 아래 별도 줄이었지만, 그 한 줄을 아끼려고 버튼들과
      같은 .chat-actions 행 안으로 옮겼다(대화 참고 — 대화창을 조금이라도
-     더 넓게 쓰기 위함). min-width:180px + flex-wrap:wrap 조합은 좁은
-     화면에서 오히려 항상 두 줄이 되는 회귀였다(실측 확인 — 대화 참고,
-     wrap이 fitNotesActionsRow()의 넘침 감지 자체를 막아버림). 이제 부모가
-     nowrap이므로, 이 요소는 min-width:0으로 필요한 만큼 줄어들다가 정말
-     자리가 없으면(버튼은 최소 폰트까지 이미 줄어든 상태) 말줄임표로
-     끝을 자연스럽게 잘라 한 줄을 지킨다 — 버튼 가독성이 이 안내문구
-     전체 노출보다 우선이라는 판단. */
+     더 넓게 쓰기 위함). 한때 말줄임표(ellipsis)로 한 줄을 지켰었는데,
+     문장 뒷부분("저장·전송되지 않습니다")이 잘려 무슨 말인지 알기 어렵다는
+     피드백을 받았다(대화 참고) — 잘라서 숨기는 대신, 자리가 있으면 한 줄,
+     없으면 두 줄로 자연스럽게 줄바꿈해 항상 문장 전체가 보이게 한다.
+     버튼 줄은 align-items:center라 두 줄이 되어도 버튼과 어긋나지 않는다. */
   flex:1 1 auto;
-  min-width:0;
+  min-width:140px;
   margin:0;
   font-size:11.5px;
   color:var(--gray-500);
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  white-space:normal;
 }
 .ollama-failure-banner{
   margin-top:10px;
@@ -759,6 +769,63 @@ a{color:var(--primary)}
   padding:3px 10px;
   white-space:nowrap;
 }
+
+/* ---------- 우측 상단 엔진 배지 → 빠른 전환 드롭다운 (대화 참고) ----------
+   기존 "AI 선택" 버튼(하단, 설치 안내·다운로드 확인까지 포함하는 큰 모달)은
+   그대로 두고, 배지를 눌렀을 때는 "이미 준비된 것 중 빠르게 고르기"만
+   담당하는 작은 드롭다운을 새로 둔다. 설치 안 된 옵션은 여기서 다운로드
+   흐름을 새로 만들지 않고 기존 큰 모달을 그대로 열어 안내한다(로직 중복
+   방지). */
+.engine-badge-wrap{ position:relative; display:inline-block; }
+.engine-badge-btn{
+  cursor:pointer;
+  font-family:inherit;
+  transition:background .15s ease, border-color .15s ease;
+}
+.engine-badge-btn:hover{ background:#f5e9c8; }
+.engine-badge-dropdown{
+  position:absolute;
+  top:calc(100% + 6px);
+  right:0;
+  z-index:20;
+  min-width:240px;
+  background:var(--white);
+  border:1px solid var(--gray-200);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow-md);
+  padding:6px;
+}
+.engine-badge-option{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  padding:8px 10px;
+  border:none;
+  background:none;
+  border-radius:var(--radius-sm);
+  font-family:inherit;
+  font-size:12.5px;
+  color:var(--ink);
+  text-align:left;
+  cursor:pointer;
+}
+.engine-badge-option:hover{ background:var(--gray-100); }
+.engine-badge-option.is-disabled{ color:var(--gray-500); cursor:pointer; }
+.engine-badge-option.is-disabled:hover{ background:var(--primary-50); }
+.engine-badge-check{
+  flex:0 0 auto;
+  width:14px;
+  font-weight:700;
+  color:var(--primary);
+}
+.engine-badge-label{ flex:1 1 auto; }
+.engine-badge-status{
+  flex:0 0 auto;
+  font-size:10.5px;
+  color:var(--gray-500);
+}
+.engine-badge-option.is-disabled .engine-badge-status{ color:var(--primary); text-decoration:underline; }
 
 /* ---------- Layout (정밀 체크리스트 영역) ---------- */
 .container{

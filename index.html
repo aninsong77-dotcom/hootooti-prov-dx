@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT-Variable.css">
-<link rel="stylesheet" href="css/style.css?v=38">
+<link rel="stylesheet" href="css/style.css?v=41">
 </head>
 <body>
 
@@ -49,8 +49,12 @@
   <div class="chat-col">
     <div class="chat-card">
       <div class="chat-engine-badge-row">
-        <span class="candidates-badge" id="ai-mode-badge">브라우저 내 로컬 AI</span>
+        <div class="engine-badge-wrap">
+          <button class="candidates-badge engine-badge-btn" id="ai-mode-badge" type="button" aria-haspopup="true" aria-expanded="false" title="지금 사용 중인 AI를 확인하고 다른 AI로 바로 전환합니다">브라우저 내 로컬 AI</button>
+          <div class="engine-badge-dropdown" id="engine-badge-dropdown" hidden></div>
+        </div>
       </div>
+      <div class="engine-lock-toast" id="engine-lock-toast" hidden>지금 답변을 생성하는 중에는 AI를 바꿀 수 없습니다. 완료 후 다시 시도해 주세요.</div>
 
       <div class="chat-messages" id="chat-messages">
         <div class="chat-empty-hint" id="chat-empty-hint">
@@ -63,17 +67,17 @@
 
       <div class="ollama-failure-banner" id="ollama-failure-banner" hidden>
         <p class="ollama-failure-message" id="ollama-failure-message"></p>
-        <button class="ollama-debug-toggle" id="ollama-debug-toggle" type="button" aria-expanded="false">자세히 보기 (개발자용)</button>
+        <button class="ollama-debug-toggle" id="ollama-debug-toggle" type="button" aria-expanded="false" title="개발자를 위한 상세 오류 정보를 펼쳐 봅니다">자세히 보기 (개발자용)</button>
         <div class="ollama-debug-detail" id="ollama-debug-detail" hidden>
           <pre id="ollama-debug-raw"></pre>
-          <button class="btn btn-compact" id="ollama-debug-copy-btn" type="button">복사</button>
+          <button class="btn btn-compact" id="ollama-debug-copy-btn" type="button" title="이 오류 정보를 클립보드에 복사합니다">복사</button>
         </div>
       </div>
       <div class="ollama-cpu-banner" id="ollama-cpu-banner" hidden>
         <p class="ollama-cpu-message">지금 Ollama가 GPU를 쓰지 못하고 CPU로만 동작하고 있어 응답이 느립니다. 대신 브라우저 내장 AI(카나나)로 전환하시겠습니까?</p>
         <div class="ollama-cpu-actions">
-          <button class="btn btn-compact btn-primary" id="ollama-cpu-switch-btn" type="button">카나나로 전환</button>
-          <button class="btn btn-compact" id="ollama-cpu-dismiss-btn" type="button">그대로 Ollama 사용</button>
+          <button class="btn btn-compact btn-primary" id="ollama-cpu-switch-btn" type="button" title="지금부터 느린 Ollama 대신 브라우저 내장 카나나를 사용합니다">카나나로 전환</button>
+          <button class="btn btn-compact" id="ollama-cpu-dismiss-btn" type="button" title="느리더라도 계속 Ollama를 사용합니다">그대로 Ollama 사용</button>
         </div>
       </div>
       <div class="ai-status" id="ai-status" hidden></div>
@@ -81,15 +85,15 @@
       <div class="chat-input-bar">
         <textarea id="chat-input" class="chat-textarea" rows="1"
           placeholder="증상, 행동, 진술이나 상담자 본인의 의견을 입력하고 Enter(또는 전송)를 누르세요"></textarea>
-        <button class="btn btn-compact btn-primary chat-send-btn" id="chat-send-btn" type="button">
+        <button class="btn btn-compact btn-primary chat-send-btn" id="chat-send-btn" type="button" title="입력한 내용을 AI에게 보내 분석을 요청합니다">
           <span class="ai-btn-label">전송</span>
           <span class="ai-btn-spinner" aria-hidden="true"></span>
         </button>
       </div>
       <div class="chat-actions">
-        <button class="btn btn-compact" id="chat-sufficient-btn" type="button">충분함 — 진단 결과 보기</button>
-        <button class="btn btn-compact" id="clear-notes-btn">대화 초기화</button>
-        <button class="btn btn-compact" id="engine-select-btn" type="button" aria-haspopup="dialog" aria-disabled="false">
+        <button class="btn btn-compact" id="chat-sufficient-btn" type="button" title="더 묻지 않고 지금까지 대화만으로 최종 진단 후보를 정리해 달라고 요청합니다">충분함 — 진단 결과 보기</button>
+        <button class="btn btn-compact" id="clear-notes-btn" title="지금까지의 대화 내용을 모두 지우고 처음부터 다시 시작합니다">대화 초기화</button>
+        <button class="btn btn-compact" id="engine-select-btn" type="button" aria-haspopup="dialog" aria-disabled="false" title="사용할 AI 모델을 선택하거나 새로 설치합니다">
           <span id="engine-select-label">AI 선택</span>
         </button>
         <p class="notes-hint">입력한 대화는 이 브라우저 화면에만 남고(같은 탭이 열려 있는 동안 유지) 저장·전송되지 않습니다.</p>
@@ -111,14 +115,14 @@
       <div class="candidates-head">
         <h2>유력한 진단</h2>
         <div class="candidates-head-right">
-          <button class="copy-btn" id="copy-final-result-btn" type="button">복사</button>
+          <button class="copy-btn" id="copy-final-result-btn" type="button" title="이 결과 내용을 클립보드에 복사합니다">복사</button>
         </div>
       </div>
       <div class="final-result-empty-hint chat-empty-hint" id="final-result-empty-hint">
         <p>대화가 진행되면 여기에 현재까지 유력한 진단이<br>정리되어 나타납니다.</p>
       </div>
       <div class="final-result-text" id="final-result-text" hidden></div>
-      <button class="btn btn-compact btn-primary" id="save-result-btn">결과 저장</button>
+      <button class="btn btn-compact btn-primary" id="save-result-btn" title="소견과 AI 분석 결과를 텍스트 파일로 내려받습니다">결과 저장</button>
     </div>
   </aside>
 </section>
@@ -154,7 +158,7 @@
 
 <script src="js/data.js?v=2"></script>
 <script src="js/main.js?v=8"></script>
-<script type="module" src="js/ai-ui.js?v=40"></script>
+<script type="module" src="js/ai-ui.js?v=43"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('header-diag-count').textContent = DIAGNOSES.length;
