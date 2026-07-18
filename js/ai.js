@@ -23,6 +23,7 @@
    ========================================================================== */
 
 import { Wllama } from 'https://cdn.jsdelivr.net/npm/@wllama/wllama@3.5.1/esm/index.js';
+import { fitConversationToBudget, pickFullDetailCount } from './context-budget.js?v=1';
 
 const WASM_PATH_CONFIG = {
   default: 'https://cdn.jsdelivr.net/npm/@wllama/wllama@3.5.1/esm/wasm/wllama.wasm',
@@ -81,9 +82,12 @@ function pickRelevantDiagnoses(noteText, limit) {
   return matched;
 }
 
-function formatDiagnosisDictionary(diagnoses) {
-  const detailed = diagnoses.slice(0, FULL_DETAIL_DIAGNOSES);
-  const nameOnly = diagnoses.slice(FULL_DETAIL_DIAGNOSES);
+// fullDetailCount(선택): 기준 전문을 통째로 실을 진단 수. 대화가 진행될수록
+// pickFullDetailCount()로 줄여 문맥 예산을 회수한다(미지정 시 기존 고정값).
+function formatDiagnosisDictionary(diagnoses, fullDetailCount) {
+  const detailCount = typeof fullDetailCount === 'number' ? fullDetailCount : FULL_DETAIL_DIAGNOSES;
+  const detailed = diagnoses.slice(0, detailCount);
+  const nameOnly = diagnoses.slice(detailCount);
 
   const detailedText = detailed
     .map((d) => {
@@ -1004,6 +1008,38 @@ export function extractFinalCandidates(answerText) {
 // 문구를 안 띄우고 조용히 정리하도록) — Ollama 실패 시의 wllama 폴백
 // 로직과 섞이지 않도록 아래에서 AbortError는 즉시 재던지고 폴백을 타지
 // 않는다(취소된 요청을 취소 안 된 척 다른 엔진으로 재시도하면 안 됨).
+// ---------- 문맥 예산 가드 (카나나 전용, DECISION.md §1-A) ----------
+// N_CTX=4096은 입력+출력 합산 예산이라, 넘치면 (ABORT) 크래시·답변 잘림으로
+// 이어진다. wllama 요청 직전에 예산을 근사 계산해 넘치는 만큼 가장 오래된
+// 턴부터 탈락시키고, 한도 근접·탈락 발생 시 UI(ai-ui.js)가 등록한 핸들러로
+// 알린다. Ollama 경로는 모델별 num_ctx가 따로 있고 크래시 실측이 카나나
+// 한정이므로 이 가드를 태우지 않는다.
+let contextNoticeHandler = null;
+let lastContextNoticeKey = '';
+export function setContextNoticeHandler(fn) { contextNoticeHandler = fn; }
+
+// 섹션별 요청은 한 턴에 최대 6번 조립되므로, 같은 상태로는 한 번만 알린다
+// (탈락 개수가 늘거나 상태가 바뀔 때만 재통지).
+function fitMessagesForKanana(systemPrompt, conversation, reservedOutput) {
+  const fit = fitConversationToBudget({
+    systemPrompt: systemPrompt,
+    conversation: conversation,
+    maxCtx: N_CTX,
+    reservedOutput: reservedOutput,
+  });
+  if (fit.status === 'ok') {
+    lastContextNoticeKey = '';
+  } else {
+    const key = fit.status + ':' + fit.droppedCount;
+    if (key !== lastContextNoticeKey && typeof contextNoticeHandler === 'function') {
+      lastContextNoticeKey = key;
+      try { contextNoticeHandler(fit); } catch (e) { /* 알림 실패가 분석을 막으면 안 됨 */ }
+    }
+  }
+  return [{ role: 'system', content: systemPrompt }]
+    .concat(fit.conversation.map(function (t) { return { role: t.role, content: t.text }; }));
+}
+
 export async function analyzeWithAI(conversation, onProgress, forceConclusion, onDelta, abortSignal) {
   const combinedUserText = conversation
     .filter(function (t) { return t.role === 'user'; })
@@ -1013,8 +1049,9 @@ export async function analyzeWithAI(conversation, onProgress, forceConclusion, o
   // 합쳐 진단 사전 그라운딩을 매번 재계산한다 — 후속 답변에서 나온 새 키워드도
   // 후보 추림에 반영되도록. DIAGNOSES 배열 크기상 매 턴 재계산 비용은 무시할
   // 수준이라 회귀 위험 없이 요구사항 취지("히스토리 전체 활용")에 더 부합한다.
+  const userTurnCount = conversation.filter(function (t) { return t.role === 'user'; }).length;
   const relevant = pickRelevantDiagnoses(combinedUserText, MAX_DICT_DIAGNOSES);
-  const dictionaryText = formatDiagnosisDictionary(relevant);
+  const dictionaryText = formatDiagnosisDictionary(relevant, pickFullDetailCount(userTurnCount, FULL_DETAIL_DIAGNOSES));
   const systemPrompt = buildSystemPrompt(dictionaryText, !!forceConclusion);
 
   const messages = [{ role: 'system', content: systemPrompt }]
@@ -1058,9 +1095,12 @@ export async function analyzeWithAI(conversation, onProgress, forceConclusion, o
   // 누적 대화를 그대로 전달하므로, 대화가 매우 길어지면 한도 초과로 요청
   // 자체가 실패할 수 있다. 이 함수는 그 경우 예외를 그대로 던지며(조용히
   // 삼키지 않음), 호출부(TICKET-3)가 사용자에게 안내할 수 있게 한다.
+  // 카나나 경로는 예산 가드를 통과한 메시지를 쓴다(위 fitMessagesForKanana 주석).
+  const kananaMessages = fitMessagesForKanana(systemPrompt, conversation, 1800);
+
   if (typeof onDelta !== 'function') {
     const result = await wllama.createChatCompletion({
-      messages: messages,
+      messages: kananaMessages,
       max_tokens: 1800,
       temperature: 0.3,
       abortSignal: abortSignal,
@@ -1073,7 +1113,7 @@ export async function analyzeWithAI(conversation, onProgress, forceConclusion, o
   // 온다). onData가 있으면 함수가 void를 반환하므로 fullText를 직접 누적한다.
   let fullText = '';
   await wllama.createChatCompletion({
-    messages: messages,
+    messages: kananaMessages,
     max_tokens: 1800,
     temperature: 0.3,
     abortSignal: abortSignal,
@@ -1109,8 +1149,9 @@ export async function analyzeWithAISequential(conversation, onProgress, forceCon
     .filter(function (t) { return t.role === 'user'; })
     .map(function (t) { return t.text; })
     .join('\n');
+  const userTurnCount = conversation.filter(function (t) { return t.role === 'user'; }).length;
   const relevant = pickRelevantDiagnoses(combinedUserText, MAX_DICT_DIAGNOSES);
-  const dictionaryText = formatDiagnosisDictionary(relevant);
+  const dictionaryText = formatDiagnosisDictionary(relevant, pickFullDetailCount(userTurnCount, FULL_DETAIL_DIAGNOSES));
 
   const conversationMessages = conversation.map(function (t) { return { role: t.role, content: t.text }; });
 
@@ -1140,7 +1181,7 @@ export async function analyzeWithAISequential(conversation, onProgress, forceCon
       return await analyzeWithOllama(messages, undefined, abortSignal, def.tokenBudget, lockedOllamaModelId);
     }
     const result = await wllama.createChatCompletion({
-      messages: messages,
+      messages: fitMessagesForKanana(systemPrompt, conversation, def.tokenBudget),
       max_tokens: def.tokenBudget,
       temperature: 0.3,
       abortSignal: abortSignal,
@@ -1206,8 +1247,9 @@ export async function beginSequentialTurn(conversation, onProgress, abortSignal)
     .filter(function (t) { return t.role === 'user'; })
     .map(function (t) { return t.text; })
     .join('\n');
+  const userTurnCount = conversation.filter(function (t) { return t.role === 'user'; }).length;
   const relevant = pickRelevantDiagnoses(combinedUserText, MAX_DICT_DIAGNOSES);
-  const dictionaryText = formatDiagnosisDictionary(relevant);
+  const dictionaryText = formatDiagnosisDictionary(relevant, pickFullDetailCount(userTurnCount, FULL_DETAIL_DIAGNOSES));
 
   let useOllama = !forceBrowserEngine && (await detectOllama());
   const lockedOllamaModelId = selectedOllamaModelId;
@@ -1248,7 +1290,7 @@ export async function stepSequentialTurn(conversation, seq, abortSignal) {
     raw = await analyzeWithOllama(messages, undefined, abortSignal, def.tokenBudget, seq.lockedOllamaModelId);
   } else {
     const result = await wllama.createChatCompletion({
-      messages: messages,
+      messages: fitMessagesForKanana(systemPrompt, conversation, def.tokenBudget),
       max_tokens: def.tokenBudget,
       temperature: 0.3,
       abortSignal: abortSignal,

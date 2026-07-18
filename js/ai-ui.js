@@ -4,8 +4,8 @@ import {
   listOllamaModels, getSelectedModelId, setSelectedModelId, getOllamaConnectionState,
   isModelInstalled, pullOllamaModel, getLastPullError, getLastOllamaError,
   extractFinalCandidates, getOllamaProcessorInfo, setForceBrowserEngine, getForceBrowserEngine,
-  getSectionMarkers, extractNoteSummary,
-} from './ai.js?v=27';
+  getSectionMarkers, extractNoteSummary, setContextNoticeHandler,
+} from './ai.js?v=28';
 
 // "충분함"(forceConclusion) 턴 전용 — 전체 섹션을 자동으로 연달아 받아오므로
 // 사이사이 멈추지 않는다는 뜻에서 "이어서 정리한다"는 문구를 쓴다.
@@ -117,6 +117,27 @@ document.addEventListener('DOMContentLoaded', function () {
   var engineBadgeDropdown = document.getElementById('engine-badge-dropdown');
   var engineLockToast = document.getElementById('engine-lock-toast');
   if (!chatSendBtn || !chatInputEl || !chatMessagesEl) return;
+
+  // 문맥 예산 안내(카나나 전용, DECISION.md §1-A) — ai.js가 요청 직전 예산을
+  // 근사 계산해 한도 근접('near')·오래된 턴 탈락('trimmed')이 발생하면 이
+  // 핸들러를 부른다(같은 상태로는 한 번만 — 중복 통지는 ai.js가 걸러줌).
+  // 새 화면 요소 없이 채팅창에 흐린 안내 말풍선 하나만 추가한다.
+  setContextNoticeHandler(function (fit) {
+    var text;
+    if (fit.status === 'trimmed') {
+      text = '안내: 대화가 브라우저 AI(카나나)의 기억 한도를 넘어, 가장 오래된 대화 '
+        + fit.droppedCount + '개를 이번 분석에서 제외했습니다. 앞부분의 중요한 내용은 소견에 다시 포함해 주세요. '
+        + '긴 상담에는 "AI 선택"에서 Ollama 사용을 권장합니다.';
+    } else {
+      text = '안내: 대화가 길어져 브라우저 AI(카나나)의 기억 한도에 가까워졌습니다. '
+        + '더 길어지면 오래된 내용부터 분석에서 제외됩니다. 긴 상담에는 "AI 선택"에서 Ollama 사용을 권장합니다.';
+    }
+    var el = document.createElement('div');
+    el.className = 'chat-message assistant chat-message-filler';
+    el.textContent = text;
+    chatMessagesEl.appendChild(el);
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  });
 
   // 답변을 생성하는 도중(currentAbortController가 있는 동안) 또는 한 턴이
   // 잠시 멈춰 사용자의 "다음 내용 보기" 클릭을 기다리는 동안(pendingTurnSequence가
