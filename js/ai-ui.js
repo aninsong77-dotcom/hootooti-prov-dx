@@ -5,7 +5,7 @@ import {
   isModelInstalled, pullOllamaModel, getLastPullError, getLastOllamaError,
   extractFinalCandidates, getOllamaProcessorInfo, setForceBrowserEngine, getForceBrowserEngine,
   getSectionMarkers, extractNoteSummary, setContextNoticeHandler,
-} from './ai.js?v=28';
+} from './ai.js?v=29';
 
 // "충분함"(forceConclusion) 턴 전용 — 전체 섹션을 자동으로 연달아 받아오므로
 // 사이사이 멈추지 않는다는 뜻에서 "이어서 정리한다"는 문구를 쓴다.

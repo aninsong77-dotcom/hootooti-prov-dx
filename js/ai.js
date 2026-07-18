@@ -23,7 +23,7 @@
    ========================================================================== */
 
 import { Wllama } from 'https://cdn.jsdelivr.net/npm/@wllama/wllama@3.5.1/esm/index.js';
-import { fitConversationToBudget, pickFullDetailCount } from './context-budget.js?v=1';
+import { fitConversationToBudget, pickFullDetailCount } from './context-budget.js?v=2';
 
 const WASM_PATH_CONFIG = {
   default: 'https://cdn.jsdelivr.net/npm/@wllama/wllama@3.5.1/esm/wasm/wllama.wasm',

@@ -13,9 +13,10 @@
    순수 계산만 있고 DOM·네트워크 의존이 없어 node로 단독 테스트 가능하다.
    ========================================================================== */
 
-// 한글 음절·자모 범위. 한국어 특화 토크나이저(카나나)도 1토큰당 1~2자
-// 수준이므로 보수적으로 1.5자/토큰, 그 외 문자(영문·숫자·공백·기호)는
-// 3.5자/토큰으로 근사한다.
+// 한글 음절·자모 범위. 처음엔 1.5자/토큰·3.5자/토큰으로 잡았으나, 실배포에서
+// 'near'(추정 80~100%) 상태로 보낸 요청이 실제로는 한도를 넘어 (ABORT)가
+// 재현됐다(2026-07-19 사용자 실측) — 추정이 실제보다 낙관적이었다는 증거.
+// 한글 1.25자/토큰, 그 외 3.0자/토큰으로 더 보수적으로 조정한다.
 function isHangulCode(c) {
   return (c >= 0xac00 && c <= 0xd7a3) || (c >= 0x1100 && c <= 0x11ff) || (c >= 0x3130 && c <= 0x318f);
 }
@@ -27,11 +28,12 @@ export function estimateTokens(text) {
     if (isHangulCode(s.charCodeAt(i))) hangul++;
   }
   const other = s.length - hangul;
-  return Math.ceil(hangul / 1.5 + other / 3.5);
+  return Math.ceil(hangul / 1.25 + other / 3.0);
 }
 
-// 챗 템플릿이 메시지마다 붙이는 특수 토큰(role 태그 등) 몫.
-const PER_MESSAGE_OVERHEAD = 8;
+// 챗 템플릿이 메시지마다 붙이는 특수 토큰(role 태그 등) 몫 — 같은 실측
+// 근거로 8→16으로 상향(과대추정이 안전한 방향).
+const PER_MESSAGE_OVERHEAD = 16;
 
 // conversation은 ai.js의 대화 배열({ role, text }) 형태를 그대로 받는다.
 export function estimateBudgetUse(systemPrompt, conversation) {
@@ -49,23 +51,29 @@ export function pickFullDetailCount(userTurnCount, maxCount) {
 }
 
 /* 대화를 예산(maxCtx - reservedOutput)에 맞춘다.
+   처음엔 예산 100%까지 채워 보내고 80% 이상이면 경고만 했는데, 그 상태로
+   보낸 요청이 실제 한도를 넘어 (ABORT)가 재현됐다(2026-07-19 실측). 이제
+   예산의 safetyRatio(기본 85%) 지점을 목표로 미리 잘라낸다 — 추정 오차
+   15%까지는 흡수된다.
    반환 status:
    - 'ok'      여유 있음
-   - 'near'    들어가긴 하지만 예산의 warnRatio(기본 80%)를 넘음 — 경고용
-   - 'trimmed' 가장 오래된 턴부터 droppedCount개 탈락시켜 맞춤
+   - 'near'    잘라낼 정도는 아니지만 예산의 warnRatio(기본 70%)를 넘음 — 경고용
+   - 'trimmed' 가장 오래된 턴부터 droppedCount개 탈락시켜 목표 안으로 맞춤
    최근 턴은 최소 keepMinTurns(기본 2)개를 항상 보존한다 — 최소 구성으로도
-   넘치면 'trimmed'인 채 그대로 반환한다(호출부는 지금처럼 시도하고, 실패
-   시 기존 예외 경로를 탄다). 탈락 후 대화가 assistant 턴으로 시작하면
-   챗 템플릿 혼란을 피하기 위해 그 턴도 함께 탈락시킨다. */
+   넘치면 'trimmed'(또는 단일 거대 턴이면 'near')인 채 그대로 반환한다
+   (호출부는 지금처럼 시도하고, 실패 시 기존 예외 경로를 탄다). 탈락 후
+   대화가 assistant 턴으로 시작하면 챗 템플릿 혼란을 피하기 위해 그 턴도
+   함께 탈락시킨다. */
 export function fitConversationToBudget(opts) {
   const source = (opts.conversation || []).slice();
   const budget = opts.maxCtx - opts.reservedOutput;
-  const warnRatio = opts.warnRatio || 0.8;
+  const target = budget * (opts.safetyRatio || 0.85);
+  const warnRatio = opts.warnRatio || 0.7;
   const keepMinTurns = opts.keepMinTurns || 2;
 
   const kept = source.slice();
   let dropped = 0;
-  while (kept.length > keepMinTurns && estimateBudgetUse(opts.systemPrompt, kept) > budget) {
+  while (kept.length > keepMinTurns && estimateBudgetUse(opts.systemPrompt, kept) > target) {
     kept.shift();
     dropped++;
     while (kept.length > keepMinTurns && kept[0] && kept[0].role === 'assistant') {
