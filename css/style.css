@@ -1386,17 +1386,6 @@ a{color:var(--primary)}
 .site-nav .nav-secondary{ opacity:.62; font-weight:500; }
 .site-nav .nav-secondary:hover{ opacity:1; }
 
-/* 증상 항목의 생각·행동·감정·신념 라벨 — 표시 전용(필터 아님) */
-.item-tag{
-  display:inline-block; margin-right:6px; padding:1px 6px; border-radius:4px;
-  font-size:10.5px; font-weight:700; vertical-align:1px; white-space:nowrap;
-}
-.item-tag.t-thought{ background:#eef2fb; color:#3a4f86; }
-.item-tag.t-behavior{ background:#eef7f1; color:#2f6a4c; }
-.item-tag.t-feeling{ background:#fdf0ee; color:#8c4a3e; }
-.item-tag.t-belief{ background:#f6f0fa; color:#5f4380; }
-.item-tag.t-somatic{ background:#f2f4f6; color:#4a5560; }
-
 /* 소견 다섯 칸 (생각·행동·감정·신념·신체) */
 .note-field{ display:flex; align-items:flex-start; gap:10px; }
 .note-label{

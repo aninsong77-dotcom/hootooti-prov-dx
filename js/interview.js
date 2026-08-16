@@ -402,13 +402,12 @@
         var key = HututiScoring.keyOf(d.id, gi, ii);
         var id = 'chk-' + key.split('::').join('-');
         var on = !!S.checked[key];
-        // 생각·행동·감정·신념 라벨. 표시일 뿐이며 어떤 항목도 숨기지 않는다
-        // (필터로 만들면 분류가 틀린 항목이 안 보이게 된다 — symptom-tags.js 주석).
-        var tag = (typeof HututiSymptomTags !== 'undefined') ? HututiSymptomTags.tagFor(it) : null;
-        var tagHtml = tag ? '<span class="item-tag t-' + tag + '">' + HututiSymptomTags.labelOf(tag) + '</span>' : '';
+        // 항목에는 갈래 표시를 붙이지 않는다. 생각·행동·감정·신념·신체 구분은
+        // **맨 처음 소견을 나눠 적게 하는 용도**로만 쓴다(사용자 결정 2026-08-16) —
+        // 체크 단계에서는 항목 문구만 읽고 판단하는 편이 방해가 적다.
         return '<label class="item' + (on ? ' checked' : '') + '" for="' + id + '">' +
           '<input type="checkbox" id="' + id + '" data-act="check" data-diag="' + attr(d.id) + '" data-g="' + gi + '" data-i="' + ii + '"' +
-          (on ? ' checked' : '') + '><span>' + tagHtml + esc(it) + '</span></label>';
+          (on ? ' checked' : '') + '><span>' + esc(it) + '</span></label>';
       }).join('');
       var lab = g.label ? g.label : (d.groups.length > 1 ? ('항목군 ' + (gi + 1)) : '증상 항목');
       return '<div class="group"><div class="group-label">' + esc(lab) +
