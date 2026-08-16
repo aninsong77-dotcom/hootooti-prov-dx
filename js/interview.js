@@ -38,8 +38,6 @@
   var streamNode = null;     // 부분 응답을 직접 갱신할 DOM 노드
 
   var ANSWER_KR = { yes: '예', no: '아니오', unknown: '확인 안 됨' };
-  var UNIT_KR = { hours: '시간', days: '일', weeks: '주', months: '개월', years: '년' };
-  var FREQ_KR = { occasional: '이따금', most_days: '대부분의 날에', almost_always: '거의 항상' };
 
   // AI에 넘길 후보 수 상한 (structure.md §3.3 프롬프트 크기 상한)
   var MAX_CANDIDATES = 5;
@@ -148,10 +146,9 @@
     return {
       age: S.common.age,
       onsetAge: S.common.onsetAge,
-      duration: p.duration,
-      frequency: p.frequency,
+      met: p.met || {},
       impairment: p.impairment,
-      dailyTime: p.dailyTime,
+      confirmations: p.confirmations || {},
       exceptions: p.exceptions || {},
     };
   }
@@ -494,45 +491,34 @@
       '<div class="bubble-covers">기준 원문 — ' + esc(c.source.duration || '(기간 규정 없음)') + '</div>';
 
     if (isCurrent) {
+      // 기준을 문장으로 보여주고 예/아니오를 받는다. 숫자·단위 입력을 없앤 이유는
+      // criteria-engine.js 파일 주석 참고(입력 부담 + 단위 경계 판정 불가).
+      // 질문 문장은 엔진이 규칙에서 조립해 주므로 여기서 만들지 않는다.
       body += '<div class="bubble-fields">';
       var ax = res.axes;
 
-      if (ax.duration && (ax.duration.status === 'UNKNOWN' || ax.duration.status === 'PASS' || ax.duration.status === 'FAIL')) {
-        var du = (c.duration && (c.duration.min || c.duration.max)) || null;
-        var unit = du ? ((c.duration.min || c.duration.max).unit) : 'months';
-        body += '<div class="field-row"><span class="field-label">증상이 지속된 기간' +
-          (ax.duration.need ? ' <em>(' + esc(ax.duration.need) + ')</em>' : '') + '</span>' +
-          '<span class="field-input"><input type="number" min="0" step="1" data-field="durationValue" value="' +
-          (p.duration ? attr(p.duration.value) : '') + '">' + unitSelect('durationUnit', p.duration ? p.duration.unit : unit) + '</span></div>';
-      }
-      if (ax.frequency && ax.frequency.status !== 'NA') {
-        if (c.frequency.level) {
-          body += '<div class="field-row"><span class="field-label">증상이 나타나는 빈도 <em>(' + esc(ax.frequency.need || '') + ')</em></span>' +
-            '<span class="field-input">' + ['occasional', 'most_days', 'almost_always'].map(function (k) {
-              var on = p.frequency === k ? ' is-picked' : '';
-              return '<button type="button" class="btn btn-compact btn-choice' + on + '" data-act="pick" data-field="frequency" data-val="' + k + '">' + FREQ_KR[k] + '</button>';
-            }).join('') + '</span></div>';
-        } else {
-          body += '<div class="field-row"><span class="field-label">발생 횟수 <em>(' + esc(ax.frequency.need || '') + ')</em></span>' +
-            '<span class="field-input"><select data-field="freqPer">' +
-            '<option value="week"' + (p.frequency && p.frequency.per === 'week' ? ' selected' : '') + '>주</option>' +
-            '<option value="month"' + (p.frequency && p.frequency.per === 'month' ? ' selected' : '') + '>월</option></select>' +
-            '<input type="number" min="0" step="1" data-field="freqCount" value="' + (p.frequency && p.frequency.count != null ? attr(p.frequency.count) : '') + '">' +
-            '<span class="field-unit">회</span></span></div>';
-        }
-      }
-      if (ax.dailyTime && ax.dailyTime.status !== 'NA') {
-        body += '<div class="field-row"><span class="field-label">하루에 소요되는 시간 <em>(' + esc(ax.dailyTime.need || '') + ')</em></span>' +
-          '<span class="field-input"><input type="number" min="0" step="0.5" data-field="dailyTimeValue" value="' +
-          (p.dailyTime ? attr(p.dailyTime.value) : '') + '"><span class="field-unit">시간</span></span></div>';
-      }
+      ['duration', 'frequency', 'dailyTime'].forEach(function (k) {
+        var a = ax[k];
+        if (!a || a.status === 'NA' || a.status === 'QUALITATIVE') return;
+        var cur = (p.met || {})[k];
+        body += yesNoRow(HututiCriteriaEngine.AXIS_KR[k], a.question || a.need, 'pick-met',
+          { axis: k }, cur);
+      });
+
       if (ax.impairment && ax.impairment.status !== 'NA') {
-        body += '<div class="field-row"><span class="field-label">일상 기능(직업·학업·사회관계)에 뚜렷한 지장</span>' +
-          '<span class="field-input">' +
-          '<button type="button" class="btn btn-compact btn-choice' + (p.impairment === true ? ' is-picked' : '') + '" data-act="pick" data-field="impairment" data-val="true">있음</button>' +
-          '<button type="button" class="btn btn-compact btn-choice' + (p.impairment === false ? ' is-picked' : '') + '" data-act="pick" data-field="impairment" data-val="false">없음</button>' +
-          '</span></div>';
+        body += yesNoRow(HututiCriteriaEngine.AXIS_KR.impairment,
+          ax.impairment.question || ax.impairment.need, 'pick-impairment', {}, p.impairment);
       }
+
+      // 예/아니오로 답하는 진단기준 조건. 안내 문구로만 두면 읽고 넘기게 되므로
+      // 실제로 답을 받아 판정에 넣는다.
+      if (c.confirmations && c.confirmations.length) {
+        c.confirmations.forEach(function (cf) {
+          body += yesNoRow('추가 조건', cf.text, 'pick-confirm', { cid: cf.id },
+            (p.confirmations || {})[cf.id]);
+        });
+      }
+
       if (c.exceptions) {
         c.exceptions.forEach(function (e) {
           var on = p.exceptions && p.exceptions[e.id];
@@ -556,10 +542,23 @@
     return bubbleAssistant(body, 'bubble-param');
   }
 
-  function unitSelect(field, cur) {
-    return '<select data-field="' + field + '">' + ['days', 'weeks', 'months', 'years'].map(function (u) {
-      return '<option value="' + u + '"' + (cur === u ? ' selected' : '') + '>' + UNIT_KR[u] + '</option>';
-    }).join('') + '</select>';
+  // 기준 한 줄 = 질문 + [예][아니오][확인 안 됨]. 세 축이 모두 같은 모양이라
+  // 상담자가 형태를 한 번만 익히면 된다.
+  function yesNoRow(kindLabel, question, act, data, cur) {
+    var attrs = Object.keys(data || {}).map(function (k) {
+      return ' data-' + k + '="' + attr(data[k]) + '"';
+    }).join('');
+    var btn = function (val, text, on) {
+      return '<button type="button" class="btn btn-compact btn-choice' + (on ? ' is-picked' : '') +
+        '" data-act="' + act + '"' + attrs + ' data-val="' + val + '">' + text + '</button>';
+    };
+    return '<div class="field-row">' +
+      '<span class="field-label"><em>' + esc(kindLabel) + '</em> ' + esc(question) + '</span>' +
+      '<span class="field-input">' +
+      btn('true', '예', cur === true) +
+      btn('false', '아니오', cur === false) +
+      btn('unknown', '확인 안 됨', cur === undefined) +
+      '</span></div>';
   }
 
   function axisSummary(res) {
@@ -807,23 +806,40 @@
       return;
     }
     if (act === 'edit-common') { S.common._skipped = false; render(); return; }
-    if (act === 'pick') {
-      var b = node.closest('.bubble-param');
-      var target = b.querySelector('[data-act="save-param"]');
-      if (!target) return;
-      var id = target.dataset.diag;
-      S.params[id] = S.params[id] || {};
-      var f = node.dataset.field, v = node.dataset.val;
-      if (f === 'impairment') S.params[id].impairment = (v === 'true');
-      else if (f === 'frequency') S.params[id].frequency = v;
-      // 같은 줄의 다른 버튼 선택 해제
-      node.parentNode.querySelectorAll('.btn-choice').forEach(function (x) { x.classList.remove('is-picked'); });
-      node.classList.add('is-picked');
+    if (act === 'pick-confirm') {
+      var did = paramDiagOf(node);
+      if (!did) return;
+      S.params[did] = S.params[did] || {};
+      S.params[did].confirmations = S.params[did].confirmations || {};
+      var cval = node.dataset.val;
+      if (cval === 'unknown') delete S.params[did].confirmations[node.dataset.cid];
+      else S.params[did].confirmations[node.dataset.cid] = (cval === 'true');
+      markPicked(node);
       save();
+      renderResults();
+      return;
+    }
+    // 기준 충족 여부(기간·빈도·하루 소요시간)를 예/아니오로 받는다.
+    if (act === 'pick-met' || act === 'pick-impairment') {
+      var pid = paramDiagOf(node);
+      if (!pid) return;
+      S.params[pid] = S.params[pid] || {};
+      var val = node.dataset.val;
+      var answer = (val === 'unknown') ? undefined : (val === 'true');
+      if (act === 'pick-impairment') {
+        if (answer === undefined) delete S.params[pid].impairment;
+        else S.params[pid].impairment = answer;
+      } else {
+        S.params[pid].met = S.params[pid].met || {};
+        if (answer === undefined) delete S.params[pid].met[node.dataset.axis];
+        else S.params[pid].met[node.dataset.axis] = answer;
+      }
+      markPicked(node);
+      save();
+      renderResults();
       return;
     }
     if (act === 'save-param' || act === 'skip-param') {
-      if (act === 'save-param') collectParams(node);
       if (S.paramIdx < S.paramQueue.length - 1) S.paramIdx++;
       else S.phase = 'done';
       render();
@@ -844,26 +860,20 @@
     }
   }
 
-  function collectParams(saveBtn) {
-    var id = saveBtn.dataset.diag;
-    var bubble = saveBtn.closest('.bubble-param');
-    S.params[id] = S.params[id] || {};
-    var p = S.params[id];
-
-    var get = function (f) { return bubble.querySelector('[data-field="' + f + '"]'); };
-    var dv = get('durationValue'), du = get('durationUnit');
-    if (dv) {
-      p.duration = (dv.value === '') ? undefined
-        : { value: Number(dv.value), unit: du ? du.value : 'months' };
-    }
-    var fc = get('freqCount'), fp = get('freqPer');
-    if (fc) {
-      p.frequency = (fc.value === '') ? undefined : { count: Number(fc.value), per: fp ? fp.value : 'week' };
-    }
-    var dt = get('dailyTimeValue');
-    if (dt) p.dailyTime = (dt.value === '') ? undefined : { value: Number(dt.value), unit: 'hours' };
-    save();
+  // 이 버튼이 어느 진단의 말풍선에 있는지
+  function paramDiagOf(node) {
+    var bubble = node.closest('.bubble-param');
+    var save = bubble && bubble.querySelector('[data-act="save-param"]');
+    return save ? save.dataset.diag : null;
   }
+
+  function markPicked(node) {
+    node.parentNode.querySelectorAll('.btn-choice').forEach(function (x) { x.classList.remove('is-picked'); });
+    node.classList.add('is-picked');
+  }
+
+  // 답은 버튼을 누를 때마다 바로 저장되므로 따로 걷을 것이 없다.
+  // (숫자·단위 입력창이 있던 시절의 흔적을 제거했다.)
 
   /* ------------------------------------------------------------ 진행 제어 */
 

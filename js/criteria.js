@@ -42,8 +42,8 @@
         other: "지능검사와 적응기능 평가가 함께 이루어져야 함",
       },
       age: { max: { value: 18, unit: 'years' }, kind: 'onset' },
-      notes: [
-        "지능검사와 적응기능 평가가 함께 이루어져야 함",
+      confirmations: [
+        { id: "iq-adaptive", text: "지능검사와 적응기능 평가가 함께 이루어졌습니까?" },
       ],
     },
 
@@ -64,8 +64,8 @@
       },
       duration: { min: { value: 6, unit: 'months' } },
       age: { max: { value: 12, unit: 'years' }, kind: 'onset' },
-      notes: [
-        "2개 이상의 환경(가정·학교·직장 등)에서 증상이 나타나야 함",
+      confirmations: [
+        { id: "two-settings", text: "2개 이상의 환경(가정·학교·직장 등)에서 증상이 나타납니까?" },
       ],
     },
 
@@ -114,9 +114,9 @@
       },
       duration: { min: { value: 6, unit: 'months' } },
       impairment: { required: true },
-      notes: [
-        "활성기 증상이 1개월 중 상당 기간 존재해야 함",
-        "조현정동장애·기분장애·물질로 설명되지 않아야 함",
+      confirmations: [
+        { id: "active-phase", text: "활성기 증상이 1개월 중 상당 기간 존재했습니까?" },
+        { id: "not-other", text: "조현정동장애·기분장애·물질로 더 잘 설명되지 않습니까?" },
       ],
     },
 
@@ -145,8 +145,8 @@
         other: "흔히 극심한 스트레스 사건 이후 발생",
       },
       duration: { min: { value: 1, unit: 'days' }, max: { value: 1, unit: 'months' }, maxInclusive: true },
-      notes: [
-        "이후 병전 기능 수준으로 완전히 회복해야 함",
+      confirmations: [
+        { id: "full-recovery", text: "이후 병전 기능 수준으로 완전히 회복했습니까?" },
       ],
     },
 
@@ -177,9 +177,9 @@
         other: "조증 삽화가 있었던 적은 없어야 함(있었다면 제1형에 해당)",
       },
       duration: { min: { value: 4, unit: 'days' } },
-      notes: [
-        "주요우울삽화는 별도로 2주 이상이어야 함",
-        "조증 삽화가 있었던 적이 없어야 함(있었다면 제1형)",
+      confirmations: [
+        { id: "mde-2w", text: "주요우울삽화가 별도로 2주 이상 지속되었습니까?" },
+        { id: "no-mania", text: "조증 삽화가 있었던 적이 없습니까? (있었다면 제1형입니다)" },
       ],
     },
 
@@ -190,9 +190,9 @@
         other: "이 기간 동안 주요우울·조증·경조증 삽화의 전체 기준을 만족한 적은 없어야 함",
       },
       duration: { min: { value: 2, unit: 'years' }, minIfUnder: { age: 18, value: 1, unit: 'years' } },
-      notes: [
-        "증상이 없던 기간이 2개월을 넘지 않아야 함",
-        "주요우울·조증·경조증 삽화의 전체 기준을 만족한 적이 없어야 함",
+      confirmations: [
+        { id: "no-gap-2m", text: "증상이 없던 기간이 2개월을 넘지 않았습니까?" },
+        { id: "no-full-episode", text: "주요우울·조증·경조증 삽화의 전체 기준을 만족한 적이 없습니까?" },
       ],
     },
 
@@ -214,8 +214,8 @@
         other: "주요우울삽화가 만성적으로 겹쳐 나타날 수도 있음",
       },
       duration: { min: { value: 2, unit: 'years' }, minIfUnder: { age: 18, value: 1, unit: 'years' } },
-      notes: [
-        "2개월 이상 증상이 없는 기간이 없어야 함",
+      confirmations: [
+        { id: "no-gap-2m", text: "증상이 없던 기간이 2개월을 넘지 않았습니까?" },
       ],
     },
 
@@ -237,10 +237,10 @@
       duration: { min: { value: 12, unit: 'months' } },
       age: { min: { value: 6, unit: 'years' }, max: { value: 18, unit: 'years' }, kind: 'diagnosis' },
       frequency: { minCount: 3, per: 'week' },
-      notes: [
-        "10세 이전에 발병했어야 함",
-        "3개월 이상 증상 없는 기간이 없어야 함",
-        "2개 이상의 환경에서 나타나야 함",
+      confirmations: [
+        { id: "onset-before-10", text: "10세 이전에 발병했습니까?" },
+        { id: "no-gap-3m", text: "증상이 없던 기간이 3개월을 넘지 않았습니까?" },
+        { id: "two-settings", text: "2개 이상의 환경에서 나타납니까?" },
       ],
     },
 
@@ -262,8 +262,8 @@
         other: "물질이나 다른 의학적 상태로 설명되지 않아야 함",
       },
       duration: { min: { value: 1, unit: 'months' } },
-      notes: [
-        "예기치 못한 공황발작이 반복되어야 함",
+      confirmations: [
+        { id: "unexpected-attacks", text: "예기치 못한 공황발작이 반복됩니까?" },
       ],
     },
 
@@ -392,9 +392,9 @@
         other: "다른 정신질환의 진단기준을 만족하지 않고, 정상적인 애도반응이 아니어야 함",
       },
       duration: { qualitative: true },
-      notes: [
-        "스트레스 요인 발생 후 3개월 이내 발병했는지 확인",
-        "스트레스 요인 종료 후 6개월 이내 소실하는지 확인",
+      confirmations: [
+        { id: "onset-3m", text: "스트레스 요인 발생 후 3개월 이내에 증상이 시작되었습니까?" },
+        { id: "resolve-6m", text: "스트레스 요인이 종료된 뒤 6개월 이내에 증상이 사라집니까?" },
       ],
     },
 
@@ -405,8 +405,8 @@
         other: "자폐스펙트럼장애 기준을 만족하지 않아야 함",
       },
       age: { min: { value: 9, unit: 'months' }, max: { value: 5, unit: 'years' }, kind: 'onset' },
-      notes: [
-        "극심한 방임·학대 등 불충분한 양육 병력이 있어야 함",
+      confirmations: [
+        { id: "insufficient-care", text: "극심한 방임·학대 등 불충분한 양육 병력이 있습니까?" },
       ],
     },
 
@@ -417,8 +417,8 @@
         other: "주의력결핍 과잉행동장애의 충동성만으로는 설명되지 않아야 함",
       },
       age: { min: { value: 9, unit: 'months' }, kind: 'onset' },
-      notes: [
-        "불충분한 양육 병력이 있어야 함",
+      confirmations: [
+        { id: "insufficient-care", text: "불충분한 양육 병력이 있습니까?" },
       ],
     },
 
@@ -587,8 +587,8 @@
       },
       duration: { min: { value: 3, unit: 'months' } },
       frequency: { minCount: 3, per: 'week' },
-      notes: [
-        "수면다원검사·뇌척수액 히포크레틴 검사 등 객관적 검사 확인이 필요함",
+      confirmations: [
+        { id: "objective-test", text: "수면다원검사·뇌척수액 히포크레틴 검사 등 객관적 검사로 확인되었습니까?" },
       ],
     },
 
@@ -709,8 +709,9 @@
       },
       duration: { qualitative: true },
       impairment: { required: true },
-      notes: [
-        "최근 12개월 이내 3개 이상, 최근 6개월 이내 1개 이상 항목을 충족했는지 확인",
+      confirmations: [
+        { id: "window-12m-3", text: "최근 12개월 이내에 3개 이상 항목을 충족했습니까?" },
+        { id: "window-6m-1", text: "최근 6개월 이내에 1개 이상 항목을 충족했습니까?" },
       ],
     },
 
@@ -739,9 +740,11 @@
         other: "충족 항목 수에 따라 경도(2~3개), 중등도(4~5개), 중증(6개 이상)으로 심각도가 구분됨. 특정 물질(알코올, 대마, 아편계, 자극제, 진정제 등)마다 별도 진단으로 명명됨",
       },
       duration: { qualitative: true },
+      confirmations: [
+        { id: "window-12m", text: "증상이 최근 12개월 이내에 발생했습니까?" },
+      ],
       notes: [
-        "12개월 이내에 증상이 발생했는지 확인",
-        "충족 항목 수로 경도(2~3)·중등도(4~5)·중증(6+) 구분",
+        "충족 항목 수로 경도(2~3개)·중등도(4~5개)·중증(6개 이상)을 구분합니다",
       ],
     },
 
@@ -752,9 +755,9 @@
         other: "조증삽화로 더 잘 설명되지 않아야 함",
       },
       duration: { qualitative: true },
-      notes: [
-        "12개월 동안의 문제성 도박행동인지 확인",
-        "조증삽화로 더 잘 설명되지 않아야 함",
+      confirmations: [
+        { id: "window-12m", text: "최근 12개월 동안의 문제성 도박행동입니까?" },
+        { id: "not-mania", text: "조증삽화로 더 잘 설명되지 않습니까?" },
       ],
     },
 
@@ -819,8 +822,8 @@
         other: "반사회적 행동이 조현병이나 양극성장애의 경과 중에만 나타나는 것이 아니어야 함",
       },
       age: { min: { value: 18, unit: 'years' }, kind: 'diagnosis' },
-      notes: [
-        "15세 이전 품행장애 병력이 필요함",
+      confirmations: [
+        { id: "cd-before-15", text: "15세 이전에 품행장애 병력이 있습니까?" },
       ],
     },
 
@@ -883,7 +886,7 @@
   function hasComputableAxis(c) {
     if (!c || c.qualitative) return false;
     if (c.duration && !c.duration.qualitative) return true;
-    return !!(c.age || c.frequency || c.dailyTime || c.impairment);
+    return !!(c.age || c.frequency || c.dailyTime || c.impairment || c.confirmations);
   }
 
   var api = {
