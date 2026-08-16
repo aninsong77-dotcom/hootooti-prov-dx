@@ -664,7 +664,13 @@
       if (!badge) return;
       var s = HututiScoring.diagnosisScore(d, S.checked);
       if (s.met) { badge.textContent = '기준 충족 가능성'; badge.className = 'badge badge-met'; }
-      else {
+      else if (s.requiredMissing && s.requiredMissing.length) {
+        // 개수는 채웠는데 핵심 증상이 빠진 경우 — 이유를 밝히지 않으면 왜 충족이
+        // 안 되는지 알 수 없다.
+        badge.textContent = '핵심 증상 미포함';
+        badge.className = 'badge badge-partial';
+        badge.title = s.requiredMissing.join(', ') + ' 중 최소 1개가 필요합니다';
+      } else {
         badge.textContent = s.anyChecked ? ('부분 일치 ' + Math.round(s.ratio * 100) + '%') : '미충족';
         badge.className = 'badge badge-partial';
       }
@@ -693,11 +699,13 @@
       if (!axes && res.overall === 'QUALITATIVE') {
         axes = '<span class="axis-badge s-QUALITATIVE">기간·기타 직접 확인 필요</span>';
       }
+      var reqMiss = (x.s.requiredMissing || []).length
+        ? '<div class="result-req">' + esc(x.s.requiredMissing.join(', ')) + ' 중 최소 1개가 필요합니다</div>' : '';
       return '<div class="result-item ' + (x.s.met ? 'is-met' : '') + '">' +
         '<div class="result-line"><span class="result-rank">' + (i + 1) + '</span>' +
         '<span class="result-name">' + esc(x.d.name_kr) +
         '<span class="result-cat">' + esc(x.d.category) + ' · 확인 ' + c.done + '개 / 미확인 ' + c.unknown + '개</span></span>' +
-        '<span class="result-score">' + (x.s.met ? '증상 충족' : Math.round(x.s.ratio * 100) + '%') + '</span></div>' +
+        '<span class="result-score">' + (x.s.met ? '증상 충족' : Math.round(x.s.ratio * 100) + '%') + '</span></div>' + reqMiss +
         (axes ? '<div class="result-axes">' + axes + '</div>' : '') + '</div>';
     }).join('');
   }
@@ -991,6 +999,9 @@
     list.forEach(function (x, i) {
       var c = countItems(x.d), res = evaluateFor(x.d.id);
       L.push('  ' + (i + 1) + '. [' + x.d.category + '] ' + x.d.name_kr + ' (' + x.d.name_en + ')');
+      if ((x.s.requiredMissing || []).length) {
+        L.push('     ※ ' + x.s.requiredMissing.join(', ') + ' 중 최소 1개가 필요합니다 (핵심 증상 미포함)');
+      }
       L.push('     증상: ' + (x.s.met ? '기준 충족 가능성' : '부분 일치 ' + Math.round(x.s.ratio * 100) + '%') +
         ' — 확인 ' + c.done + '개 / 미확인 ' + c.unknown + '개 (미확인은 "증상 없음"이 아닙니다)');
       Object.keys(res.axes).forEach(function (k) {

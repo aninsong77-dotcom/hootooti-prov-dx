@@ -48,6 +48,22 @@
   //   groupLogic 'AND' — 모든 항목군을 충족해야 하고, 진행률은 가장 뒤처진 군을 따른다
   //   groupLogic 'OR'  — 한 항목군만 충족해도 되고, 진행률은 가장 앞선 군을 따른다
   //   anyChecked       — 하나라도 체크됐는지(결과 목록에 띄울지 판단용)
+  // DSM에는 "개수"만이 아니라 "그중 특정 항목이 반드시 포함되어야 한다"는 조건이
+  // 있다 — 주요우울장애는 우울 기분 또는 흥미상실 중 1개, 조현병은 망상·환각·
+  // 와해된 언어 중 1개. 개수만 세면 그런 핵심 증상 없이도 기준 충족이 떠서
+  // DSM이 인정하지 않는 결과가 나온다(2026-08-16 교차 확인으로 발견).
+  // 해당 진단의 data.js에 requiredAny로 적혀 있고, 여기서 함께 판정한다.
+  function requiredMissing(diag, checked) {
+    if (!diag.requiredAny || !diag.requiredAny.length) return [];
+    return diag.requiredAny.filter(function (req) {
+      var n = 0;
+      req.indexes.forEach(function (i) {
+        if (checked[keyOf(diag.id, req.group, i)]) n++;
+      });
+      return n < (req.min || 1);
+    }).map(function (req) { return req.label; });
+  }
+
   function diagnosisScore(diag, checked) {
     var groupResults = diag.groups.map(function (g, idx) {
       return groupSatisfied(diag, idx, checked);
@@ -55,12 +71,19 @@
     var met = diag.groupLogic === 'OR'
       ? groupResults.some(function (r) { return r.met; })
       : groupResults.every(function (r) { return r.met; });
+
+    // 필수 포함 조건을 못 채우면 개수를 채웠더라도 충족이 아니다.
+    var missing = requiredMissing(diag, checked);
+    if (missing.length) met = false;
     var ratios = groupResults.map(function (r) { return r.ratio; });
     var ratio = diag.groupLogic === 'OR'
       ? Math.max.apply(null, ratios)
       : Math.min.apply(null, ratios);
     var anyChecked = groupResults.some(function (r) { return r.count > 0; });
-    return { met: met, ratio: ratio, groupResults: groupResults, anyChecked: anyChecked };
+    return {
+      met: met, ratio: ratio, groupResults: groupResults, anyChecked: anyChecked,
+      requiredMissing: missing,   // 비어 있지 않으면 "핵심 증상 미포함"
+    };
   }
 
   // 진단 목록을 결과 패널용으로 정렬한다. 체크가 하나도 없는 진단은 제외.
@@ -92,6 +115,7 @@
   var api = {
     keyOf: keyOf,
     groupSatisfied: groupSatisfied,
+    requiredMissing: requiredMissing,
     diagnosisScore: diagnosisScore,
     rankDiagnoses: rankDiagnoses,
   };

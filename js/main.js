@@ -151,6 +151,11 @@
         if(score.met){
           badge.textContent = '기준 충족 가능성';
           badge.className = 'badge badge-met';
+        } else if(score.requiredMissing && score.requiredMissing.length){
+          // 개수는 채웠으나 DSM이 요구하는 핵심 증상이 빠진 경우
+          badge.textContent = '핵심 증상 미포함';
+          badge.className = 'badge badge-partial';
+          badge.title = score.requiredMissing.join(', ') + ' 중 최소 1개가 필요합니다';
         } else {
           badge.textContent = score.anyChecked ? ('부분 일치 ' + Math.round(score.ratio*100) + '%') : '미충족';
           badge.className = 'badge badge-partial';

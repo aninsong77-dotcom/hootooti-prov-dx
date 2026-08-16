@@ -1512,3 +1512,10 @@ a{color:var(--primary)}
   font-size:12px; line-height:1.6;
 }
 .cut-note b{ color:var(--warn); }
+
+/* 개수는 채웠으나 DSM이 요구하는 핵심 증상이 빠졌을 때 */
+.result-req{
+  margin:4px 0 0 26px; padding:4px 8px; border-radius:var(--radius-sm);
+  background:var(--warn-bg); color:var(--warn);
+  font-size:11px; line-height:1.5;
+}
