@@ -1523,11 +1523,3 @@ a{color:var(--primary)}
   font-size:12px; line-height:1.6;
 }
 .cut-note b{ color:var(--warn); }
-
-/* about 페이지의 보조 설명 (Ollama 참고 안내 등) */
-.about-note{
-  margin:14px 0 0; padding:11px 14px; border-radius:var(--radius);
-  background:var(--gray-100); color:var(--gray-700);
-  font-size:13px; line-height:1.7;
-}
-.about-note b{ color:var(--ink); font-weight:600; }
