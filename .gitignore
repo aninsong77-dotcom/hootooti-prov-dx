@@ -1,2 +1,5 @@
 .claude/
 .conversationLog/
+
+# 문헌 검색 도구가 남긴 임시 캐시 (앱 동작과 무관)
+.researchclaw_cache/

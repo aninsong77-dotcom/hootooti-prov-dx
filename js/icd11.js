@@ -1,10 +1,13 @@
 /* ==========================================================================
    ICD-11(WHO) 챕터06+07 분류 지도 페이지.
-   icd11-source/icd11_curated_top_level.json(상위 진단명 149개 + 대분류 31개,
-   자체 번역)을 불러와 클릭으로 펼치고 접을 수 있는 트리로 렌더링한다.
-   ========================================================================== */
+   상위 진단명 149개 + 대분류 31개(자체 번역)를 클릭으로 펼치고 접을 수 있는
+   트리로 렌더링한다.
 
-const DATA_URL = 'icd11-source/icd11_curated_top_level.json?v=1';
+   데이터는 js/icd11-data.js가 window.ICD11_DATA로 넘겨준다. 예전에는 이 파일이
+   fetch로 JSON을 직접 읽었는데, 브라우저로 파일을 직접 열면(file://) 외부 파일
+   읽기가 차단되어 "불러오는 중"에서 멈췄다(2026-08-16 실측). 데이터를 일반
+   스크립트로 옮기고 이 파일도 module에서 일반 스크립트로 바꿔 그 제약을 없앴다.
+   ========================================================================== */
 
 const CHAPTER_LABEL = {
   '06': { kr: '정신, 행동 및 신경발달장애', en: 'Mental, behavioural or neurodevelopmental disorders' },
@@ -87,12 +90,13 @@ function renderChapter(chapterCode, blocks) {
   return details;
 }
 
-async function init() {
+function init() {
   const root = document.getElementById('icd11-tree-root');
   try {
-    const res = await fetch(DATA_URL);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
+    const data = window.ICD11_DATA;
+    if (!data || !data.chapters) {
+      throw new Error('분류 데이터를 찾을 수 없습니다 (js/icd11-data.js 로드 실패)');
+    }
 
     root.innerHTML = '';
     Object.keys(data.chapters).forEach((chapterCode) => {

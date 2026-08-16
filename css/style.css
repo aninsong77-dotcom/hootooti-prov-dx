@@ -1269,3 +1269,212 @@ a{color:var(--primary)}
 .results-list::-webkit-scrollbar{ width:8px; }
 .results-list::-webkit-scrollbar-thumb{ background:var(--gray-300); border-radius:8px; }
 .results-list::-webkit-scrollbar-track{ background:transparent; }
+
+/* ==========================================================================
+   알고리즘 문답 화면 (index.html) — quantified-criteria 트랙
+   대화 레이아웃(.chat-*)은 chat.html과 공유하고, 말풍선 안에 들어가는
+   문항 버튼·체크리스트·입력 위젯만 여기서 더한다.
+   ========================================================================== */
+
+/* 말풍선 내부 공통 */
+.chat-message.assistant .bubble-head{
+  display:flex; align-items:center; gap:8px; margin-bottom:8px;
+}
+.bubble-step{
+  font-size:11.5px; font-weight:700; color:var(--gray-500); font-variant-numeric:tabular-nums;
+}
+.wizard-chip{
+  display:inline-block; padding:3px 9px; border-radius:99px;
+  background:var(--primary-100); color:var(--primary-700);
+  font-size:11.5px; font-weight:700;
+}
+.bubble-q{ font-size:15px; font-weight:600; line-height:1.6; color:var(--ink); }
+.bubble-covers{ font-size:12px; line-height:1.6; color:var(--gray-500); margin-top:6px; }
+.bubble-foot{ font-size:12px; line-height:1.6; color:var(--gray-500); margin-top:10px; }
+.bubble-actions{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:12px; }
+.bubble-note{ background:var(--primary-50); border-color:var(--primary-100); }
+.linklike{
+  background:none; border:none; padding:0; font:inherit; font-size:inherit;
+  color:var(--primary); text-decoration:underline; cursor:pointer;
+}
+
+/* 문항 답변 버튼 */
+.bubble-answers{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+.btn-answer{
+  flex:1 1 90px; padding:11px 10px; font-size:14px; font-weight:700;
+  border-radius:var(--radius); border:1.5px solid var(--gray-300);
+  background:var(--white); color:var(--gray-700); cursor:pointer; transition:all .12s ease;
+}
+.btn-answer:hover:not(:disabled){ border-color:var(--primary); color:var(--primary); background:var(--primary-50); }
+.btn-answer.is-picked{ border-color:var(--primary); background:var(--primary); color:var(--white); }
+.btn-answer:disabled{ opacity:.55; cursor:default; }
+.btn-answer:disabled.is-picked{ opacity:1; }
+
+/* 말풍선 안 체크리스트 */
+.bubble-checklist{
+  margin-top:12px; max-height:460px; overflow-y:auto;
+  border:1px solid var(--gray-200); border-radius:var(--radius); background:var(--white);
+}
+.bubble-deferred{ margin-top:10px; border-top:1px dashed var(--gray-300); padding-top:10px; }
+.group-or-sep{ font-size:11px; color:var(--gray-500); font-weight:600; margin:2px 0 6px; }
+.wizard-empty{
+  padding:20px; text-align:center; color:var(--gray-500); font-size:13px;
+  background:var(--gray-100); border-radius:var(--radius);
+}
+.wizard-note{ font-size:12px; line-height:1.6; color:var(--gray-500); margin:0 0 8px; }
+
+/* 정량 입력 위젯 */
+.bubble-fields{ margin-top:12px; display:flex; flex-direction:column; gap:10px; }
+.field-row, .field{
+  display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+  font-size:13px; color:var(--gray-700);
+}
+.field-label{ flex:1 1 220px; line-height:1.5; }
+.field-label em{ font-style:normal; color:var(--primary-700); font-weight:600; }
+.field-input{ display:flex; align-items:center; gap:6px; }
+.field-input input[type=number]{
+  width:84px; padding:7px 9px; font:inherit; font-size:13px;
+  border:1px solid var(--gray-300); border-radius:var(--radius-sm); background:var(--white); color:var(--ink);
+}
+.field-input select{
+  padding:7px 9px; font:inherit; font-size:13px;
+  border:1px solid var(--gray-300); border-radius:var(--radius-sm); background:var(--white); color:var(--ink);
+}
+.field-unit{ font-size:12.5px; color:var(--gray-500); }
+.btn-choice{ border:1px solid var(--gray-300); background:var(--white); }
+.btn-choice.is-picked{ border-color:var(--primary); background:var(--primary); color:var(--white); }
+
+.bubble-notes{
+  margin-top:12px; padding:10px 12px; background:var(--warn-bg);
+  border-radius:var(--radius); font-size:12.5px; line-height:1.65; color:var(--gray-700);
+}
+.bubble-notes ul{ margin:6px 0 0; padding-left:18px; }
+.bubble-notes b{ color:var(--warn); }
+
+/* 축별 판정 배지 */
+.axis-list{ margin-top:10px; display:flex; flex-direction:column; gap:5px; }
+.axis-row{ display:flex; align-items:center; gap:8px; font-size:12.5px; flex-wrap:wrap; }
+.axis-name{ min-width:78px; color:var(--gray-500); }
+.axis-reason{ color:var(--gray-500); flex:1 1 160px; }
+.axis-badge{
+  display:inline-block; padding:2px 8px; border-radius:99px;
+  font-size:11px; font-weight:700; white-space:nowrap;
+}
+.axis-badge.s-PASS{ background:var(--ok-bg); color:var(--ok); }
+.axis-badge.s-FAIL{ background:var(--warn-bg); color:var(--warn); }
+.axis-badge.s-UNKNOWN{ background:var(--gray-100); color:var(--gray-500); border:1px solid var(--gray-200); }
+.axis-badge.s-QUALITATIVE{ background:var(--primary-100); color:var(--primary-700); }
+
+/* AI 정리 */
+.bubble-ai{ margin-top:12px; }
+.wizard-ai-output{
+  margin-top:8px; padding:12px 14px; background:var(--gray-100); border-radius:var(--radius);
+  font-size:13px; line-height:1.75; color:var(--ink); white-space:pre-wrap;
+}
+
+/* 결과 패널 */
+.results-card{ display:flex; flex-direction:column; min-height:0; }
+.result-line{ display:flex; align-items:center; gap:8px; }
+.result-axes{ display:flex; flex-wrap:wrap; gap:4px; margin:6px 0 0 26px; }
+
+@media (max-width:900px){
+  .field-row, .field{ align-items:flex-start; }
+  .bubble-checklist{ max-height:none; }
+}
+
+/* 기본 경로가 아닌 보조 메뉴(자유 대화) — 있되 눈에 덜 띄게 */
+.site-nav .nav-secondary{ opacity:.62; font-weight:500; }
+.site-nav .nav-secondary:hover{ opacity:1; }
+
+/* 증상 항목의 생각·행동·감정·신념 라벨 — 표시 전용(필터 아님) */
+.item-tag{
+  display:inline-block; margin-right:6px; padding:1px 6px; border-radius:4px;
+  font-size:10.5px; font-weight:700; vertical-align:1px; white-space:nowrap;
+}
+.item-tag.t-thought{ background:#eef2fb; color:#3a4f86; }
+.item-tag.t-behavior{ background:#eef7f1; color:#2f6a4c; }
+.item-tag.t-feeling{ background:#fdf0ee; color:#8c4a3e; }
+.item-tag.t-belief{ background:#f6f0fa; color:#5f4380; }
+.item-tag.t-somatic{ background:#f2f4f6; color:#4a5560; }
+
+/* 소견 다섯 칸 (생각·행동·감정·신념·신체) */
+.note-field{ display:flex; align-items:flex-start; gap:10px; }
+.note-label{
+  flex:0 0 62px; padding:5px 8px; border-radius:var(--radius-sm);
+  font-size:12px; font-weight:700; text-align:center;
+}
+.note-label.t-thought{ background:#eef2fb; color:#3a4f86; }
+.note-label.t-behavior{ background:#eef7f1; color:#2f6a4c; }
+.note-label.t-feeling{ background:#fdf0ee; color:#8c4a3e; }
+.note-label.t-belief{ background:#f6f0fa; color:#5f4380; }
+.note-label.t-somatic{ background:#f2f4f6; color:#4a5560; }
+.note-input{
+  flex:1; min-height:34px; box-sizing:border-box; resize:vertical;
+  border:1px solid var(--gray-300); border-radius:var(--radius-sm);
+  padding:7px 10px; font:inherit; font-size:13px; line-height:1.5; color:var(--ink); background:var(--white);
+}
+.note-input:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-100); }
+.note-echo{ line-height:1.7; }
+
+/* 빠른 확인 목록 */
+.quick-list{
+  margin-top:12px; border:1px solid var(--gray-200); border-radius:var(--radius);
+  background:var(--white); max-height:420px; overflow-y:auto;
+}
+.quick-row{
+  display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+  padding:10px 12px; border-bottom:1px solid var(--gray-100);
+}
+.quick-row:last-child{ border-bottom:none; }
+.quick-label{ flex:1; min-width:0; }
+.quick-q{ display:block; margin-top:4px; font-size:12.5px; line-height:1.55; color:var(--gray-700); }
+.quick-btns{ display:flex; gap:4px; flex-shrink:0; }
+.quick-btns .btn{ padding:5px 9px; font-size:12px; }
+
+@media (max-width:900px){
+  .note-field{ flex-direction:column; }
+  .note-label{ flex:none; }
+  .quick-row{ flex-direction:column; }
+}
+
+/* 결과 패널(문답 화면 전용) — 버튼이 세로로 쌓이면 푸터가 247px까지 커져
+   정작 결과 목록이 93px로 눌린다(2026-08-16 실측). 버튼은 가로로 흘리고
+   목록이 남은 공간을 차지하게 한다. checklist.html의 푸터는 건드리지 않는다. */
+.results-card .results-list{
+  flex:1 1 auto;
+  max-height:none;
+  min-height:140px;
+}
+.results-card .results-footer{
+  flex-direction:column;
+  align-items:stretch;
+  gap:6px;
+  padding:10px 12px;
+  flex:0 0 auto;
+}
+/* 버튼은 한 줄에 모두 들어간다. 칼럼이 좁아도 줄바꿈하지 않고 함께 줄어들며,
+   글자는 잘리지 않도록 라벨 자체를 짧게 두었다. */
+.results-actions{
+  display:flex;
+  flex-wrap:nowrap;
+  gap:5px;
+}
+.results-actions .btn{
+  flex:1 1 0;
+  min-width:0;
+  padding:7px 4px;
+  font-size:12px;
+  white-space:nowrap;
+}
+.results-card .results-footer .wizard-note{
+  margin:0;
+  font-size:11.5px;
+}
+
+/* 저장 결과 안내 */
+.save-status{
+  margin:0; padding:7px 10px; border-radius:var(--radius-sm);
+  background:var(--ok-bg); color:var(--ok);
+  font-size:11.5px; line-height:1.55; word-break:break-all;
+}
+.save-status.is-error{ background:var(--warn-bg); color:var(--warn); }

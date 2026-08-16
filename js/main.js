@@ -41,26 +41,17 @@
 
   var $root, $results, $resultsCount, $checkCounter, $search;
 
-  function keyOf(diagId, g, i){ return diagId + '::' + g + '::' + i; }
+  // 채점 3함수(keyOf·groupSatisfied·diagnosisScore)는 js/scoring.js로 옮겼다.
+  // 이 파일이 IIFE라 밖에서 호출할 수 없었는데, 위저드 화면(index.html)이
+  // 같은 채점 규칙을 써야 해서 순수 함수로 분리한 것이다
+  // (docsPlan/guided-intake-wizard/structure.md §3.1). 계산 규칙은 그대로이며,
+  // 달라진 것은 체크 상태를 인자로 넘긴다는 점뿐이다 — 추출 전후 결과가
+  // 완전히 같음을 동치 테스트로 확인했다(81개 진단 × 1002개 조합 = 81,162 케이스).
+  // 아래 래퍼들은 호출 시점에 전역을 찾으므로 스크립트 로드 순서가
+  // 어긋나도 조용히 잘못된 값을 내지 않고 명확히 실패한다.
+  function keyOf(diagId, g, i){ return HututiScoring.keyOf(diagId, g, i); }
   function checkboxId(diagId, g, i){ return 'chk-' + keyOf(diagId, g, i).split('::').join('-'); }
-
-  function groupSatisfied(diag, gIdx){
-    var g = diag.groups[gIdx];
-    var n = 0;
-    for(var i=0;i<g.items.length;i++){ if(checked[keyOf(diag.id,gIdx,i)]) n++; }
-    return { count:n, min:g.min, met: n>=g.min, ratio: Math.min(1, n/g.min) };
-  }
-
-  function diagnosisScore(diag){
-    var groupResults = diag.groups.map(function(g,idx){ return groupSatisfied(diag, idx); });
-    var met = diag.groupLogic === 'OR'
-      ? groupResults.some(function(r){ return r.met; })
-      : groupResults.every(function(r){ return r.met; });
-    var ratios = groupResults.map(function(r){ return r.ratio; });
-    var ratio = diag.groupLogic === 'OR' ? Math.max.apply(null, ratios) : Math.min.apply(null, ratios);
-    var anyChecked = groupResults.some(function(r){ return r.count>0; });
-    return { met: met, ratio: ratio, groupResults: groupResults, anyChecked: anyChecked };
-  }
+  function diagnosisScore(diag){ return HututiScoring.diagnosisScore(diag, checked); }
 
   function buildChecklist(){
     var byCategory = {};
@@ -173,9 +164,9 @@
   }
 
   function updateResults(){
-    var scored = DIAGNOSES.map(function(d){ return { d: d, s: diagnosisScore(d) }; })
-      .filter(function(x){ return x.s.anyChecked; })
-      .sort(function(a,b){ return (b.s.met - a.s.met) || (b.s.ratio - a.s.ratio); });
+    // 정렬 규칙(충족 먼저 → 진행률 높은 순)은 결과 패널과 내보내기가 똑같이
+    // 쓰던 것이라 scoring.js로 모았다. 위저드의 AI 설명 후보 선정도 같은 규칙을 쓴다.
+    var scored = HututiScoring.rankDiagnoses(DIAGNOSES, checked);
 
     $resultsCount.textContent = scored.filter(function(x){ return x.s.met; }).length;
 
@@ -204,9 +195,9 @@
   }
 
   function exportChecklist(){
-    var scored = DIAGNOSES.map(function(d){ return { d: d, s: diagnosisScore(d) }; })
-      .filter(function(x){ return x.s.anyChecked; })
-      .sort(function(a,b){ return (b.s.met - a.s.met) || (b.s.ratio - a.s.ratio); });
+    // 정렬 규칙(충족 먼저 → 진행률 높은 순)은 결과 패널과 내보내기가 똑같이
+    // 쓰던 것이라 scoring.js로 모았다. 위저드의 AI 설명 후보 선정도 같은 규칙을 쓴다.
+    var scored = HututiScoring.rankDiagnoses(DIAGNOSES, checked);
 
     var now = new Date();
     var lines = [];

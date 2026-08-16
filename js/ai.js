@@ -23,7 +23,7 @@
    ========================================================================== */
 
 import { Wllama } from 'https://cdn.jsdelivr.net/npm/@wllama/wllama@3.5.1/esm/index.js';
-import { fitConversationToBudget, pickFullDetailCount } from './context-budget.js?v=2';
+import { fitConversationToBudget, pickFullDetailCount, estimateBudgetUse } from './context-budget.js?v=2';
 
 const WASM_PATH_CONFIG = {
   default: 'https://cdn.jsdelivr.net/npm/@wllama/wllama@3.5.1/esm/wasm/wllama.wasm',
@@ -1040,6 +1040,93 @@ function fitMessagesForKanana(systemPrompt, conversation, reservedOutput) {
     .concat(fit.conversation.map(function (t) { return { role: t.role, content: t.text }; }));
 }
 
+// ---------- 엔진 호출부 (프롬프트가 무엇이든 상관하지 않는다) ----------
+// analyzeWithAI() 안에 인라인으로 들어 있던 "Ollama 시도 → 실패 시 카나나
+// 폴백 → 스트리밍/비스트리밍 분기 → 취소 처리" 구간을 그대로 떼어낸 것이다.
+// 떼어낸 이유는 문답 화면(js/interview-ai.js)의 단발 호출이 똑같은 폴백 로직을
+// 써야 하는데, 기존에는 채팅용 프롬프트 조립과 한 덩어리라 재사용할 수 없었기
+// 때문이다(docsPlan/guided-intake-wizard/structure.md §3.2).
+// 동작은 추출 전과 완전히 동일해야 한다.
+//
+//   messages              Ollama에 보낼 메시지 배열
+//   opts.buildKananaMessages  카나나에 보낼 메시지를 만드는 **함수**. 배열이 아니라
+//                         함수인 것이 중요하다 — 카나나 경로에 실제로 진입할 때만
+//                         호출해야 한다. 미리 만들어두면 Ollama로 정상 처리된
+//                         경우에도 문맥 예산 가드가 돌아 불필요한 안내가 뜬다
+//                         (기존 주석 "Ollama 경로는 이 가드를 태우지 않는다").
+//                         넘기지 않으면 messages를 그대로 쓴다.
+//   opts.maxTokens        카나나 응답 상한(기존 값 1800)
+//   opts.numPredict       Ollama 응답 상한 override(없으면 모델 기본값)
+async function runEngine(messages, opts) {
+  const o = opts || {};
+  const maxTokens = o.maxTokens || 1800;
+
+  // 1순위: PC에 설치된 Ollama (빠름). 없으면 브라우저 내 모델로 폴백.
+  //
+  // 재검사 정책(계획 리뷰 Warning 1 반영, TICKET-2 §5): 방식 A(실패 시에만
+  // 강제 재검사)를 채택했다. 방식 B(매 분석 시도마다 항상 강제 재검사)는
+  // Ollama가 계속 켜져 있는 대다수 정상 경로에도 매번 최대 15초 타임아웃
+  // 위험을 다시 노출시킨다(00-overview.md §5 위험 #10과 동일 트레이드오프).
+  // 방식 A는 정상 경로엔 지연을 추가하지 않으면서도, "세션 초반엔 감지됐지만
+  // 이후 Ollama가 꺼진" 흔한 시나리오에서 fetch 실패를 계기로 캐시를 무효화해
+  // 최신 상태를 다시 확인한다.
+  // forceBrowserEngine: 사용자가 "카나나로 전환" 배너 버튼을 눌렀으면 Ollama가
+  // 연결돼 있어도 이 경로 자체를 건너뛴다(위 setForceBrowserEngine() 참고).
+  if (!forceBrowserEngine && await detectOllama()) {
+    try {
+      return finalizeModelOutput(await analyzeWithOllama(messages, o.onDelta, o.abortSignal, o.numPredict));
+    } catch (e) {
+      if (e && e.name === 'AbortError') throw e; // 취소는 폴백하지 않고 그대로 전파
+      // Ollama가 세션 중 꺼졌거나 대상 모델이 삭제됐을 가능성 — 캐시된 값을
+      // 더 이상 신뢰하지 않고 강제 재검사로 상태를 갱신한 뒤, 그 결과와
+      // 무관하게 아래 wllama 경로로 폴백한다(재검사 결과가 다시 true여도
+      // 방금 실패한 요청을 이 함수 안에서 또 재시도하지는 않는다).
+      await detectOllama(true);
+    }
+  }
+
+  if (o.abortSignal && o.abortSignal.aborted) {
+    throw new DOMException('사용자가 취소함', 'AbortError');
+  }
+
+  await ensureModelLoaded(o.onProgress);
+
+  const kananaMessages = typeof o.buildKananaMessages === 'function'
+    ? o.buildKananaMessages()
+    : messages;
+
+  if (typeof o.onDelta !== 'function') {
+    const result = await wllama.createChatCompletion({
+      messages: kananaMessages,
+      max_tokens: maxTokens,
+      temperature: 0.3,
+      abortSignal: o.abortSignal,
+    });
+    return finalizeModelOutput(result.choices[0].message.content);
+  }
+
+  // wllama 스트리밍: stream:true + onData 콜백 조합(@wllama/wllama 3.5.1
+  // 확인된 API — 청크가 OpenAI 호환 형식이라 delta.content로 조각 텍스트가
+  // 온다). onData가 있으면 함수가 void를 반환하므로 fullText를 직접 누적한다.
+  let fullText = '';
+  await wllama.createChatCompletion({
+    messages: kananaMessages,
+    max_tokens: maxTokens,
+    temperature: 0.3,
+    abortSignal: o.abortSignal,
+    stream: true,
+    onData: function (chunk) {
+      const delta = chunk && chunk.choices && chunk.choices[0] && chunk.choices[0].delta && chunk.choices[0].delta.content;
+      if (delta) {
+        fullText += delta;
+        o.onDelta(delta);
+      }
+    },
+  });
+
+  return finalizeModelOutput(fullText);
+}
+
 export async function analyzeWithAI(conversation, onProgress, forceConclusion, onDelta, abortSignal) {
   const combinedUserText = conversation
     .filter(function (t) { return t.role === 'user'; })
@@ -1057,77 +1144,195 @@ export async function analyzeWithAI(conversation, onProgress, forceConclusion, o
   const messages = [{ role: 'system', content: systemPrompt }]
     .concat(conversation.map(function (t) { return { role: t.role, content: t.text }; }));
 
-  // 1순위: PC에 설치된 Ollama (빠름). 없으면 브라우저 내 모델로 폴백.
+  // 엔진 선택·폴백·스트리밍·취소 처리는 전부 runEngine()이 맡는다(위 정의).
+  // 카나나용 메시지를 함수로 넘기는 이유는 runEngine() 주석 참고 — Ollama가
+  // 정상 처리한 경우에는 문맥 예산 가드가 아예 돌지 않아야 한다.
   //
-  // 재검사 정책(계획 리뷰 Warning 1 반영, TICKET-2 §5): 방식 A(실패 시에만
-  // 강제 재검사)를 채택했다. 방식 B(매 분석 시도마다 항상 강제 재검사)는
-  // Ollama가 계속 켜져 있는 대다수 정상 경로에도 매번 최대 15초 타임아웃
-  // 위험을 다시 노출시킨다(00-overview.md §5 위험 #10과 동일 트레이드오프).
-  // 방식 A는 정상 경로엔 지연을 추가하지 않으면서도, "세션 초반엔 감지됐지만
-  // 이후 Ollama가 꺼진" 흔한 시나리오에서 fetch 실패를 계기로 캐시를 무효화해
-  // 최신 상태를 다시 확인한다.
-  // forceBrowserEngine: 사용자가 "카나나로 전환" 배너 버튼을 눌렀으면 Ollama가
-  // 연결돼 있어도 이 경로 자체를 건너뛴다(위 setForceBrowserEngine() 참고).
-  if (!forceBrowserEngine && await detectOllama()) {
-    try {
-      return finalizeModelOutput(await analyzeWithOllama(messages, onDelta, abortSignal));
-    } catch (e) {
-      if (e && e.name === 'AbortError') throw e; // 취소는 폴백하지 않고 그대로 전파(위 주석 참고)
-      // Ollama가 세션 중 꺼졌거나 대상 모델이 삭제됐을 가능성 — 캐시된 값을
-      // 더 이상 신뢰하지 않고 강제 재검사로 상태를 갱신한 뒤, 그 결과와
-      // 무관하게 아래 wllama 경로로 폴백한다(재검사 결과가 다시 true여도
-      // 방금 실패한 요청을 이 함수 안에서 또 재시도하지는 않는다 — 무한
-      // 재시도로 인한 지연·중복 요청을 피하기 위함).
-      await detectOllama(true);
-    }
-  }
-
-  if (abortSignal && abortSignal.aborted) {
-    throw new DOMException('사용자가 취소함', 'AbortError');
-  }
-
-  await ensureModelLoaded(onProgress);
-
   // wllama(브라우저 내 Kanana)는 생각과정 유무 선택 대상이 아닌 별도 고정
-  // 엔진이므로, 이번 engine-selector 트랙의 모델 레지스트리·토큰 파라미터화와
-  // 무관하게 기존 고정값을 그대로 둔다(TICKET-1 판단, 00-overview.md §4·requirements.md §3.5 참고).
+  // 엔진이므로, engine-selector 트랙의 모델 레지스트리·토큰 파라미터화와
+  // 무관하게 기존 고정값(1800)을 그대로 둔다.
   // N_CTX=4096 컨텍스트 한도(00-overview.md §5 위험#3): 요약 압축 없이 전체
   // 누적 대화를 그대로 전달하므로, 대화가 매우 길어지면 한도 초과로 요청
-  // 자체가 실패할 수 있다. 이 함수는 그 경우 예외를 그대로 던지며(조용히
-  // 삼키지 않음), 호출부(TICKET-3)가 사용자에게 안내할 수 있게 한다.
-  // 카나나 경로는 예산 가드를 통과한 메시지를 쓴다(위 fitMessagesForKanana 주석).
-  const kananaMessages = fitMessagesForKanana(systemPrompt, conversation, 1800);
+  // 자체가 실패할 수 있다. 그 경우 예외를 그대로 던지며(조용히 삼키지 않음),
+  // 호출부(TICKET-3)가 사용자에게 안내할 수 있게 한다.
+  return runEngine(messages, {
+    onProgress: onProgress,
+    onDelta: onDelta,
+    abortSignal: abortSignal,
+    maxTokens: 1800,
+    buildKananaMessages: function () { return fitMessagesForKanana(systemPrompt, conversation, 1800); },
+  });
+}
 
-  if (typeof onDelta !== 'function') {
-    const result = await wllama.createChatCompletion({
-      messages: kananaMessages,
-      max_tokens: 1800,
-      temperature: 0.3,
-      abortSignal: abortSignal,
-    });
-    return finalizeModelOutput(result.choices[0].message.content);
+/* ==========================================================================
+   문답 화면 전용 — 단발 설명 요청 (guided-intake-wizard → quantified-criteria 트랙)
+
+   채팅 경로(analyzeWithAI·analyzeWithAISequential)와 완전히 분리된 경로다.
+   차이가 설계의 핵심이라 적어둔다:
+
+     채팅   매 턴마다 [진단 사전 + 누적 대화 전체]를 다시 보낸다.
+            대화가 길어질수록 프롬프트가 계속 커져 결국 N_CTX를 넘고 (ABORT).
+     위저드 이미 확정된 [후보 몇 개 + 체크된 근거]만 한 번 보낸다.
+            누적되는 것이 없어 프롬프트가 커질 구조 자체가 없다.
+
+   AI가 하는 일은 서술뿐이다 — 판단·계산·후보 좁히기는 전부 위저드(JS)가
+   끝낸 뒤라, 여기서는 "이미 나온 결과를 사람이 읽을 문장으로 정리"만 한다.
+   ========================================================================== */
+
+// 후보 하나를 프롬프트용 텍스트로 만든다. 기준 전문은 싣지 않고 **체크된
+// 항목(근거)만** 싣는다 — 프롬프트 크기 상한의 핵심(structure.md §3.3).
+function formatWizardCandidate(c, index) {
+  const lines = [];
+  lines.push((index + 1) + '. ' + c.name_kr + ' (' + c.name_en + ') — ' + c.category);
+  lines.push('   증상 판정: ' + (c.met ? '기준 충족 가능성 있음' : '부분 일치 ' + Math.round((c.ratio || 0) * 100) + '%'));
+  lines.push('   상담자가 확인한 항목 ' + c.checkedCount + '개 / 확인하지 못한 항목 ' + c.unknownCount + '개');
+  if (c.evidence && c.evidence.length) {
+    lines.push('   확인된 근거:');
+    c.evidence.forEach(function (e) { lines.push('     · ' + e); });
+  }
+  // 기간·연령·빈도·기능손상 판정 (quantified-criteria 트랙). 이것이 있어야 AI가
+  // "무엇이 아직 확인되지 않았는지"까지 짚어줄 수 있다.
+  if (c.criteriaOverall) lines.push('   기준 판정 종합: ' + c.criteriaOverall);
+  if (c.criteriaAxes && c.criteriaAxes.length) {
+    c.criteriaAxes.forEach(function (a) { lines.push('     - ' + a); });
+  }
+  if (c.checkNotes && c.checkNotes.length) {
+    lines.push('   자동으로 판정할 수 없어 직접 확인해야 하는 것:');
+    c.checkNotes.forEach(function (n) { lines.push('     · ' + n); });
+  }
+  if (c.duration) lines.push('   기간 기준(원문): ' + c.duration);
+  if (c.other) lines.push('   추가 확인사항(원문): ' + c.other);
+  return lines.join('\n');
+}
+
+function buildWizardSystemPrompt() {
+  return [
+    '당신은 상담·임상 전문가를 돕는 보조자입니다. 상담자가 구조화된 문진과 체크리스트를',
+    '이미 마쳤고, 어떤 진단이 기준을 충족하는지는 프로그램이 계산해 확정했습니다.',
+    '',
+    '당신의 역할은 그 확정된 결과를 상담자가 읽기 좋은 문장으로 정리하는 것뿐입니다.',
+    '',
+    '반드시 지킬 것:',
+    '- 아래 제시된 후보 목록에 없는 진단명을 새로 만들어내지 마십시오.',
+    '- 충족 여부·백분율 등 숫자를 스스로 다시 계산하거나 바꾸지 마십시오. 주어진 값을 그대로 쓰십시오.',
+    '- 근거는 아래 "확인된 근거"에 적힌 내용만 사용하십시오. 없는 증상을 추측해 덧붙이지 마십시오.',
+    '- "확인하지 못한 항목"과 "미확인"은 증상이 없다는 뜻이 아니라 아직 확인되지 않았다는 뜻입니다. 그렇게 다루십시오.',
+    '- "직접 확인 필요"라고 표시된 항목은 프로그램이 자동으로 판정할 수 없는 것입니다. 상담자가 확인해야 한다고 안내하십시오.',
+    '- 확정적인 진단 선언을 하지 마십시오. 이것은 참고용 후보이며 최종 판단은 임상가의 몫입니다.',
+    '',
+    '형식:',
+    '- 상위 후보 3개까지만 다룹니다.',
+    '- 후보마다 제목 한 줄 + 근거 설명 2~3문장. 증상뿐 아니라 기간·빈도·기능손상 판정도 함께 언급하십시오.',
+    '- 마지막에 "추가로 확인이 필요한 점"을 2~3줄로 정리합니다(미확인 항목·직접 확인 필요 항목 중심).',
+    '- 표나 마크다운 기호 없이 담백한 문장으로 씁니다.',
+  ].join('\n');
+}
+
+function buildWizardUserPrompt(payload, candidateLimit) {
+  const cands = (payload.candidates || []).slice(0, candidateLimit);
+  const parts = [];
+  if (payload.notes && payload.notes.trim()) {
+    parts.push('[상담자가 적은 소견]\n' + payload.notes.trim());
+    parts.push('');
+  }
+  parts.push('[프로그램이 확정한 진단 후보]');
+  parts.push(cands.map(formatWizardCandidate).join('\n\n'));
+  parts.push('');
+  parts.push('위 결과를 상담자에게 설명해 주십시오.');
+  return parts.join('\n');
+}
+
+// payload는 interview.js의 window.__hututiSession.getSnapshot()이 만든 것이다.
+// 후보는 이미 상위 5개로 잘려 오지만, 근거 항목이 많으면 그래도 커질 수 있어
+// 조립 후 토큰을 근사 측정하고 예산을 넘으면 5 → 3 → 1로 줄인다.
+// (설계상 도달할 일이 없어야 정상인 안전망이다.)
+export async function explainCandidates(payload, onProgress, abortSignal) {
+  if (!payload || !payload.candidates || !payload.candidates.length) {
+    throw new Error('설명할 진단 후보가 없습니다. 체크리스트에서 해당하는 항목을 먼저 선택해 주세요.');
   }
 
-  // wllama 스트리밍: stream:true + onData 콜백 조합(@wllama/wllama 3.5.1
-  // 확인된 API — 청크가 OpenAI 호환 형식이라 delta.content로 조각 텍스트가
-  // 온다). onData가 있으면 함수가 void를 반환하므로 fullText를 직접 누적한다.
-  let fullText = '';
-  await wllama.createChatCompletion({
-    messages: kananaMessages,
-    max_tokens: 1800,
-    temperature: 0.3,
-    abortSignal: abortSignal,
-    stream: true,
-    onData: function (chunk) {
-      const delta = chunk && chunk.choices && chunk.choices[0] && chunk.choices[0].delta && chunk.choices[0].delta.content;
-      if (delta) {
-        fullText += delta;
-        onDelta(delta);
-      }
-    },
-  });
+  const systemPrompt = buildWizardSystemPrompt();
+  const RESERVED_OUTPUT = 900;               // 설명 1단락 분량이면 충분하다
+  const budget = N_CTX - RESERVED_OUTPUT;
 
-  return finalizeModelOutput(fullText);
+  let userPrompt = '';
+  let used = 0;
+  const limits = [5, 3, 1];
+  for (let i = 0; i < limits.length; i++) {
+    userPrompt = buildWizardUserPrompt(payload, limits[i]);
+    used = estimateBudgetUse(systemPrompt, [{ role: 'user', text: userPrompt }]);
+    if (used <= budget * 0.85) break;
+  }
+
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userPrompt },
+  ];
+
+  // 카나나도 같은 메시지를 쓴다 — 잘라낼 누적 대화가 애초에 없다.
+  return runEngine(messages, {
+    onProgress: onProgress,
+    abortSignal: abortSignal,
+    maxTokens: RESERVED_OUTPUT,
+    numPredict: RESERVED_OUTPUT,
+  });
+}
+
+/* ==========================================================================
+   문답 종료 후 후속 질문 (quantified-criteria 트랙)
+
+   문답이 끝난 뒤 상담자가 "이 결과에서 양극성은 왜 빠졌나요?" 같은 질문을 이어서
+   던질 수 있게 한다. chat.html이 하던 자유 대화를 문답 화면 안으로 들여온 것이다.
+
+   과거 채팅과 결정적으로 다른 점:
+     과거   처음부터 81개 진단 사전을 통째로 들고 시작 → 금방 N_CTX를 채워 (ABORT)
+     지금   이미 좁혀진 결과(후보 3~5개와 판정)만 들고 시작 → 출발 문맥이 훨씬 작다
+
+   그래도 무한은 아니다. 대화가 길어지면 fitMessagesForKanana()가 오래된 턴부터
+   걷어내고, 그마저 부족하면 호출부가 "새로 시작하시는 게 좋겠다"고 안내한다.
+   ========================================================================== */
+
+function buildFollowUpSystemPrompt(payload) {
+  const cands = (payload.candidates || []).slice(0, 3);
+  return [
+    '당신은 상담·임상 전문가를 돕는 보조자입니다. 상담자가 구조화된 문진과 체크리스트를',
+    '이미 마쳤고, 아래 결과는 프로그램이 계산해 확정한 것입니다. 상담자의 추가 질문에',
+    '이 결과를 근거로 답하십시오.',
+    '',
+    '반드시 지킬 것:',
+    '- 아래 결과에 없는 진단명을 새로 만들어내지 마십시오.',
+    '- 충족 여부·백분율 등 숫자를 스스로 다시 계산하거나 바꾸지 마십시오.',
+    '- "미확인"은 증상이 없다는 뜻이 아니라 아직 확인되지 않았다는 뜻입니다.',
+    '- "직접 확인 필요"는 프로그램이 자동 판정할 수 없는 항목이라는 뜻입니다.',
+    '- 확정적인 진단 선언을 하지 마십시오. 최종 판단은 임상가의 몫입니다.',
+    '- 모르면 모른다고 답하십시오. 추측으로 지어내지 마십시오.',
+    '- 짧고 담백하게, 표나 마크다운 기호 없이 답하십시오.',
+    '',
+    '[문진으로 확정된 결과]',
+    cands.map(formatWizardCandidate).join('\n\n'),
+  ].join('\n');
+}
+
+// history: [{ role:'user'|'assistant', text }] — 이 화면에서 오간 후속 대화만.
+// 문진 과정 자체는 프롬프트에 넣지 않는다(이미 결과로 요약돼 있다).
+export async function followUpChat(payload, history, question, onProgress, abortSignal) {
+  if (!payload || !payload.candidates || !payload.candidates.length) {
+    throw new Error('먼저 문답을 마쳐 주세요. 확정된 결과가 있어야 답할 수 있습니다.');
+  }
+  const systemPrompt = buildFollowUpSystemPrompt(payload);
+  const conversation = (history || []).concat([{ role: 'user', text: question }]);
+  const RESERVED_OUTPUT = 700;
+
+  const messages = [{ role: 'system', content: systemPrompt }]
+    .concat(conversation.map(function (t) { return { role: t.role, content: t.text }; }));
+
+  return runEngine(messages, {
+    onProgress: onProgress,
+    abortSignal: abortSignal,
+    maxTokens: RESERVED_OUTPUT,
+    numPredict: RESERVED_OUTPUT,
+    buildKananaMessages: function () { return fitMessagesForKanana(systemPrompt, conversation, RESERVED_OUTPUT); },
+  });
 }
 
 // ---------- 방식 A: 섹션별 개별 요청 ----------

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 대화 분석 | 후투티</title>
+<meta name="description" content="후투티 — 소견을 자유롭게 서술하며 AI와 대화로 진단 후보를 좁혀가는 화면(기존 방식)">
+<meta name="robots" content="noindex">
+<!-- 이 페이지는 guided-intake-wizard 트랙 이전의 채팅 방식이다. 메인 화면이
+     안내형 문진 위저드로 바뀌면서 여기로 옮겨 보존했다(삭제 ❌ — 위저드에
+     문제가 생기면 즉시 되돌릴 수 있게 하기 위함. requirements.md §5).
+     대화가 길어지면 문맥 한도 초과로 (ABORT) 오류가 날 수 있다는 기존 한계도
+     그대로 남아 있다 — 그래서 위저드가 기본 화면이 되었다. -->
+<!-- GitHub Pages는 COOP/COEP 헤더(_headers)를 무시해 crossOriginIsolated=false,
+     SharedArrayBuffer 불가 → 카나나(wllama)가 싱글스레드로만 돌았다(2026-07-19
+     배포 헤더 실측). 이 서비스워커가 응답에 두 헤더를 주입해 교차 출처 격리를
+     켜서, 브라우저 AI가 멀티스레드(WASM threads)로 돌 수 있게 한다. 최초 방문
+     1회에 한해 등록 직후 자동 새로고침이 일어난다. (coi-serviceworker MIT) -->
+<script src="coi-serviceworker.min.js"></script>
+<link rel="icon" type="image/png" href="assets/favicon-tile.png?v=2">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT-Variable.css">
+<link rel="stylesheet" href="css/style.css?v=44">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-top">
+      <a class="brand-row" href="index.html">
+        <div class="brand-mark" aria-hidden="true">
+          <img src="assets/logo-transparent.png" alt="" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+          <svg class="brand-fallback-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <path d="M11 15 L13 6 M14.5 14 L16.5 5 M18 14 L20.5 6" stroke="white" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9 16 C9 21.5 14 25.5 20.5 25.5 C26.5 25.5 30.5 22.5 32.5 18 L28 17 L30.5 13 L23.5 15.3 C19.5 14.2 13 14.2 9 16 Z" fill="white"/>
+            <path d="M7 16.2 L1.5 17.3 L7.3 19.2 Z" fill="white"/>
+            <path d="M18.5 25.5 L17.5 31.5 M24 25.3 L25.3 31.3" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="site-title">후투티<span class="site-title-sub">AI 대화 분석 (이전 방식)</span></h1>
+        </div>
+      </a>
+      <nav class="site-nav">
+        <a href="index.html">← 문진으로 돌아가기</a>
+        <a href="checklist.html">체크리스트로 확인하기</a>
+        <a href="icd11.html">ICD-11 분류 지도</a>
+        <a href="about.html">후투티란?</a>
+      </nav>
+    </div>
+    <div class="header-meta">
+      <span>수록 진단 <b id="header-diag-count">-</b>개</span>
+      <span>수록 범주 <b>18</b>개 (DSM-5-TR 챕터 기준)</span>
+      <span>참고자료 <b>DSM-5-TR, American Psychiatric Association, 2022</b></span>
+      <span>대화가 길어지면 오류가 날 수 있습니다 — 안정적인 <a href="index.html" class="header-meta-link">안내형 문진 →</a></span>
+    </div>
+  </div>
+</header>
+
+<section class="assist-layout chat-with-results">
+  <div class="chat-col">
+    <div class="chat-card">
+      <div class="chat-engine-badge-row">
+        <div class="engine-badge-wrap">
+          <button class="candidates-badge engine-badge-btn" id="ai-mode-badge" type="button" aria-haspopup="true" aria-expanded="false" title="지금 사용 중인 AI를 확인하고 다른 AI로 바로 전환합니다">브라우저 내 로컬 AI</button>
+          <div class="engine-badge-dropdown" id="engine-badge-dropdown" hidden></div>
+        </div>
+      </div>
+      <div class="engine-lock-toast" id="engine-lock-toast" hidden>지금 답변을 생성하는 중에는 AI를 바꿀 수 없습니다. 완료 후 다시 시도해 주세요.</div>
+
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-empty-hint" id="chat-empty-hint">
+          <div class="chat-message assistant">안녕하세요? 내담자의 증상, 행동, 진술이나 내담자에 대한 상담자님의 의견을 자유롭게 말씀해 주세요.</div>
+          <p class="chat-empty-subtext">의견이나 가설을 밝히시면 AI가 그에 동의·이견을 판단해 답합니다 —
+          이후 추가 자료를 이어서 입력하며 함께 의견을 조율해갈 수 있습니다.<br>
+          순서대로 안내받고 싶다면 <a href="index.html">안내형 문진</a>을, 키워드로 직접 확인하고 싶다면 <a href="checklist.html">체크리스트</a>를 이용해 주세요.</p>
+        </div>
+      </div>
+
+      <div class="ollama-failure-banner" id="ollama-failure-banner" hidden>
+        <p class="ollama-failure-message" id="ollama-failure-message"></p>
+        <button class="ollama-debug-toggle" id="ollama-debug-toggle" type="button" aria-expanded="false" title="개발자를 위한 상세 오류 정보를 펼쳐 봅니다">자세히 보기 (개발자용)</button>
+        <div class="ollama-debug-detail" id="ollama-debug-detail" hidden>
+          <pre id="ollama-debug-raw"></pre>
+          <button class="btn btn-compact" id="ollama-debug-copy-btn" type="button" title="이 오류 정보를 클립보드에 복사합니다">복사</button>
+        </div>
+      </div>
+      <div class="ollama-cpu-banner" id="ollama-cpu-banner" hidden>
+        <p class="ollama-cpu-message">지금 Ollama가 GPU를 쓰지 못하고 CPU로만 동작하고 있어 응답이 느립니다. 대신 브라우저 내장 AI(카나나)로 전환하시겠습니까?</p>
+        <div class="ollama-cpu-actions">
+          <button class="btn btn-compact btn-primary" id="ollama-cpu-switch-btn" type="button" title="지금부터 느린 Ollama 대신 브라우저 내장 카나나를 사용합니다">카나나로 전환</button>
+          <button class="btn btn-compact" id="ollama-cpu-dismiss-btn" type="button" title="느리더라도 계속 Ollama를 사용합니다">그대로 Ollama 사용</button>
+        </div>
+      </div>
+      <div class="ai-status" id="ai-status" hidden></div>
+
+      <div class="chat-input-bar">
+        <textarea id="chat-input" class="chat-textarea" rows="1"
+          placeholder="증상, 행동, 진술이나 상담자 본인의 의견을 입력하고 Enter(또는 전송)를 누르세요"></textarea>
+        <button class="btn btn-compact btn-primary chat-send-btn" id="chat-send-btn" type="button" title="입력한 내용을 AI에게 보내 분석을 요청합니다">
+          <span class="ai-btn-label">전송</span>
+          <span class="ai-btn-spinner" aria-hidden="true"></span>
+        </button>
+      </div>
+      <div class="chat-actions">
+        <button class="btn btn-compact btn-primary" id="chat-continue-btn" type="button" hidden title="다음 순서의 내용을 이어서 봅니다">다음 내용 보기 →</button>
+        <button class="btn btn-compact" id="chat-sufficient-btn" type="button" title="더 묻지 않고 지금까지 대화만으로 최종 진단 후보를 정리해 달라고 요청합니다">충분함 — 진단 결과 보기</button>
+        <button class="btn btn-compact" id="clear-notes-btn" title="지금까지의 대화 내용을 모두 지우고 처음부터 다시 시작합니다">대화 초기화</button>
+        <button class="btn btn-compact" id="engine-select-btn" type="button" aria-haspopup="dialog" aria-disabled="false" title="사용할 AI 모델을 선택하거나 새로 설치합니다">
+          <span id="engine-select-label">AI 선택</span>
+        </button>
+        <p class="notes-hint">입력한 대화는 이 브라우저 화면에만 남고(같은 탭이 열려 있는 동안 유지) 저장·전송되지 않습니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <aside class="results-col">
+    <div class="disclaimer-box-small">
+      <strong>사용 전 반드시 확인하십시오.</strong>
+      이 도구는 <b>상담·임상 전문가가 내담자를 위해 사용하는 보조 도구</b>이며 일반인의 자가진단용이 아닙니다.
+      이 결과는 <b>가진단(참고용 후보)</b>이며 실제 진단이 아닙니다. 자격을 갖춘 임상가가 면담·병력·감별진단을
+      포함한 종합적 평가를 거쳐야만 진단을 내릴 수 있습니다. 진단 기준 문구는 DSM-5-TR(American Psychiatric
+      Association, 2022)의 개념을 참고하여 <b>AI(Claude)의 도움을 받아 재서술</b>한 것으로, APA의 공식 문서가
+      아니며 <b>자격을 갖춘 임상 전문가의 검증을 거치지 않았습니다.</b> 실제 사용 전 반드시 DSM-5-TR 원서와
+      대조하여 정확성을 확인하시기 바랍니다.
+    </div>
+
+    <div class="chat-card">
+      <div class="candidates-head">
+        <h2>유력한 진단</h2>
+        <div class="candidates-head-right">
+          <button class="copy-btn" id="copy-final-result-btn" type="button" title="이 결과 내용을 클립보드에 복사합니다">복사</button>
+        </div>
+      </div>
+      <div class="final-result-empty-hint chat-empty-hint" id="final-result-empty-hint">
+        <p>대화가 진행되면 여기에 현재까지 유력한 진단이<br>정리되어 나타납니다.</p>
+      </div>
+      <div class="final-result-text" id="final-result-text" hidden></div>
+      <button class="btn btn-compact btn-primary" id="save-result-btn" title="소견과 AI 분석 결과를 텍스트 파일로 내려받습니다">결과 저장</button>
+    </div>
+  </aside>
+</section>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-bottom">
+      <span>후투티 — 상담사를 위한 가진단 도구</span>
+      <span class="footer-copyright">© 2026. An In-song. Distributed for free.<br>(2026. 안인성. 무료 배포)</span>
+    </div>
+  </div>
+</footer>
+
+<div class="download-confirm-overlay" id="engine-select-overlay" hidden>
+  <div class="download-confirm-dialog engine-select-dialog" role="dialog" aria-modal="true" aria-labelledby="engine-select-title">
+    <div class="engine-select-head">
+      <h3 id="engine-select-title">AI 엔진 선택</h3>
+      <button class="ai-engine-modal-close" id="engine-select-close" type="button" aria-label="닫기">✕</button>
+    </div>
+    <div class="engine-select-body" id="engine-select-body"></div>
+  </div>
+</div>
+
+<div class="download-confirm-overlay" id="download-confirm-overlay" hidden>
+  <div class="download-confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="download-confirm-text">
+    <p id="download-confirm-text"></p>
+    <div class="download-confirm-actions">
+      <button class="btn btn-compact" id="download-confirm-cancel" type="button">취소</button>
+      <button class="btn btn-compact btn-primary" id="download-confirm-ok" type="button">다운로드 시작</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js?v=2"></script>
+<!-- scoring.js는 main.js보다 먼저 와야 한다 — main.js가 로드 즉시 실행되는
+     IIFE라 그 안에서 HututiScoring을 찾기 때문이다. -->
+<script src="js/scoring.js?v=2"></script>
+<script src="js/main.js?v=9"></script>
+<script type="module" src="js/ai-ui.js?v=48"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    document.getElementById('header-diag-count').textContent = DIAGNOSES.length;
+  });
+
+  // 채팅+결과 영역(.chat-with-results)이 "헤더를 뺀 나머지 화면 전체"를
+  // 딱 채우게 하려면 헤더의 실제 렌더링 높이를 알아야 한다. 헤더 높이는
+  // 폰트 로딩·줄바꿈에 따라 달라질 수 있어 CSS만으로 고정값을 넣을 수
+  // 없으므로, 실제 렌더링된 높이를 재서 CSS 변수로 흘려보낸다(--header-h).
+  // 이렇게 하면 대화 영역은 스크롤 없이 한 화면에 다 보이고, 그 아래
+  // 푸터(저작권 표시)만 스크롤을 내려야 보이게 된다.
+  (function () {
+    function syncHeaderHeight() {
+      var header = document.querySelector('.site-header');
+      if (!header) return;
+      document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
+    }
+    syncHeaderHeight();
+    window.addEventListener('load', syncHeaderHeight);
+    window.addEventListener('resize', syncHeaderHeight);
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(syncHeaderHeight).catch(function () {});
+    }
+  })();
+</script>
+</body>
+</html>
