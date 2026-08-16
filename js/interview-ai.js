@@ -22,7 +22,7 @@
    스크립트다. 그 환경에서는 이 파일이 로드되지 않고, 화면은 AI 없이 정상 동작한다.
    ========================================================================== */
 
-import { explainCandidates, followUpChat, currentEngine, detectOllama } from './ai.js?v=33';
+import { explainCandidates, followUpChat, currentEngine, detectOllama } from './ai.js?v=34';
 
 var running = false;
 var abortCtrl = null;
@@ -70,14 +70,20 @@ async function generate(kind, work) {
   abortCtrl = new AbortController();
   S.streamBegin(kind);
 
+  // 응답이 왜 끝났는지 엔진이 알려주는 값. 분량이 차서 잘렸으면 화면에 알린다.
+  var meta = null;
   try {
     await announceEngine(kind === 'explain' ? '결과를 정리하는' : '답을 만드는');
-    var text = await work(abortCtrl.signal, function (chunk) { S.streamChunk(chunk); });
-    S.streamEnd(text, null);
+    var text = await work(
+      abortCtrl.signal,
+      function (chunk) { S.streamChunk(chunk); },
+      function (m) { meta = m; }
+    );
+    S.streamEnd(text, null, meta);
     setStatus('');
   } catch (e) {
     if (e && e.name === 'AbortError') {
-      S.streamEnd(null, '취소되었습니다.');
+      S.streamEnd(null, '취소되었습니다.', null);
       setStatus('');
     } else {
       // 실패해도 판정 결과는 이미 화면에 있다 — AI는 보조일 뿐임을 분명히 한다.
@@ -100,8 +106,8 @@ function explain() {
     setStatus('먼저 증상 항목에 체크해 주세요. 체크된 근거가 있어야 설명을 만들 수 있습니다.');
     return;
   }
-  return generate('explain', function (signal, onDelta) {
-    return explainCandidates(snapshot, onProgress, signal, onDelta);
+  return generate('explain', function (signal, onDelta, onMeta) {
+    return explainCandidates(snapshot, onProgress, signal, onDelta, onMeta);
   });
 }
 
@@ -113,8 +119,8 @@ function ask(question) {
     // 방금 밀어 넣은 마지막 사용자 질문은 followUpChat이 따로 받으므로 제외한다
     return !(i === arr.length - 1 && t.role === 'user');
   });
-  return generate('ask', function (signal, onDelta) {
-    return followUpChat(snapshot, history, question, onProgress, signal, onDelta);
+  return generate('ask', function (signal, onDelta, onMeta) {
+    return followUpChat(snapshot, history, question, onProgress, signal, onDelta, onMeta);
   });
 }
 

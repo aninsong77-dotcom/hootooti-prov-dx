@@ -602,7 +602,10 @@
           '요약을 만든 뒤 체크나 응답이 바뀌었습니다. “다시 정리받기”를 눌러 갱신해 주세요.</div>';
       }
       body += '<div class="bubble-ai"><b>AI 정리</b>' + (stale ? ' <span class="stale-tag">갱신 필요</span>' : '') +
-        '<div class="wizard-ai-output' + (stale ? ' is-stale' : '') + '">' + esc(S.aiText) + '</div></div>';
+        (S.aiTruncated ? ' <span class="cut-tag">뒷부분 잘림</span>' : '') +
+        '<div class="wizard-ai-output' + (stale ? ' is-stale' : '') + '">' + esc(S.aiText) + '</div>' +
+        (S.aiTruncated ? '<p class="cut-note">분량 제한에 걸려 <b>뒷부분이 잘렸습니다.</b> “다시 정리받기”를 누르면 새로 만듭니다.</p>' : '') +
+        '</div>';
       if (!stream) {
         body += '<div class="bubble-actions"><button type="button" class="btn btn-compact' + (stale ? ' btn-primary' : '') +
           '" id="ai-explain-btn" data-act="ai">다시 정리받기</button>' +
@@ -1068,18 +1071,22 @@
         }
       },
       // text가 있으면 성공, 없으면 errorText를 남긴다. 어느 쪽이든 화면을 정리한다.
-      streamEnd: function (text, errorText) {
+      // meta: { truncated, reason, tokens } — 분량이 차서 잘렸는지 엔진이 알려준 값.
+      // truncated가 true일 때만 알린다. null(판단 근거 없음)이면 아무 말도 하지
+      // 않는다 — 멀쩡한 결과를 잘렸다고 하면 상담자가 공연히 의심하게 된다.
+      streamEnd: function (text, errorText, meta) {
         var kind = stream ? stream.kind : null;
         var partial = stream ? stream.text : '';
         stream = null;
         streamNode = null;
         var body = text || partial || '';
+        var cut = !!(meta && meta.truncated === true);
         if (kind === 'explain') {
-          if (body) { S.aiText = body; S.aiStamp = fingerprint(); }
+          if (body) { S.aiText = body; S.aiStamp = fingerprint(); S.aiTruncated = cut; }
           if (errorText) S.aiError = errorText;
         } else if (kind === 'ask') {
           S.followUp = S.followUp || [];
-          S.followUp.push({ role: 'assistant', text: body || errorText || '(응답 없음)' });
+          S.followUp.push({ role: 'assistant', text: body || errorText || '(응답 없음)', truncated: cut });
         }
         save();
         render();

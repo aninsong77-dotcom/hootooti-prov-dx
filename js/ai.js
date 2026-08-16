@@ -638,7 +638,10 @@ function finalizeModelOutput(rawText) {
 // id를 이걸로 고정해 넘겨, 그 턴이 끝날 때까지는 중간에 모델을 바꿔도
 // 반영되지 않게 한다(카나나/Ollama 엔진 전환이 이미 턴 단위로 고정된 것과
 // 동일한 원칙 — "한 턴 안에서는 모델이 바뀌면 안 된다").
-async function analyzeWithOllama(messages, onDelta, abortSignal, numPredictOverride, modelIdOverride) {
+// onMeta(선택): 응답이 왜 끝났는지 알려준다. Ollama는 done_reason으로
+// 'stop'(할 말을 다 함) / 'length'(분량이 차서 잘림)를 명시해 준다 —
+// 추정이 아니라 엔진이 보고하는 사실이라, 잘림 안내의 근거로 쓴다.
+async function analyzeWithOllama(messages, onDelta, abortSignal, numPredictOverride, modelIdOverride, onMeta) {
   const modelConf = OLLAMA_MODELS[modelIdOverride || selectedOllamaModelId];
   const useStream = typeof onDelta === 'function';
   const options = { temperature: 0.3, num_predict: numPredictOverride || modelConf.numPredict, num_ctx: modelConf.numCtx };
@@ -652,6 +655,7 @@ async function analyzeWithOllama(messages, onDelta, abortSignal, numPredictOverr
     });
     if (!res.ok) throw new Error('Ollama 응답 오류 (HTTP ' + res.status + ')');
     const data = await res.json();
+    if (onMeta) onMeta({ truncated: data.done_reason === 'length', reason: data.done_reason, tokens: data.eval_count });
     return data.message.content;
   }
 
@@ -669,6 +673,7 @@ async function analyzeWithOllama(messages, onDelta, abortSignal, numPredictOverr
     // 스트리밍 body를 못 받는 환경 — 통짜 응답으로 폴백(진행 표시 없이).
     const data = await res.json();
     const full = data.message.content;
+    if (onMeta) onMeta({ truncated: data.done_reason === 'length', reason: data.done_reason, tokens: data.eval_count });
     onDelta(full);
     return full;
   }
@@ -689,6 +694,10 @@ async function analyzeWithOllama(messages, onDelta, abortSignal, numPredictOverr
     if (delta) {
       fullText += delta;
       onDelta(delta);
+    }
+    // 마지막 줄에 종료 사유가 실려 온다.
+    if (evt.done && onMeta) {
+      onMeta({ truncated: evt.done_reason === 'length', reason: evt.done_reason, tokens: evt.eval_count });
     }
   };
   while (true) {
@@ -1074,7 +1083,7 @@ async function runEngine(messages, opts) {
   // 연결돼 있어도 이 경로 자체를 건너뛴다(위 setForceBrowserEngine() 참고).
   if (!forceBrowserEngine && await detectOllama()) {
     try {
-      return finalizeModelOutput(await analyzeWithOllama(messages, o.onDelta, o.abortSignal, o.numPredict));
+      return finalizeModelOutput(await analyzeWithOllama(messages, o.onDelta, o.abortSignal, o.numPredict, undefined, o.onMeta));
     } catch (e) {
       if (e && e.name === 'AbortError') throw e; // 취소는 폴백하지 않고 그대로 전파
       // Ollama가 세션 중 꺼졌거나 대상 모델이 삭제됐을 가능성 — 캐시된 값을
@@ -1102,6 +1111,8 @@ async function runEngine(messages, opts) {
       temperature: 0.3,
       abortSignal: o.abortSignal,
     });
+    // 스트리밍이 아니면 조각 수를 셀 수 없다 — 모르는 것은 모른다고 둔다.
+    if (o.onMeta) o.onMeta({ truncated: null, reason: 'unknown', tokens: null });
     return finalizeModelOutput(result.choices[0].message.content);
   }
 
@@ -1109,6 +1120,7 @@ async function runEngine(messages, opts) {
   // 확인된 API — 청크가 OpenAI 호환 형식이라 delta.content로 조각 텍스트가
   // 온다). onData가 있으면 함수가 void를 반환하므로 fullText를 직접 누적한다.
   let fullText = '';
+  let pieces = 0;   // 흘러온 조각 수 ≈ 생성한 토큰 수
   await wllama.createChatCompletion({
     messages: kananaMessages,
     max_tokens: maxTokens,
@@ -1119,10 +1131,15 @@ async function runEngine(messages, opts) {
       const delta = chunk && chunk.choices && chunk.choices[0] && chunk.choices[0].delta && chunk.choices[0].delta.content;
       if (delta) {
         fullText += delta;
+        pieces++;
         o.onDelta(delta);
       }
     },
   });
+
+  // 상한을 다 썼으면 잘린 것이다. 여유를 두고 끝났으면 스스로 마친 것이다.
+  // 경계에서의 오차를 감안해 2개까지는 도달로 본다(조각과 토큰이 1:1이 아닐 수 있다).
+  if (o.onMeta) o.onMeta({ truncated: pieces >= maxTokens - 2, reason: pieces >= maxTokens - 2 ? 'length' : 'stop', tokens: pieces });
 
   return finalizeModelOutput(fullText);
 }
@@ -1249,7 +1266,7 @@ function buildWizardUserPrompt(payload, candidateLimit) {
 // onDelta(선택): 토큰이 생성되는 대로 조각 텍스트를 받는다. 넘기지 않으면 응답이
 // 다 만들어질 때까지 아무 표시가 없어, 느린 기기에서는 멈춘 것처럼 보인다
 // (2026-08-16 사용자 보고). 화면이 살아 있음을 보이려면 반드시 넘길 것.
-export async function explainCandidates(payload, onProgress, abortSignal, onDelta) {
+export async function explainCandidates(payload, onProgress, abortSignal, onDelta, onMeta) {
   if (!payload || !payload.candidates || !payload.candidates.length) {
     throw new Error('설명할 진단 후보가 없습니다. 체크리스트에서 해당하는 항목을 먼저 선택해 주세요.');
   }
@@ -1276,6 +1293,7 @@ export async function explainCandidates(payload, onProgress, abortSignal, onDelt
   return runEngine(messages, {
     onProgress: onProgress,
     onDelta: onDelta,
+    onMeta: onMeta,
     abortSignal: abortSignal,
     maxTokens: RESERVED_OUTPUT,
     numPredict: RESERVED_OUTPUT,
@@ -1319,7 +1337,7 @@ function buildFollowUpSystemPrompt(payload) {
 
 // history: [{ role:'user'|'assistant', text }] — 이 화면에서 오간 후속 대화만.
 // 문진 과정 자체는 프롬프트에 넣지 않는다(이미 결과로 요약돼 있다).
-export async function followUpChat(payload, history, question, onProgress, abortSignal, onDelta) {
+export async function followUpChat(payload, history, question, onProgress, abortSignal, onDelta, onMeta) {
   if (!payload || !payload.candidates || !payload.candidates.length) {
     throw new Error('먼저 문답을 마쳐 주세요. 확정된 결과가 있어야 답할 수 있습니다.');
   }
@@ -1333,6 +1351,7 @@ export async function followUpChat(payload, history, question, onProgress, abort
   return runEngine(messages, {
     onProgress: onProgress,
     onDelta: onDelta,
+    onMeta: onMeta,
     abortSignal: abortSignal,
     maxTokens: RESERVED_OUTPUT,
     numPredict: RESERVED_OUTPUT,
