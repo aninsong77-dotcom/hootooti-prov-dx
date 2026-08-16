@@ -31,6 +31,12 @@
   var el = {};
   var coverageGaps = null;   // 문항이 81개 진단을 모두 덮는지 (브릿지로 노출)
 
+  // AI가 답을 만드는 동안의 상태. 토큰이 오는 대로 화면에 흘려 넣어 "살아 있음"을
+  // 보이고, 그동안 입력창을 잠가 사용자의 질문이 조용히 버려지지 않게 한다
+  // (2026-08-16 "멈춘 것처럼 보이고 이후 대꾸가 없다" 보고 대응).
+  var stream = null;         // { kind:'explain'|'ask', text:'' }
+  var streamNode = null;     // 부분 응답을 직접 갱신할 DOM 노드
+
   var ANSWER_KR = { yes: '예', no: '아니오', unknown: '확인 안 됨' };
   var UNIT_KR = { hours: '시간', days: '일', weeks: '주', months: '개월', years: '년' };
   var FREQ_KR = { occasional: '이따금', most_days: '대부분의 날에', almost_always: '거의 항상' };
@@ -179,7 +185,7 @@
     }
     if (S.phase === 'checklist' || S.phase === 'params' || S.phase === 'done') h.push(checklistBubble());
     if (S.phase === 'params' || S.phase === 'done') h.push(paramBubbles());
-    if (S.phase === 'done') { h.push(doneBubble()); h.push(followUpBubbles()); }
+    if (S.phase === 'done') { h.push(doneBubble()); h.push(followUpBubbles()); h.push(streamBubble()); }
 
     el.messages.innerHTML = h.join('');
     bindMessageEvents();
@@ -558,8 +564,17 @@
       '<div class="bubble-covers">이 결과는 <b>가진단(참고용 후보)</b>이며 실제 진단이 아닙니다. ' +
       '최종 판단은 자격을 갖춘 임상가의 면담·병력·감별진단을 통해 내려야 합니다.</div>';
 
+    if (S.aiError) {
+      body += '<div class="bubble-notes"><b>AI 응답 실패</b><br>' + esc(S.aiError).split('\n').join('<br>') + '</div>';
+    }
     if (S.aiText) {
       body += '<div class="bubble-ai"><b>AI 정리</b><div class="wizard-ai-output">' + esc(S.aiText) + '</div></div>';
+      if (!stream) {
+        body += '<div class="bubble-actions"><button type="button" class="btn btn-compact" id="ai-explain-btn" data-act="ai">다시 정리받기</button>' +
+          '<span class="wizard-note">아래 입력창으로 더 물어보실 수 있습니다.</span></div>';
+      }
+    } else if (stream) {
+      // 생성 중에는 버튼을 내려 중복 호출을 막는다(아래 스트리밍 말풍선이 상태를 보여준다).
     } else if (window.__hututiInterviewAI && window.__hututiInterviewAI.available) {
       body += '<div class="bubble-actions"><button type="button" class="btn btn-primary" id="ai-explain-btn" data-act="ai">' +
         '<span class="ai-btn-label">AI 설명 받기</span><span class="ai-btn-spinner" aria-hidden="true"></span></button>' +
@@ -573,6 +588,17 @@
         '<b>판정 결과와 결과 저장은 지금 그대로 사용하실 수 있습니다.</b></div>';
     }
     return bubbleAssistant(body, 'bubble-done');
+  }
+
+  // AI가 답을 만드는 동안 보이는 말풍선. 토큰이 오는 대로 여기 쌓인다.
+  function streamBubble() {
+    if (!stream) return '';
+    return bubbleAssistant(
+      '<div class="stream-head"><span class="stream-dot"></span>' +
+      (stream.kind === 'explain' ? '결과를 정리하고 있습니다' : '답을 만들고 있습니다') +
+      ' <button type="button" class="linklike" data-act="ai-cancel">취소</button></div>' +
+      '<div class="wizard-ai-output" id="ai-stream">' + esc(stream.text) + '</div>',
+      'bubble-stream');
   }
 
   // 문답이 끝난 뒤 오간 추가 대화. 여기부터는 입력창이 다시 살아난다.
@@ -762,6 +788,10 @@
     }
     if (act === 'goto-param') { S.paramIdx = parseInt(node.dataset.idx, 10); S.phase = 'params'; render(); return; }
     if (act === 'ai') { runAI(); return; }
+    if (act === 'ai-cancel') {
+      if (window.__hututiInterviewAI && window.__hututiInterviewAI.cancel) window.__hututiInterviewAI.cancel();
+      return;
+    }
   }
 
   function collectParams(saveBtn) {
@@ -820,11 +850,15 @@
   // 안 된다), 문답 중에는 버튼으로만 답한다. 문답 중에 자유 입력을 받아 AI를 부르면
   // 과거 채팅처럼 호출이 누적돼 느려지고 (ABORT)로 죽는다.
   function syncInputBar() {
-    var canAsk = S.phase === 'done' && !!(window.__hututiInterviewAI && window.__hututiInterviewAI.available);
+    var hasAI = !!(window.__hututiInterviewAI && window.__hututiInterviewAI.available);
+    var busy = !!stream;
+    var canAsk = S.phase === 'done' && hasAI && !busy;
     el.input.disabled = !canAsk;
     el.send.disabled = !canAsk;
 
-    if (canAsk) {
+    if (busy) {
+      el.input.placeholder = 'AI가 답하는 중입니다 — 끝나면 다시 입력하실 수 있습니다';
+    } else if (canAsk) {
       el.input.placeholder = '결과에 대해 더 물어보실 수 있습니다 — 예) 양극성장애는 왜 후보에서 낮은가요?';
     } else if (S.phase === 'done') {
       el.input.placeholder = 'AI를 사용할 수 없는 환경입니다(파일로 직접 열었을 때). 결과는 그대로 사용하실 수 있습니다';
@@ -967,7 +1001,41 @@
           }),
         };
       },
-      setAiText: function (t) { S.aiText = t || ''; save(); render(); },
+      // ── 생성 중 화면 갱신 ────────────────────────────────────────────
+      // 토큰마다 전체를 다시 그리면 무거우므로, 시작할 때 한 번만 그리고
+      // 이후에는 그 노드의 텍스트만 직접 바꾼다.
+      streamBegin: function (kind) {
+        stream = { kind: kind, text: '' };
+        S.aiError = '';
+        render();
+        streamNode = document.getElementById('ai-stream');
+      },
+      streamChunk: function (chunk) {
+        if (!stream) return;
+        stream.text += chunk;
+        if (!streamNode) streamNode = document.getElementById('ai-stream');
+        if (streamNode) {
+          streamNode.textContent = stream.text;
+          el.messages.scrollTop = el.messages.scrollHeight;
+        }
+      },
+      // text가 있으면 성공, 없으면 errorText를 남긴다. 어느 쪽이든 화면을 정리한다.
+      streamEnd: function (text, errorText) {
+        var kind = stream ? stream.kind : null;
+        var partial = stream ? stream.text : '';
+        stream = null;
+        streamNode = null;
+        var body = text || partial || '';
+        if (kind === 'explain') {
+          if (body) S.aiText = body;
+          if (errorText) S.aiError = errorText;
+        } else if (kind === 'ask') {
+          S.followUp = S.followUp || [];
+          S.followUp.push({ role: 'assistant', text: body || errorText || '(응답 없음)' });
+        }
+        save();
+        render();
+      },
       // AI 연동 파일(module)이 준비되면 이걸 불러 화면을 다시 그리게 한다.
       // 그 파일은 외부 CDN에서 wllama를 받아온 뒤에야 실행되므로, 첫 렌더보다
       // 늦게 끝나는 일이 흔하다. 알려주는 통로가 없으면 입력창이 잠긴 채로,
@@ -1002,6 +1070,12 @@
       var q = el.input.value.trim();
       if (!q) return;
       if (!window.__hututiInterviewAI || !window.__hututiInterviewAI.available) return;
+      // 생성 중에 들어온 질문을 대화에 밀어 넣으면 답이 영영 오지 않는 말풍선이
+      // 남는다. 넣지 않고 이유만 알린다.
+      if (stream) {
+        setSaveStatus('AI가 답하는 중입니다. 끝난 뒤에 다시 보내 주세요.', true);
+        return;
+      }
       el.input.value = '';
       S.followUp = S.followUp || [];
       S.followUp.push({ role: 'user', text: q });

@@ -1246,7 +1246,10 @@ function buildWizardUserPrompt(payload, candidateLimit) {
 // 후보는 이미 상위 5개로 잘려 오지만, 근거 항목이 많으면 그래도 커질 수 있어
 // 조립 후 토큰을 근사 측정하고 예산을 넘으면 5 → 3 → 1로 줄인다.
 // (설계상 도달할 일이 없어야 정상인 안전망이다.)
-export async function explainCandidates(payload, onProgress, abortSignal) {
+// onDelta(선택): 토큰이 생성되는 대로 조각 텍스트를 받는다. 넘기지 않으면 응답이
+// 다 만들어질 때까지 아무 표시가 없어, 느린 기기에서는 멈춘 것처럼 보인다
+// (2026-08-16 사용자 보고). 화면이 살아 있음을 보이려면 반드시 넘길 것.
+export async function explainCandidates(payload, onProgress, abortSignal, onDelta) {
   if (!payload || !payload.candidates || !payload.candidates.length) {
     throw new Error('설명할 진단 후보가 없습니다. 체크리스트에서 해당하는 항목을 먼저 선택해 주세요.');
   }
@@ -1272,6 +1275,7 @@ export async function explainCandidates(payload, onProgress, abortSignal) {
   // 카나나도 같은 메시지를 쓴다 — 잘라낼 누적 대화가 애초에 없다.
   return runEngine(messages, {
     onProgress: onProgress,
+    onDelta: onDelta,
     abortSignal: abortSignal,
     maxTokens: RESERVED_OUTPUT,
     numPredict: RESERVED_OUTPUT,
@@ -1315,7 +1319,7 @@ function buildFollowUpSystemPrompt(payload) {
 
 // history: [{ role:'user'|'assistant', text }] — 이 화면에서 오간 후속 대화만.
 // 문진 과정 자체는 프롬프트에 넣지 않는다(이미 결과로 요약돼 있다).
-export async function followUpChat(payload, history, question, onProgress, abortSignal) {
+export async function followUpChat(payload, history, question, onProgress, abortSignal, onDelta) {
   if (!payload || !payload.candidates || !payload.candidates.length) {
     throw new Error('먼저 문답을 마쳐 주세요. 확정된 결과가 있어야 답할 수 있습니다.');
   }
@@ -1328,6 +1332,7 @@ export async function followUpChat(payload, history, question, onProgress, abort
 
   return runEngine(messages, {
     onProgress: onProgress,
+    onDelta: onDelta,
     abortSignal: abortSignal,
     maxTokens: RESERVED_OUTPUT,
     numPredict: RESERVED_OUTPUT,

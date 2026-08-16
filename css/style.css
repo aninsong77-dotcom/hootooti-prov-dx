@@ -1478,3 +1478,29 @@ a{color:var(--primary)}
   font-size:11.5px; line-height:1.55; word-break:break-all;
 }
 .save-status.is-error{ background:var(--warn-bg); color:var(--warn); }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   체크할 때 화면이 흔들리는 문제 (2026-08-16 사용자 보고) 대응.
+
+   원인 ① 스크롤 상자가 이중이었다. 체크리스트가 자체 스크롤(460px) 안에 있고
+   그것이 다시 스크롤되는 대화 영역 안에 있어서, 휠로 넘기다 끝에 닿으면 바깥
+   영역으로 스크롤이 넘어가 화면이 통째로 튀었다(scroll chaining).
+   → 안쪽 스크롤을 없애고 대화 영역 하나만 스크롤하게 한다. 스크롤 축이 하나면
+     체크한 위치가 그대로 유지된다.
+
+   원인 ② 배지 문구가 바뀌며 너비가 변했다(미충족 49px → 부분 일치 20% 88px).
+   → 최소 너비를 고정해 글자가 바뀌어도 자리가 흔들리지 않게 한다.
+   ────────────────────────────────────────────────────────────────────────── */
+.bubble-checklist{
+  max-height:none;
+  overflow:visible;
+}
+.chat-messages{
+  overscroll-behavior:contain;   /* 끝에 닿아도 페이지로 스크롤이 넘어가지 않게 */
+}
+.bubble-checklist .badge,
+.bubble-deferred .badge{
+  min-width:104px;
+  text-align:center;
+  white-space:nowrap;
+}
