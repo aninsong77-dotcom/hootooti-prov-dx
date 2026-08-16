@@ -160,6 +160,17 @@
     return HututiCriteriaEngine.evaluate(HututiCriteria.get(diagId), inputFor(diagId));
   }
 
+  // 지금까지의 입력을 한 줄로 요약한 지문. AI 요약을 만든 시점의 지문과 다르면
+  // 그 요약은 낡은 것이다(체크를 고쳤는데 예전 설명이 그대로 남아 오해를 부른다).
+  function fingerprint() {
+    return [
+      Object.keys(S.checked).sort().join(','),
+      JSON.stringify(S.answers),
+      JSON.stringify(S.params),
+      JSON.stringify(S.common),
+    ].join('|');
+  }
+
   // 증상 채점 상위 후보
   function ranked() {
     return HututiScoring.rankDiagnoses(DIAGNOSES, S.checked);
@@ -187,14 +198,19 @@
     if (S.phase === 'params' || S.phase === 'done') h.push(paramBubbles());
     if (S.phase === 'done') { h.push(doneBubble()); h.push(followUpBubbles()); h.push(streamBubble()); }
 
+    // 다시 그리기 전에 보던 위치를 기억한다. 맨 아래를 보고 있었으면 새 말풍선을
+    // 따라가고, 위쪽에서 뭔가 고치는 중이었으면 그 자리를 지킨다 — 무조건 맨
+    // 아래로 보내면 체크하다가 화면이 튀어 다시 찾아야 한다(2026-08-16 보고).
+    var wasAtBottom = (el.messages.scrollHeight - el.messages.scrollTop - el.messages.clientHeight) < 60;
+    var prevScroll = el.messages.scrollTop;
+
     el.messages.innerHTML = h.join('');
     bindMessageEvents();
     renderResults();
     syncInputBar();
     save();
 
-    // 마지막 말풍선이 보이도록
-    el.messages.scrollTop = el.messages.scrollHeight;
+    el.messages.scrollTop = wasAtBottom ? el.messages.scrollHeight : prevScroll;
   }
 
   function bubbleAssistant(inner, extraClass) {
@@ -567,10 +583,29 @@
     if (S.aiError) {
       body += '<div class="bubble-notes"><b>AI 응답 실패</b><br>' + esc(S.aiError).split('\n').join('<br>') + '</div>';
     }
+    // 체크나 응답을 고친 뒤에도 기간·빈도를 다시 물어볼 수 있어야 한다.
+    // 이 버튼이 없으면 불러오기로 이어 작업할 때 정량 판정이 예전 상태로 굳는다.
+    var freshQueue = buildParamQueue();
+    var queueChanged = freshQueue.join(',') !== (S.paramQueue || []).join(',');
+    if (!stream) {
+      body += '<div class="bubble-actions">' +
+        '<button type="button" class="btn btn-compact" data-act="redo-params">기간·빈도 다시 확인하기</button>' +
+        (queueChanged ? '<span class="wizard-note">체크가 바뀌어 <b>확인할 진단이 달라졌습니다.</b></span>'
+          : '<span class="wizard-note">체크를 고치셨다면 눌러서 다시 확인해 주세요.</span>') +
+        '</div>';
+    }
+
     if (S.aiText) {
-      body += '<div class="bubble-ai"><b>AI 정리</b><div class="wizard-ai-output">' + esc(S.aiText) + '</div></div>';
+      var stale = S.aiStamp && S.aiStamp !== fingerprint();
+      if (stale) {
+        body += '<div class="bubble-notes"><b>아래 정리는 예전 내용입니다</b><br>' +
+          '요약을 만든 뒤 체크나 응답이 바뀌었습니다. “다시 정리받기”를 눌러 갱신해 주세요.</div>';
+      }
+      body += '<div class="bubble-ai"><b>AI 정리</b>' + (stale ? ' <span class="stale-tag">갱신 필요</span>' : '') +
+        '<div class="wizard-ai-output' + (stale ? ' is-stale' : '') + '">' + esc(S.aiText) + '</div></div>';
       if (!stream) {
-        body += '<div class="bubble-actions"><button type="button" class="btn btn-compact" id="ai-explain-btn" data-act="ai">다시 정리받기</button>' +
+        body += '<div class="bubble-actions"><button type="button" class="btn btn-compact' + (stale ? ' btn-primary' : '') +
+          '" id="ai-explain-btn" data-act="ai">다시 정리받기</button>' +
           '<span class="wizard-note">아래 입력창으로 더 물어보실 수 있습니다.</span></div>';
       }
     } else if (stream) {
@@ -682,8 +717,14 @@
         var k = HututiScoring.keyOf(cb.dataset.diag, cb.dataset.g, cb.dataset.i);
         if (cb.checked) S.checked[k] = true; else delete S.checked[k];
         cb.closest('.item').classList.toggle('checked', cb.checked);
-        renderResults();
-        save();
+        if (S.phase === 'done') {
+          // 문답이 끝난 뒤 체크를 고치면 AI 정리가 낡고 확인 대상도 달라진다.
+          // 그 안내를 갱신하려면 다시 그려야 한다(스크롤 위치는 render가 지킨다).
+          render();
+        } else {
+          renderResults();
+          save();
+        }
       });
     });
     root.querySelectorAll('input[data-act="pick-exception"]').forEach(function (cb) {
@@ -787,6 +828,13 @@
       return;
     }
     if (act === 'goto-param') { S.paramIdx = parseInt(node.dataset.idx, 10); S.phase = 'params'; render(); return; }
+    if (act === 'redo-params') {
+      S.paramQueue = buildParamQueue();
+      S.paramIdx = 0;
+      S.phase = S.paramQueue.length ? 'params' : 'done';
+      render();
+      return;
+    }
     if (act === 'ai') { runAI(); return; }
     if (act === 'ai-cancel') {
       if (window.__hututiInterviewAI && window.__hututiInterviewAI.cancel) window.__hututiInterviewAI.cancel();
@@ -1027,7 +1075,7 @@
         streamNode = null;
         var body = text || partial || '';
         if (kind === 'explain') {
-          if (body) S.aiText = body;
+          if (body) { S.aiText = body; S.aiStamp = fingerprint(); }
           if (errorText) S.aiError = errorText;
         } else if (kind === 'ask') {
           S.followUp = S.followUp || [];

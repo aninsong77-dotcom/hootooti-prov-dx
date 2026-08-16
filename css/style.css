@@ -1504,3 +1504,10 @@ a{color:var(--primary)}
   text-align:center;
   white-space:nowrap;
 }
+
+/* 체크를 고친 뒤 AI 정리가 낡았음을 알리는 표시 */
+.stale-tag{
+  display:inline-block; margin-left:6px; padding:1px 7px; border-radius:99px;
+  background:var(--warn-bg); color:var(--warn); font-size:10.5px; font-weight:700;
+}
+.wizard-ai-output.is-stale{ opacity:.62; }
